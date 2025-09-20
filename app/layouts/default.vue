@@ -4,7 +4,7 @@
 
     <slot />
 
-    <CommonButton />
+    <CommonButton icon="rocket" />
 
     <LayoutFooter />
   </div>

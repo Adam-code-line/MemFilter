@@ -6,12 +6,12 @@ export default defineNuxtConfig({
     '@nuxt/content',
     '@nuxt/eslint',
     '@nuxt/ui',
-    '@nuxtjs/tailwindcss'
   ],
 
   css: ['~/assets/css/main.css'],
 
   ui: {
     fonts: false
-  }
+  },
+
 })
