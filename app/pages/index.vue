@@ -1,13 +1,12 @@
 <template>
-
-  <div>
-    <CommonFloatingContainer>
-      <CommonFloatingCard
-      :title="page?.title"
-      icon="🎉"
-    />
-  </CommonFloatingContainer>
-  </div>
+    <div v-if="page" class="py-8">
+      <CommonFloatingContainer>
+        <CommonFloatingCard
+          :title="page?.title"
+          icon="🎉"
+        />
+      </CommonFloatingContainer>
+    </div>
 </template>
 
 <script lang="ts" setup>
@@ -21,5 +20,7 @@ const {data: page} = await useAsyncData('index', () => queryCollection('index').
 </script>
 
 <style>
+
+
 
 </style>

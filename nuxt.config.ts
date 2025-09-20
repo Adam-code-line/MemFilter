@@ -14,4 +14,7 @@ export default defineNuxtConfig({
     fonts: false
   },
 
+  // 确保组件自动导入
+  components: true,
+
 })

@@ -1,16 +1,18 @@
 <template>
-  <div>
+  <div class="min-h-screen flex flex-col">
     <LayoutHeader />
-
-    <slot />
-
+    
+    <UMain class="flex-1">
+      <slot />
+    </UMain>
+      
     <CommonButton icon="rocket" />
-
     <LayoutFooter />
   </div>
 </template>
 
 <script lang="ts" setup>
+
 
 </script>
 

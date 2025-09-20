@@ -1,13 +1,16 @@
-<template>
-  <div>
-    
-  </div>
-</template>
+<script setup lang="ts">
 
-<script lang="ts" setup>
+const route = useRoute()
 
 </script>
 
-<style>
+<template>
+  <UHeader>
 
-</style>
+  <template #left>
+    <AppLogo
+    />
+  </template>
+
+  </UHeader>
+</template>
