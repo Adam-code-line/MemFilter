@@ -1,8 +1,9 @@
 <template>
+
   <div>
     <CommonFloatingContainer>
       <CommonFloatingCard
-      title="欢迎使用"
+      :title="page?.title"
       icon="🎉"
     />
   </CommonFloatingContainer>
@@ -11,6 +12,11 @@
 
 <script lang="ts" setup>
 
+useHead({
+  title: "忆滤 MemFilter"
+})
+
+const {data: page} = await useAsyncData('index', () => queryCollection('index').first())
 
 </script>
 
