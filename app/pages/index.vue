@@ -1,5 +1,5 @@
 <template>
-    <div v-if="page" class="py-8">
+    <div v-if="page" class="py-8 px-4 sm:px-6 lg:px-8">
       <CommonFloatingContainer>
         <CommonFloatingCard
           :title="page?.title"
