@@ -1,42 +1,38 @@
 <script setup lang="ts">
+import type { NavigationMenuItem } from '@nuxt/ui'
 
 const route = useRoute()
 
-const items = computed(() => [
-  {
-    label: 'Home',
-    icon: 'i-lucide-home',
-    to: '/'
-  },
-  {
-    label: 'About',
-    icon: 'i-lucide-info',
-    to: '/about'
-  },
-])
-
+const items = computed<NavigationMenuItem[]>(() => [{
+  label: 'Home',
+  to: '/',
+  icon: 'i-lucide-book-open',
+}, {
+  label: 'About',
+  icon: 'i-lucide-box',
+}, {
+  label: 'Log',
+  icon: 'i-simple-icons-bookstack',
+  to: '/',
+  target: '_blank'
+}, {
+  label: 'Review',
+  icon: 'i-lucide-bookmark',
+  to: '/',
+  target: '_blank'
+}])
 </script>
 
 <template>
-
   <UHeader>
-    <template #left>
-      <NuxtLink to="/">
-        <AppLogo class="w-auto h-15 shrink-0" />
-      </NuxtLink>
+    <template #title>
+      <AppLogo class="h-15 w-auto" />
     </template>
 
-    <template #body>
-      <UNavigationMenu
-          :items="items"
-          orientation="vertical"
-          class="-mx-2.5"
-      />
-    </template>
+    <UNavigationMenu :items="items" />
 
     <template #right>
-
-      <UColorModeButton/>
+      <UColorModeButton />
 
       <UButton
           icon="i-lucide-log-in"
@@ -49,7 +45,7 @@ const items = computed(() => [
       <UButton
           label="登录"
           color="neutral"
-          variant="solid"
+          variant="outline"
           to="/login"
           class="hidden lg:inline-flex"
       />
@@ -57,12 +53,32 @@ const items = computed(() => [
       <UButton
           label="注册"
           color="neutral"
-          variant="solid"
+          trailing-icon="i-lucide-arrow-right"
           class="hidden lg:inline-flex"
           to="/signup"
       />
     </template>
-    
-  </UHeader>
 
+    <template #body>
+      <UNavigationMenu :items="items" orientation="vertical" class="-mx-2.5" />
+
+      <USeparator class="my-6"/>
+
+      <UButton
+          label="Sign in"
+          color="neutral"
+          variant="subtle"
+          to="/login"
+          block
+          class="mb-3"
+      />
+      <UButton
+          label="Sign up"
+          color="neutral"
+          to="/signup"
+          block
+      />
+    </template>
+  </UHeader>
 </template>
+
