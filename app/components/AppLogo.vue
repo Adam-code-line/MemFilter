@@ -1,3 +1,3 @@
 <template>
-  <img src="/logo.png" alt="reelflow logo" />
+  <img src="/logo.png" alt="MemFilter logo" />
 </template>

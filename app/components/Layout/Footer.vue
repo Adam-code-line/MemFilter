@@ -1,22 +1,27 @@
+<script setup lang="ts">
+import type { NavigationMenuItem } from '@nuxt/ui'
+
+const items: NavigationMenuItem[] = [
+
+]
+</script>
+
 <template>
-  <USeparator
-      class="h-px"
-  />
-
-  <UFooter :ui="{ top: 'border-b border-default' }">
+  <UFooter>
     <template #left>
-
       
     </template>
 
+    <UNavigationMenu :items="items" variant="link" />
+
     <template #right>
       <UButton
-          to="https://github.com/Adam-code-line/MemFilter"
-          target="_blank"
-          icon="i-simple-icons-github"
-          aria-label="MemFilter on GitHub"
-          color="neutral"
-          variant="ghost"
+        icon="i-simple-icons-github"
+        color="neutral"
+        variant="ghost"
+        to="https://github.com/Adam-code-line"
+        target="_blank"
+        aria-label="GitHub"
       />
     </template>
   </UFooter>
