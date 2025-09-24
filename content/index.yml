@@ -1,7 +1,13 @@
-title: "AI 遗忘引擎 —— 信息过载时代的认知减负工具"
+title: "忆滤 —— 信息过载时代的认知减负工具"
 description: "用 AI 主动帮助用户遗忘不重要的信息，保留关键内容。"
 hero:
   subtitle: "信息去噪 · 智能保留"
+  link:
+    label: "立即体验"
+    to: "/signup"
+    icon: "i-lucide-arrow-right"
+    size: "xl"
+    trailing: true
 sections:
   - title: "项目背景"
     body: |
@@ -16,5 +22,5 @@ sections:
       - 学习：笔记自动精简，考前只剩核心知识点。
       - 工作：会议纪要提炼结论，去除冗余对话。
 cta:
-  title: "想试试 AI 遗忘引擎吗？"
+  title: "想试试忆滤吗？"
   action: "/signup"
