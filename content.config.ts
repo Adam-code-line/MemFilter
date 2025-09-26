@@ -90,5 +90,56 @@ export default defineContentConfig({
           .optional(),
       }),
     }),
+
+    login: defineCollection({
+      source: 'login.yml',
+      type: 'page',
+      schema: z.object({
+        title: z.string().optional(),
+        description: z.string().optional(),
+        hero: z
+          .object({
+            title: z.string().optional(),
+            subtitle: z.string().optional(),
+          })
+          .optional(),
+        forms: z
+          .object({
+            login: z
+              .object({
+                title: z.string().optional(),
+                subtitle: z.string().optional(),
+                fields: z.record(
+                  z.object({
+                    label: z.string().optional(),
+                    placeholder: z.string().optional(),
+                  })
+                ).optional(),
+                submit: z.string().optional(),
+                switchText: z.string().optional(),
+                switchAction: z.string().optional(),
+              })
+              .optional(),
+            signup: z
+              .object({
+                title: z.string().optional(),
+                subtitle: z.string().optional(),
+                fields: z.record(
+                  z.object({
+                    label: z.string().optional(),
+                    placeholder: z.string().optional(),
+                  })
+                ).optional(),
+                submit: z.string().optional(),
+                switchText: z.string().optional(),
+                switchAction: z.string().optional(),
+              })
+              .optional(),
+          })
+          .optional(),
+        errors: z.record(z.string()).optional(),
+        labels: z.record(z.string()).optional(),
+      }),
+    }),
   },
 })

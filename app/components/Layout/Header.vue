@@ -21,10 +21,10 @@ const items = computed<NavigationMenuItem[]>(() => [
     active: route.path === '/note'
   },
   {
-    label: '回顾',
-    to: '/review',
+    label: '回忆',
+    to: '/memory',
     icon: 'i-lucide-brain',
-    active: route.path === '/review'
+    active: route.path === '/memory'
   },
   {
     label: '设置',
@@ -45,7 +45,7 @@ const user = ref({
   <UHeader class="border-b border-gray-200 dark:border-gray-800">
     <template #title>
       <NuxtLink to="/" class="flex items-center space-x-2">
-        <span class="text-2xl">🧠</span>
+        <span class="text-2xl"></span>
         <span class="font-bold text-lg">{{ page?.title }}</span>
       </NuxtLink>
     </template>
