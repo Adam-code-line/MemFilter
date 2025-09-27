@@ -1,5 +1,17 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
+
+  app: {
+    head: {
+      title: '忆滤',
+      meta: [
+        { name: 'description', content: '信息过载时代的认知减负工具' },
+      ],
+      link: [
+        { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' },
+      ],
+    },
+  },
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
   modules: [

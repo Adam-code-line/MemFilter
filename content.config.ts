@@ -91,6 +91,78 @@ export default defineContentConfig({
       }),
     }),
 
+    home: defineCollection({
+      source: 'home.yml',
+      type: 'page',
+      schema: z.object({
+        title: z.string().optional(),
+        description: z.string().optional(),
+        welcome: z
+          .object({
+            title: z.string().optional(),
+            subtitle: z.string().optional(),
+          })
+          .optional(),
+        quickActions: z
+          .object({
+            title: z.string().optional(),
+            items: z
+              .array(
+                z.object({
+                  label: z.string(),
+                  description: z.string().optional(),
+                  icon: z.string().optional(),
+                  to: z.string(),
+                  color: z.string().optional(),
+                })
+              )
+              .optional(),
+          })
+          .optional(),
+        stats: z
+          .object({
+            title: z.string().optional(),
+            items: z
+              .array(
+                z.object({
+                  label: z.string(),
+                  value: z.string(),
+                  icon: z.string().optional(),
+                })
+              )
+              .optional(),
+          })
+          .optional(),
+        memoryOverview: z
+          .object({
+            title: z.string().optional(),
+            viewDetails: z.string().optional(),
+          })
+          .optional(),
+        aiStatus: z
+          .object({
+            title: z.string().optional(),
+            status: z.string().optional(),
+            description: z.string().optional(),
+            lastUpdate: z.string().optional(),
+          })
+          .optional(),
+        recentActivity: z
+          .object({
+            title: z.string().optional(),
+            viewAll: z.string().optional(),
+            empty: z
+              .object({
+                title: z.string().optional(),
+                subtitle: z.string().optional(),
+                action: z.string().optional(),
+              })
+              .optional(),
+          })
+          .optional(),
+      }),
+    }),
+
     login: defineCollection({
       source: 'login.yml',
       type: 'page',
@@ -101,6 +173,40 @@ export default defineContentConfig({
           .object({
             title: z.string().optional(),
             subtitle: z.string().optional(),
+            icon: z.string().optional(),
+            gradient: z.string().optional(),
+          })
+          .optional(),
+        branding: z
+          .object({
+            name: z.string().optional(),
+            tagline: z.string().optional(),
+            logo: z.string().optional(),
+          })
+          .optional(),
+        ui: z
+          .object({
+            background: z
+              .object({
+                gradient: z.string().optional(),
+                overlay: z.string().optional(),
+              })
+              .optional(),
+            card: z
+              .object({
+                background: z.string().optional(),
+                border: z.string().optional(),
+                shadow: z.string().optional(),
+                rounded: z.string().optional(),
+              })
+              .optional(),
+            colors: z
+              .object({
+                primary: z.string().optional(),
+                secondary: z.string().optional(),
+                accent: z.string().optional(),
+              })
+              .optional(),
           })
           .optional(),
         forms: z
@@ -109,13 +215,17 @@ export default defineContentConfig({
               .object({
                 title: z.string().optional(),
                 subtitle: z.string().optional(),
+                icon: z.string().optional(),
                 fields: z.record(
                   z.object({
                     label: z.string().optional(),
                     placeholder: z.string().optional(),
+                    icon: z.string().optional(),
+                    type: z.string().optional(),
                   })
                 ).optional(),
                 submit: z.string().optional(),
+                submitIcon: z.string().optional(),
                 switchText: z.string().optional(),
                 switchAction: z.string().optional(),
               })
@@ -124,13 +234,17 @@ export default defineContentConfig({
               .object({
                 title: z.string().optional(),
                 subtitle: z.string().optional(),
+                icon: z.string().optional(),
                 fields: z.record(
                   z.object({
                     label: z.string().optional(),
                     placeholder: z.string().optional(),
+                    icon: z.string().optional(),
+                    type: z.string().optional(),
                   })
                 ).optional(),
                 submit: z.string().optional(),
+                submitIcon: z.string().optional(),
                 switchText: z.string().optional(),
                 switchAction: z.string().optional(),
               })

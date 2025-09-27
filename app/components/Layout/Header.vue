@@ -1,9 +1,6 @@
 <script setup lang="ts">
 import type { NavigationMenuItem } from '@nuxt/ui'
 
-// fetch page data
-const { data: page } = await useAsyncData('index', () => queryCollection('index').first())
-
 const route = useRoute()
 
 // 应用内导航菜单
@@ -44,9 +41,8 @@ const user = ref({
 <template>
   <UHeader class="border-b border-gray-200 dark:border-gray-800">
     <template #title>
-      <NuxtLink to="/" class="flex items-center space-x-2">
-        <span class="text-2xl"></span>
-        <span class="font-bold text-lg">{{ page?.title }}</span>
+      <NuxtLink to="/home" class="flex items-center space-x-2">
+        <AppLogo class="h-15 w-auto"  />
       </NuxtLink>
     </template>
 

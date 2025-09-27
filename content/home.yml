@@ -1,0 +1,76 @@
+title: "工作台"
+description: "您的智能记忆管理中心"
+
+welcome:
+  title: "欢迎回来"
+  subtitle: "开始今天的智能记忆整理"
+
+quickActions:
+  title: "快速开始"
+  items:
+    - label: "新建笔记"
+      description: "记录新的想法或内容"
+      icon: "i-lucide-plus"
+      to: "/note"
+      color: "primary"
+    - label: "查看记忆"
+      description: "浏览您的记忆库"
+      icon: "i-lucide-brain"
+      to: "/memory" 
+      color: "primary"
+    - label: "遗忘日志"
+      description: "查看已遗忘的内容"
+      icon: "i-lucide-history"
+      to: "/memory?tab=forgotten"
+      color: "warning"
+
+recentActivity:
+  title: "最近活动"
+  viewAll: "查看全部"
+  empty:
+    title: "开始记录您的第一条内容"
+    subtitle: "AI 将智能分析并帮您管理重要信息"
+    action: "创建笔记"
+
+stats:
+  title: "今日统计"
+  items:
+    - label: "新增笔记"
+      value: "0"
+      icon: "i-lucide-plus-circle"
+    - label: "处理中"
+      value: "0"
+      icon: "i-lucide-brain"
+    - label: "已保留"
+      value: "0"
+      icon: "i-lucide-bookmark"
+    - label: "已遗忘"
+      value: "0"
+      icon: "i-lucide-trash-2"
+
+memoryOverview:
+  title: "记忆概览"
+  viewDetails: "查看详情"
+  categories:
+    - name: "重要记忆"
+      count: 0
+      color: "red"
+      icon: "i-lucide-star"
+    - name: "工作笔记"
+      count: 0
+      color: "blue"
+      icon: "i-lucide-briefcase"
+    - name: "学习内容"
+      count: 0
+      color: "green"
+      icon: "i-lucide-graduation-cap"
+    - name: "生活记录"
+      count: 0
+      color: "purple"
+      icon: "i-lucide-heart"
+
+aiStatus:
+  title: "AI 引擎状态"
+  status: "运行中"
+  description: "正在智能分析您的内容..."
+  lastUpdate: "刚刚更新"

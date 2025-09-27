@@ -24,20 +24,31 @@
 </template>
 
 <script lang="ts" setup>
+interface Props {
+  title: string
+  date: string
+  snippet: string
+  icon?: string
+  importance?: 'high' | 'medium' | 'low'
+}
 
-const props = defineProps()
-
-const importanceLabel = computed(() => {
-  if (props.importance === 'high') return '核心'
-  if (props.importance === 'low') return '次要'
-  return '一般'
+const props = withDefaults(defineProps<Props>(), {
+  icon: '📝',
+  importance: 'medium'
 })
 
-const importanceColor = computed(() => {
-  if (props.importance === 'high') return 'success'
-  if (props.importance === 'low') return 'neutral'
-  return 'info'
-})
+defineEmits<{
+  open: []
+}>()
+
+const importanceConfig = {
+  high: { label: '重要', color: 'red' },
+  medium: { label: '一般', color: 'blue' },
+  low: { label: '备注', color: 'gray' }
+}
+
+const importanceLabel = computed(() => importanceConfig[props.importance].label)
+const importanceColor = computed(() => importanceConfig[props.importance].color as any)
 </script>
 
 <style scoped>

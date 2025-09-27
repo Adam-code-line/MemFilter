@@ -89,7 +89,7 @@ onMounted(() => {
 <template>
   <aside 
     :class="[
-      'bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 transition-all duration-300',
+      'bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 transition-all duration-300 relative',
       isCollapsed ? 'w-16' : 'w-64',
       'hidden lg:block'
     ]"

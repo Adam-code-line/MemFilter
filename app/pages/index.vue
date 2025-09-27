@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { link } from '#build/ui'
 import { computed } from 'vue'
-
 // SEO
 useHead({ 
   title: '忆滤 MemFilter - AI 遗忘引擎',

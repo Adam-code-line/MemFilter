@@ -1,20 +1,20 @@
 <template>
-  <div class="min-h-screen">
+  <div class="flex flex-col min-h-screen">
     <!-- 应用内头部 -->
-    <Header />
+    <LayoutHeader />
     
-    <div class="flex">
+    <div class="flex flex-1">
       <!-- 侧边栏 -->
       <Sidebar />
       
       <!-- 主内容区域 -->
-      <UMain class="flex-1 min-h-screen">
+      <UMain class="flex-1 bg-gray-50 dark:bg-gray-900 p-8">
         <slot />
       </UMain>
     </div>
     
     <!-- 应用内底部 -->
-    <Footer />
+    <LayoutFooter />
   </div>
 </template>
 
