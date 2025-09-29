@@ -43,56 +43,27 @@
           :state="loginModel"
           :schema="loginSchema"
           @submit="handleLoginSubmit"
-          class="space-y-6"
+          class="space-y-3"
         >
-          <div 
+          <UFormField 
             v-for="(field, fieldName) in config.forms?.login?.fields" 
             :key="fieldName"
-            class="space-y-2"
+            :label="field.label"
+            :name="fieldName"
+            class="space-y-3"
           >
-            <UFormField 
-              :label="field.label"
-              :name="fieldName"
-              class="space-y-2"
+            <UInput
+              :model-value="loginModel[fieldName]"
+              @update:model-value="updateLoginModel(fieldName, $event)"
+              :type="getFieldType(fieldName, field)"
+              :placeholder="field.placeholder"
+              size="xl"
+              :icon="field.icon"
+              color="primary"
+              class="w-full"
             >
-              <template #label>
-                <label class="block text-sm font-medium text-blue-100 mb-3">
-                  {{ field.label }}
-                </label>
-              </template>
-              
-              <UInput
-                :model-value="loginModel[fieldName]"
-                @update:model-value="updateLoginModel(fieldName, $event)"
-                :type="getFieldType(fieldName, field)"
-                :placeholder="field.placeholder"
-                size="xl"
-                class="w-full bg-white/8 border-white/20 text-white placeholder-blue-300 focus:ring-2 focus:ring-blue-400 focus:border-transparent hover:bg-white/10 transition-all duration-200 rounded-xl px-4 py-4"
-                :ui="{
-                  base: 'relative block w-full disabled:cursor-not-allowed disabled:opacity-75'
-                }"
-              >
-                <template #leading>
-                  <UIcon 
-                    v-if="field.icon"
-                    :name="field.icon" 
-                    class="text-blue-300 text-lg flex-shrink-0 ml-1" 
-                  />
-                </template>
-                
-                <template v-if="field.type === 'password'" #trailing>
-                  <UButton 
-                    :icon="passwordVisibility[fieldName] ? 'i-lucide-eye-off' : 'i-lucide-eye'"
-                    variant="ghost" 
-                    size="sm"
-                    class="text-blue-300 hover:text-white transition-colors flex-shrink-0 mr-1"
-                    @click="togglePasswordVisibility(fieldName)"
-                    :aria-label="passwordVisibility[fieldName] ? config.labels?.hidePassword : config.labels?.showPassword"
-                  />
-                </template>
-              </UInput>
-            </UFormField>
-          </div>
+            </UInput>
+          </UFormField>
           
           <div class="pt-4">
             <UButton 
@@ -116,56 +87,27 @@
           :state="signupModel"
           :schema="signupSchema"
           @submit="handleSignupSubmit"
-          class="space-y-6"
+          class="space-y-3"
         >
-          <div 
+          <UFormField 
             v-for="(field, fieldName) in config.forms?.signup?.fields" 
             :key="fieldName"
-            class="space-y-2"
+            :label="field.label"
+            :name="fieldName"
+            class="space-y-3"
           >
-            <UFormField 
-              :label="field.label"
-              :name="fieldName"
-              class="space-y-2"
-            >
-              <template #label>
-                <label class="block text-sm font-medium text-blue-100 mb-3">
-                  {{ field.label }}
-                </label>
-              </template>
-              
-              <UInput
-                :model-value="signupModel[fieldName]"
-                @update:model-value="updateSignupModel(fieldName, $event)"
-                :type="getFieldType(fieldName, field)"
-                :placeholder="field.placeholder"
-                size="xl"
-                class="w-full bg-white/8 border-white/20 text-white placeholder-blue-300 focus:ring-2 focus:ring-blue-400 focus:border-transparent hover:bg-white/10 transition-all duration-200 rounded-xl px-4 py-4"
-                :ui="{
-                  base: 'relative block w-full disabled:cursor-not-allowed disabled:opacity-75'
-                }"
-              >
-                <template #leading>
-                  <UIcon 
-                    v-if="field.icon"
-                    :name="field.icon" 
-                    class="text-blue-300 text-lg flex-shrink-0 ml-1" 
-                  />
-                </template>
-                
-                <template v-if="field.type === 'password'" #trailing>
-                  <UButton 
-                    :icon="passwordVisibility[fieldName] ? 'i-lucide-eye-off' : 'i-lucide-eye'"
-                    variant="ghost" 
-                    size="sm"
-                    class="text-blue-300 hover:text-white transition-colors flex-shrink-0 mr-1"
-                    @click="togglePasswordVisibility(fieldName)"
-                    :aria-label="passwordVisibility[fieldName] ? config.labels?.hidePassword : config.labels?.showPassword"
-                  />
-                </template>
-              </UInput>
-            </UFormField>
-          </div>
+            <UInput
+              :model-value="signupModel[fieldName]"
+              @update:model-value="updateSignupModel(fieldName, $event)"
+              :type="getFieldType(fieldName, field)"
+              :placeholder="field.placeholder"
+              size="xl"
+              :icon="field.icon"
+              color="primary"
+              class="w-full"
+            >      
+            </UInput>
+          </UFormField>
           
           <div class="pt-4">
             <UButton 
