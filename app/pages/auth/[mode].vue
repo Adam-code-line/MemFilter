@@ -19,21 +19,20 @@
           <div class="inline-flex items-center justify-center w-16 h-16 bg-white/10 rounded-2xl backdrop-blur-lg mb-4">
             <UIcon name="i-lucide-loader-2" class="w-8 h-8 animate-spin text-blue-300" />
           </div>
-          <p class="text-blue-200 text-lg">{{ (loginConfig as any)?.labels?.loading || '载入中...' }}</p>
+          <p class="text-blue-200 text-lg">{{ loginConfig.labels?.loading || '载入中...' }}</p>
         </div>
         
         <!-- 登录组件 -->
         <LoginCard
           v-else
-          v-model:active-tab="activeTab"
-          v-model:login-model="loginModel"
-          v-model:signup-model="signupModel"
+          :active-tab="activeTab"
           :config="loginConfig"
           :is-loading="isSubmitting"
           :error-message="errorMessage"
           :error-title="errorTitle"
           @login-submit="handleLogin"
           @signup-submit="handleSignup"
+          @tab-changed="handleTabChange"
         />
       </div>
     </div>
@@ -41,108 +40,74 @@
 </template>
 
 <script lang="ts" setup>
-// 设置页面元数据
-useHead({
-  title: '登录 / 注册 - 忆滤 MemFilter',
-  meta: [
-    { name: 'description', content: '使用忆滤账号登录或注册新账户' }
-  ]
-})
+import { 
+  useAuth, 
+  useAuthConfig, 
+  useAuthRoute, 
+  useAuthForm, 
+  type AuthMode 
+} from '~/composables/auth'
 
-// 获取配置数据
-const { data: login } = await useAsyncData('login-config', () => queryCollection('login').first())
+// 路由管理
+const { 
+  getCurrentMode, 
+  setPageMeta, 
+  handleTabChange: routeHandleTabChange, 
+  watchRouteChanges, 
+  redirectToValidMode 
+} = useAuthRoute()
 
-// 状态管理
+// 获取路由参数
 const route = useRoute()
 const router = useRouter()
+const mode = getCurrentMode()
 
-// 计算属性
-const isDataReady = computed(() => !!login.value)
-const loginConfig = computed(() => login.value as any || {})
+// 验证模式参数
+if (!mode) {
+  await redirectToValidMode(route.params.mode as string)
+}
 
-// 表单状态
-const activeTab = ref<'login' | 'signup'>(
-  route.path.includes('signup') ? 'signup' : 'login'
-)
+// 设置页面元数据
+setPageMeta(mode)
 
-const isSubmitting = ref(false)
-const errorMessage = ref('')
-const errorTitle = ref('')
+// 配置管理
+const { isConfigReady, loginConfig, isConfigLoading } = useAuthConfig()
 
-// 表单数据
-const loginModel = reactive({
-  identifier: '',
-  password: ''
-})
+// 表单管理
+const { activeTab } = useAuthForm(mode)
 
-const signupModel = reactive({
-  name: '',
-  email: '',
-  password: '',
-  confirmPassword: ''
-})
+// 认证逻辑
+const { 
+  isSubmitting, 
+  errorMessage, 
+  errorTitle, 
+  handleLogin: authHandleLogin, 
+  handleSignup: authHandleSignup, 
+  clearErrors 
+} = useAuth()
+
+// 状态管理
+const isDataReady = computed(() => isConfigReady.value)
 
 // 监听路由变化
-watch(() => route.path, (newPath) => {
-  if (newPath.includes('signup')) {
-    activeTab.value = 'signup'
-  } else if (newPath.includes('login')) {
-    activeTab.value = 'login'
-  }
+watchRouteChanges((newMode: AuthMode) => {
+  activeTab.value = newMode
+  clearErrors()
 })
 
-// 监听 activeTab 变化更新页面标题
-watch(activeTab, (newTab) => {
-  const title = newTab === 'signup' 
-    ? (loginConfig.value as any).forms?.signup?.title || '注册'
-    : (loginConfig.value as any).forms?.login?.title || '登录'
-  
-  useHead({ title: `${title} - 忆滤 MemFilter` })
-})
+// Tab切换时的处理函数
+const handleTabChange = (newTab: AuthMode) => {
+  clearErrors()
+  routeHandleTabChange(newTab)
+}
 
 // 事件处理函数
 const handleLogin = async (formData: any) => {
-  try {
-    isSubmitting.value = true
-    errorMessage.value = ''
-    errorTitle.value = ''
-    
-    console.log('登录尝试:', formData)
-    
-    // 模拟 API 调用
-    await new Promise(resolve => setTimeout(resolve, 1500))
-    
-    // 模拟成功登录
-    await router.push('/home')
-    
-  } catch (error: any) {
-    errorTitle.value = '登录失败'
-    errorMessage.value = error.message || (loginConfig.value as any).errors?.networkError || '登录过程中发生错误'
-  } finally {
-    isSubmitting.value = false
-  }
+  await authHandleLogin(formData, loginConfig.value, router)
 }
 
 const handleSignup = async (formData: any) => {
-  try {
-    isSubmitting.value = true
-    errorMessage.value = ''
-    errorTitle.value = ''
-    
-    console.log('注册尝试:', formData)
-    
-    // 模拟 API 调用
-    await new Promise(resolve => setTimeout(resolve, 2000))
-    
-    // 模拟成功注册
-    await router.push('/home')
-    
-  } catch (error: any) {
-    errorTitle.value = '注册失败'
-    errorMessage.value = error.message || (loginConfig.value as any).errors?.networkError || '注册过程中发生错误'
-  } finally {
-    isSubmitting.value = false
-  }
+  await authHandleSignup(formData, loginConfig.value, router)
 }
 </script>
 

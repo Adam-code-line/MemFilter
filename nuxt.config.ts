@@ -29,4 +29,19 @@ export default defineNuxtConfig({
   // 确保组件自动导入
   components: true,
 
+  // 路由重定向配置
+  nitro: {
+    routeRules: {
+      '/login': { redirect: '/auth/login' },
+      '/signup': { redirect: '/auth/signup' }
+    }
+  },
+
+  imports: {
+    dirs: [
+      '~/composables',
+      '~/composables/**'
+    ]
+  }
+
 })

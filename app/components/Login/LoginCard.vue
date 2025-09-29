@@ -105,7 +105,7 @@
               :icon="field.icon"
               color="primary"
               class="w-full"
-            >      
+            >
             </UInput>
           </UFormField>
           
@@ -168,81 +168,34 @@
 </template>
 
 <script lang="ts" setup>
-import { z } from 'zod'
+import { useAuthForm, useAuthValidation, type FormData, type LoginConfig } from '~/composables/auth'
 
-// 定义数据结构类型
-interface FormData {
-  [key: string]: any
-  identifier?: string
-  password?: string
-  name?: string
-  email?: string
-  confirmPassword?: string
-}
-
-interface FieldConfig {
-  label?: string
-  placeholder?: string
-  icon?: string
-  type?: string
-}
-
-interface FormConfig {
-  title?: string
-  subtitle?: string
-  icon?: string
-  fields?: Record<string, FieldConfig>
-  submit?: string
-  submitIcon?: string
-  switchText?: string
-  switchAction?: string
-}
-
-interface LoginConfig {
-  branding?: {
-    name?: string
-    tagline?: string
-    logo?: string
-  }
-  ui?: {
-    colors?: {
-      primary?: string
-    }
-  }
-  forms?: {
-    login?: FormConfig
-    signup?: FormConfig
-  }
-  labels?: {
-    showPassword?: string
-    hidePassword?: string
-    backToHome?: string
-  }
-  errors?: Record<string, string>
-}
-
-// 接收所有状态和配置数据
+// 接收属性和事件
 const props = defineProps<{
   activeTab: 'login' | 'signup'
-  loginModel: FormData
-  signupModel: FormData
   config: LoginConfig
   isLoading?: boolean
   errorMessage?: string
   errorTitle?: string
 }>()
 
-// 拍出所有事件和状态更新
 const emit = defineEmits<{
-  'update:activeTab': [tab: 'login' | 'signup']
-  'update:loginModel': [model: FormData]
-  'update:signupModel': [model: FormData]
   'login-submit': [data: FormData]
   'signup-submit': [data: FormData]
+  'tab-changed': [tab: 'login' | 'signup']
 }>()
 
-// 密码显示状态
-const passwordVisibility = ref<Record<string, boolean>>({})
+// 使用表单管理组合式函数
+const { 
+  loginModel, 
+  signupModel, 
+  updateLoginModel, 
+  updateSignupModel, 
+  getFieldType 
+} = useAuthForm(props.activeTab)
+
+// 使用表单验证组合式函数
+const { loginSchema, signupSchema } = useAuthValidation()
 
 // 计算属性
 const currentForm = computed(() => {
@@ -251,37 +204,10 @@ const currentForm = computed(() => {
     : props.config.forms?.signup || {}
 })
 
-// 表单验证模式
-const loginSchema = z.object({
-  identifier: z.string().email('请输入有效的邮箱地址'),
-  password: z.string().min(1, '请输入密码')
-})
-
-const signupSchema = z.object({
-  name: z.string().min(1, '请输入姓名'),
-  email: z.string().email('请输入有效的邮箱地址'),
-  password: z.string().min(8, '密码长度至少 8 位'),
-  confirmPassword: z.string().min(1, '请确认密码')
-}).refine((data) => data.password === data.confirmPassword, {
-  message: '两次密码输入不一致',
-  path: ['confirmPassword']
-})
-
 // 方法
-const getFieldType = (fieldName: string, field: FieldConfig): string => {
-  if (field.type === 'password' && passwordVisibility.value[fieldName]) {
-    return 'text'
-  }
-  return field.type || 'text'
-}
-
-const togglePasswordVisibility = (fieldName: string) => {
-  passwordVisibility.value[fieldName] = !passwordVisibility.value[fieldName]
-}
-
 const switchTab = () => {
   const newTab = props.activeTab === 'login' ? 'signup' : 'login'
-  emit('update:activeTab', newTab)
+  emit('tab-changed', newTab)
 }
 
 const handleLoginSubmit = (event: any) => {
@@ -290,16 +216,5 @@ const handleLoginSubmit = (event: any) => {
 
 const handleSignupSubmit = (event: any) => {
   emit('signup-submit', event.data)
-}
-
-// 更新模型数据
-const updateLoginModel = (field: string, value: any) => {
-  const newModel = { ...props.loginModel, [field]: value }
-  emit('update:loginModel', newModel)
-}
-
-const updateSignupModel = (field: string, value: any) => {
-  const newModel = { ...props.signupModel, [field]: value }
-  emit('update:signupModel', newModel)
 }
 </script>
