@@ -19,10 +19,10 @@ const router = useRouter()
 // 模拟数据（实际项目中应该从 API 获取）
 const recentMemories = ref([])
 const todayStats = ref({
-  newNotes: 3,
-  processing: 1,
-  retained: 15,
-  forgotten: 2
+  newNotes: 0,
+  processing: 0,
+  retained: 0,
+  forgotten: 0
 })
 
 // 记忆分类统计
