@@ -88,7 +88,7 @@
         
         <!-- 遗忘提示 -->
         <div v-if="isForgetting && !isCollapsed" class="forgetting-hint mt-2 p-2 bg-amber-50 dark:bg-amber-900/20 rounded text-xs text-amber-700 dark:text-amber-300">
-          🧠 此笔记正在遗忘中，{{ daysUntilForgotten }}天后将被淡化
+          此笔记正在遗忘中，{{ daysUntilForgotten }}天后将被淡化
         </div>
       </div>
 

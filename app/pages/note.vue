@@ -245,7 +245,7 @@ const handleCancelEdit = () => {
         
         <!-- 视图切换 -->
         <div class="flex items-center space-x-2">
-          <UButtonGroup>
+          <UFieldGroup>
             <UButton 
               :variant="viewMode === 'card' ? 'solid' : 'ghost'"
               icon="i-lucide-grid-3x3"
@@ -260,7 +260,7 @@ const handleCancelEdit = () => {
             >
               列表视图
             </UButton>
-          </UButtonGroup>
+          </UFieldGroup>
         </div>
       </div>
     </div>
@@ -354,7 +354,6 @@ const handleCancelEdit = () => {
         icon="🤖"
         size="sm"
         variant="elevated"
-        animation-type="rotate"
         :animation-delay="0.6"
         class="stats-card"
       >

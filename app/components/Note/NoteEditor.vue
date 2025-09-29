@@ -272,7 +272,6 @@ onMounted(() => {
   resize: vertical;
   border: 1px solid rgba(0, 0, 0, 0.1);
   border-radius: 8px;
-  padding: 1rem;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   font-size: 1rem;
   line-height: 1.6;
