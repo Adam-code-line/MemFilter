@@ -16,7 +16,12 @@
       <!-- 图标区域 -->
       <div v-if="icon || $slots.icon" class="card-icon-section">
         <slot name="icon">
-          <div v-if="icon" class="default-icon" v-html="icon"></div>
+          <UIcon
+            v-if="isIconifyIcon"
+            :name="icon as string"
+            class="default-icon"
+          />
+          <div v-else-if="icon" class="default-icon" v-html="icon"></div>
         </slot>
       </div>
 
@@ -83,6 +88,10 @@ const props = withDefaults(defineProps<Props>(), {
   hoverTranslateY: -15,
   disabled: false
 })
+
+const isIconifyIcon = computed(() =>
+  typeof props.icon === 'string' && props.icon.startsWith('i-')
+)
 
 const emit = defineEmits<{
   mouseenter: [event: MouseEvent]

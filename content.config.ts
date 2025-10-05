@@ -255,5 +255,118 @@ export default defineContentConfig({
         labels: z.record(z.string()).optional(),
       }),
     }),
+
+    note: defineCollection({
+      source: 'note.yml',
+      type: 'page',
+      schema: z.object({
+        title: z.string().optional(),
+        subtitle: z.string().optional(),
+        badge: z
+          .object({
+            label: z.string().optional(),
+            color: colorEnum.optional(),
+            icon: z.string().optional()
+          })
+          .optional(),
+        actions: z
+          .array(
+            z.object({
+              key: z.string().optional(),
+              label: z.string().nonempty(),
+              to: z.string().optional(),
+              icon: z.string().optional(),
+              variant: variantEnum.optional(),
+              color: colorEnum.optional(),
+              size: sizeEnum.optional()
+            })
+          )
+          .optional(),
+        filters: z
+          .object({
+            searchPlaceholder: z.string().optional(),
+            summaryLabel: z.string().optional(),
+            selectedLabel: z.string().optional(),
+            viewToggle: z
+              .object({
+                card: z.string().optional(),
+                list: z.string().optional()
+              })
+              .optional(),
+            importance: z
+              .array(
+                z.object({
+                  label: z.string().nonempty(),
+                  value: z.string().nonempty(),
+                  icon: z.string().optional()
+                })
+              )
+              .optional()
+          })
+          .optional(),
+        stats: z
+          .object({
+            items: z
+              .array(
+                z.object({
+                  key: z.string().nonempty(),
+                  title: z.string().nonempty(),
+                  description: z.string().optional(),
+                  icon: z.string().optional(),
+                  variant: z.enum(['gradient', 'glass', 'minimal', 'elevated']).optional()
+                })
+              )
+              .optional()
+          })
+          .optional(),
+        emptyState: z
+          .object({
+            title: z.string().optional(),
+            description: z.string().optional(),
+            action: z
+              .object({
+                label: z.string().optional(),
+                icon: z.string().optional(),
+                to: z.string().optional(),
+                variant: variantEnum.optional(),
+                color: colorEnum.optional()
+              })
+              .optional()
+          })
+          .optional(),
+        editor: z
+          .object({
+            titlePlaceholder: z.string().optional(),
+            contentPlaceholders: z
+              .object({
+                default: z.string(),
+                fading: z.string().optional(),
+                strongFading: z.string().optional()
+              })
+              .optional(),
+            actions: z
+              .object({
+                save: z.string().optional(),
+                cancel: z.string().optional()
+              })
+              .optional(),
+            status: z
+              .object({
+                saved: z.string().optional(),
+                unsaved: z.string().optional()
+              })
+              .optional(),
+            metaLabels: z
+              .object({
+                wordCount: z.string().optional(),
+                readTime: z.string().optional(),
+                lastEdited: z.string().optional()
+              })
+              .optional(),
+            aiBadgePrefix: z.string().optional()
+          })
+          .optional()
+      }),
+    }),
   },
 })

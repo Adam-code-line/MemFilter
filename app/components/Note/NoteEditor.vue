@@ -1,66 +1,66 @@
 <template>
-  <div class="note-editor-container">
-    <UCard class="note-editor-card">
-      <template #header>
-        <div class="flex items-center justify-between w-full">
-          <div class="flex-1 mr-4">
-            <UInput 
-              v-model="noteTitle"
-              placeholder="笔记标题..."
-              variant="none"
-              class="text-lg font-semibold w-full h-12"
-              :class="{ 'title-fading': fadeLevel > 0 }"
-            />
-          </div>
-          
-          <div class="flex items-center space-x-2 flex-shrink-0">
-            <!-- AI 重要度评估 -->
-            <UBadge 
-              :label="`AI 评分: ${aiScore}%`"
-              :color="getScoreColor(aiScore)"
-              variant="soft"
-            />
-            
-            <!-- 保存状态 -->
-            <UBadge 
-              :label="saveStatus"
-              :color="saveStatus === '已保存' ? 'success' : 'warning'"
-              variant="outline"
-            />
-          </div>
-        </div>
-      </template>
+  <UCard class="w-full bg-white/90 dark:bg-slate-900/80 backdrop-blur-xl border border-white/20 dark:border-white/10 shadow-xl">
+    <template #header>
+      <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <UInput
+          v-model="noteTitle"
+          :placeholder="config.titlePlaceholder"
+          variant="none"
+          class="text-lg font-semibold h-12 px-0 lg:flex-1"
+          :class="{ 'opacity-80 blur-[0.5px]': fadeLevel > 0 }"
+        />
 
-      <!-- 编辑器工具栏 -->
-      <div class="editor-toolbar mb-4 flex items-center justify-between">
-        <div class="flex items-center space-x-2">
-          <UFieldGroup>
-            <UButton icon="i-lucide-bold" variant="ghost" size="sm" />
-            <UButton icon="i-lucide-italic" variant="ghost" size="sm" />
-            <UButton icon="i-lucide-underline" variant="ghost" size="sm" />
-            <UButton icon="i-lucide-strikethrough" variant="ghost" size="sm" />
-          </UFieldGroup>
-          
-          <UFieldGroup>
-            <UButton icon="i-lucide-list" variant="ghost" size="sm" />
-            <UButton icon="i-lucide-list-ordered" variant="ghost" size="sm" />
-            <UButton icon="i-lucide-quote" variant="ghost" size="sm" />
-          </UFieldGroup>
-          
-          <UButton icon="i-lucide-image" variant="ghost" size="sm" />
-          <UButton icon="i-lucide-link" variant="ghost" size="sm" />
+        <div class="flex items-center gap-2">
+          <UBadge
+            :label="`${aiBadgePrefix}: ${aiScore}%`"
+            :color="scoreColor"
+            variant="soft"
+          />
+          <UBadge
+            :label="saveStatus"
+            :color="statusColor"
+            variant="outline"
+          />
         </div>
-        
-        <div class="flex items-center space-x-2">
-          <!-- 遗忘控制 -->
+      </div>
+    </template>
+
+    <div class="flex flex-col gap-4">
+      <div class="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 dark:border-white/10 pb-3">
+        <div class="flex flex-wrap items-center gap-2">
+          <UFieldGroup size="sm" variant="ghost">
+            <UButton
+              v-for="tool in formattingTools"
+              :key="tool.icon"
+              :icon="tool.icon"
+            />
+          </UFieldGroup>
+
+          <UFieldGroup size="sm" variant="ghost">
+            <UButton
+              v-for="tool in structureTools"
+              :key="tool.icon"
+              :icon="tool.icon"
+            />
+          </UFieldGroup>
+
+          <UFieldGroup size="sm" variant="ghost">
+            <UButton
+              v-for="tool in inlineTools"
+              :key="tool.icon"
+              :icon="tool.icon"
+            />
+          </UFieldGroup>
+        </div>
+
+        <div class="flex items-center gap-2">
           <USelectMenu
             v-model="forgettingMode"
             :options="forgettingOptions"
-            placeholder="遗忘模式"
             size="sm"
+            placeholder="遗忘模式"
           />
-          
-          <UButton 
+          <UButton
             icon="i-lucide-brain"
             variant="ghost"
             size="sm"
@@ -71,83 +71,132 @@
         </div>
       </div>
 
-      <!-- 主编辑区域 -->
-      <div class="editor-content">
-        <UTextarea 
-          v-model="noteContent"
-          :placeholder="contentPlaceholder"
-          :rows="12"
-          resize
-          class="note-textarea w-full"
-          :class="{ 'content-fading': fadeLevel > 0 }"
-          @input="handleContentChange"
-        />
-      </div>
+      <UTextarea
+        v-model="noteContent"
+        :placeholder="contentPlaceholder"
+        :rows="12"
+        class="min-h-[18rem]"
+        :class="{ 'opacity-80 blur-[0.4px] text-gray-600 dark:text-gray-300': fadeLevel > 0 }"
+      />
+    </div>
 
-      <!-- 底部信息栏 -->
-      <template #footer>
-        <div class="flex items-center justify-between">
-          <div class="flex items-center space-x-4 text-sm text-gray-500">
-            <span>字数: {{ contentLength }}</span>
-            <span>预计阅读: {{ estimatedReadTime }}分钟</span>
-            <span v-if="lastModified">修改: {{ lastModified }}</span>
-          </div>
-          
-          <div class="flex items-center space-x-2">
-            <UButton 
-              variant="ghost" 
-              size="sm"
-              @click="$emit('cancel')"
-            >
-              取消
-            </UButton>
-            
-            <UButton 
-              color="primary"
-              size="sm"
-              :loading="isSaving"
-              @click="saveNote"
-            >
-              保存笔记
-            </UButton>
-          </div>
+    <template #footer>
+      <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between text-sm text-gray-500 dark:text-gray-400">
+        <div class="flex flex-wrap items-center gap-4">
+          <span>{{ metaLabels.wordCount }}：{{ contentLength }}</span>
+          <span>{{ metaLabels.readTime }}：{{ estimatedReadTime }} 分钟</span>
+          <span v-if="lastModified">{{ metaLabels.lastEdited }}：{{ lastModified }}</span>
         </div>
-      </template>
-    </UCard>
-  </div>
+
+        <div class="flex items-center gap-2">
+          <UButton
+            variant="ghost"
+            size="sm"
+            @click="emit('cancel')"
+          >
+            {{ config.actions?.cancel ?? '取消' }}
+          </UButton>
+          <UButton
+            color="primary"
+            size="sm"
+            :loading="isSaving"
+            @click="handleSave"
+          >
+            {{ config.actions?.save ?? '保存笔记' }}
+          </UButton>
+        </div>
+      </div>
+    </template>
+  </UCard>
 </template>
 
-<script lang="ts" setup>
-interface Props {
+<script setup lang="ts">
+import { computed, ref, watch } from 'vue'
+import { useNoteEditor } from '~/composables/note'
+import type { NoteSavePayload } from '~/composables/note'
+
+interface EditorConfig {
+  titlePlaceholder?: string
+  contentPlaceholders?: {
+    default: string
+    fading?: string
+    strongFading?: string
+  }
+  actions?: {
+    save?: string
+    cancel?: string
+  }
+  status?: {
+    saved?: string
+    unsaved?: string
+  }
+  metaLabels?: {
+    wordCount?: string
+    readTime?: string
+    lastEdited?: string
+  }
+  aiBadgePrefix?: string
+}
+
+const props = withDefaults(defineProps<{
   initialTitle?: string
   initialContent?: string
   fadeLevel?: number
   mode?: 'create' | 'edit'
-}
-
-const props = withDefaults(defineProps<Props>(), {
+  config?: EditorConfig
+}>(), {
   initialTitle: '',
   initialContent: '',
   fadeLevel: 0,
-  mode: 'create'
+  mode: 'create',
+  config: () => ({})
 })
 
 const emit = defineEmits<{
-  save: [{ title: string; content: string; importance: string }]
-  cancel: []
-  'content-change': [string]
+  (e: 'save', payload: NoteSavePayload): void
+  (e: 'cancel'): void
+  (e: 'content-change', value: string): void
 }>()
 
-// 响应式数据
-const noteTitle = ref(props.initialTitle)
-const noteContent = ref(props.initialContent)
-const aiScore = ref(65)
-const isSaving = ref(false)
-const saveStatus = ref('未保存')
-const lastModified = ref('')
-const forgettingMode = ref('normal')
+const config = computed(() => props.config ?? {})
+const metaLabels = computed(() => ({
+  wordCount: config.value.metaLabels?.wordCount ?? '字数',
+  readTime: config.value.metaLabels?.readTime ?? '预计阅读',
+  lastEdited: config.value.metaLabels?.lastEdited ?? '修改'
+}))
 
-// 遗忘模式选项
+const {
+  noteTitle,
+  noteContent,
+  fadeLevel,
+  aiScore,
+  isSaving,
+  saveStatus,
+  lastModified,
+  contentLength,
+  estimatedReadTime,
+  contentPlaceholder,
+  scoreColor,
+  touchContent,
+  analyzeImportance,
+  beginSaving,
+  finishSaving,
+  setUnsaved,
+  setFadeLevel,
+  buildSavePayload,
+  statusLabels
+} = useNoteEditor({
+  initialTitle: props.initialTitle,
+  initialContent: props.initialContent,
+  fadeLevel: props.fadeLevel,
+  placeholders: config.value.contentPlaceholders,
+  statusLabels: config.value.status,
+  aiBadgePrefix: config.value.aiBadgePrefix
+})
+
+const aiBadgePrefix = computed(() => config.value.aiBadgePrefix ?? 'AI 评分')
+
+const forgettingMode = ref('normal')
 const forgettingOptions = [
   { label: '正常遗忘', value: 'normal' },
   { label: '慢速遗忘', value: 'slow' },
@@ -155,66 +204,40 @@ const forgettingOptions = [
   { label: '永不遗忘', value: 'never' }
 ]
 
-// 计算属性
-const contentLength = computed(() => noteContent.value.length)
-const estimatedReadTime = computed(() => Math.ceil(contentLength.value / 200))
+const formattingTools = [
+  { icon: 'i-lucide-bold' },
+  { icon: 'i-lucide-italic' },
+  { icon: 'i-lucide-underline' },
+  { icon: 'i-lucide-strikethrough' }
+]
 
-const contentPlaceholder = computed(() => {
-  if (props.fadeLevel > 2) return '内容正在淡化...'
-  if (props.fadeLevel > 0) return '输入笔记内容，此笔记可能会被遗忘...'
-  return '在这里记录您的想法和灵感...'
-})
+const structureTools = [
+  { icon: 'i-lucide-list' },
+  { icon: 'i-lucide-list-ordered' },
+  { icon: 'i-lucide-quote' }
+]
 
-// 获取评分颜色
-const getScoreColor = (score: number) => {
-  if (score >= 80) return 'success'
-  if (score >= 60) return 'primary'
-  if (score >= 40) return 'warning'
-  return 'error'
-}
+const inlineTools = [
+  { icon: 'i-lucide-image' },
+  { icon: 'i-lucide-link' }
+]
 
-// 处理内容变化
-const handleContentChange = () => {
-  saveStatus.value = '未保存'
-  emit('content-change', noteContent.value)
-  
-  // 模拟AI实时分析
-  if (noteContent.value.length > 50) {
-    analyzeImportance()
-  }
-}
+const statusColor = computed(() =>
+  saveStatus === statusLabels.saved ? 'success' : 'warning'
+)
 
-// AI重要度分析
-const analyzeImportance = async () => {
-  // 模拟AI分析逻辑
-  const keywordScore = (noteContent.value.match(/[重要|关键|核心|主要]/g) || []).length * 10
-  const lengthScore = Math.min(noteContent.value.length / 10, 30)
-  const titleScore = noteTitle.value.length > 0 ? 20 : 0
-  
-  aiScore.value = Math.min(100, Math.max(10, keywordScore + lengthScore + titleScore))
-}
-
-// 保存笔记
-const saveNote = async () => {
-  if (!noteTitle.value.trim() || !noteContent.value.trim()) {
+const handleSave = async () => {
+  const payload = buildSavePayload()
+  if (!payload.title || !payload.content) {
     return
   }
-  
-  isSaving.value = true
-  
+
+  beginSaving()
+
   try {
-    // 模拟保存延迟
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    
-    emit('save', {
-      title: noteTitle.value,
-      content: noteContent.value,
-      importance: getImportanceLevel(aiScore.value)
-    })
-    
-    saveStatus.value = '已保存'
-    lastModified.value = new Date().toLocaleTimeString()
-    
+    await new Promise(resolve => setTimeout(resolve, 600))
+    emit('save', payload)
+    finishSaving()
   } catch (error) {
     console.error('保存失败:', error)
   } finally {
@@ -222,158 +245,20 @@ const saveNote = async () => {
   }
 }
 
-// 获取重要度级别
-const getImportanceLevel = (score: number) => {
-  if (score >= 80) return 'high'
-  if (score >= 60) return 'medium'
-  if (score >= 40) return 'low'
-  return 'noise'
-}
-
-// 组件初始化
-onMounted(() => {
-  if (props.mode === 'edit') {
-    lastModified.value = new Date().toLocaleTimeString()
-    saveStatus.value = '已保存'
-  }
-  
-  if (noteContent.value) {
-    analyzeImportance()
+watch(() => props.fadeLevel, (value) => {
+  if (value !== undefined) {
+    setFadeLevel(value)
   }
 })
+
+watch(noteContent, (value, oldValue) => {
+  if (value === oldValue) return
+  touchContent()
+  emit('content-change', value)
+})
+
+watch(noteTitle, (value, oldValue) => {
+  if (value === oldValue) return
+  setUnsaved()
+})
 </script>
-
-<style scoped>
-.note-editor-container {
-  max-width: 4xl;
-  margin: 0 auto;
-}
-
-.note-editor-card {
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-}
-
-.editor-toolbar {
-  padding: 1rem 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.editor-content {
-  position: relative;
-  margin: 1rem 0;
-}
-
-.note-textarea {
-  width: 100%;
-  min-height: 300px;
-  resize: vertical;
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  border-radius: 8px;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-  font-size: 1rem;
-  line-height: 1.6;
-  color: rgba(0, 0, 0, 0.9);
-  background: rgba(255, 255, 255, 0.5);
-  transition: all 0.3s ease;
-}
-
-.note-textarea:focus {
-  outline: none;
-  border-color: rgb(59, 130, 246);
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-  transform: none;
-}
-
-/* 淡化效果 */
-.title-fading {
-  opacity: 0.7;
-  filter: blur(0.5px);
-}
-
-.content-fading {
-  opacity: 0.8;
-  filter: blur(0.5px);
-  color: rgba(0, 0, 0, 0.6);
-}
-
-/* 暗色主题适配 */
-@media (prefers-color-scheme: dark) {
-  .note-editor-card {
-    background: rgba(0, 0, 0, 0.8);
-    border-color: rgba(255, 255, 255, 0.1);
-  }
-  
-  .note-textarea {
-    color: rgba(255, 255, 255, 0.9);
-    background: rgba(255, 255, 255, 0.05);
-    border-color: rgba(255, 255, 255, 0.1);
-  }
-  
-  .note-textarea:focus {
-    border-color: rgb(59, 130, 246);
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-  }
-  
-  .content-fading {
-    color: rgba(255, 255, 255, 0.6);
-  }
-  
-  .editor-toolbar {
-    border-color: rgba(255, 255, 255, 0.05);
-  }
-}
-
-/* 响应式设计 */
-@media (max-width: 768px) {
-  .editor-toolbar {
-    flex-direction: column;
-    gap: 1rem;
-    align-items: stretch;
-  }
-  
-  .note-textarea {
-    font-size: 0.9rem;
-    min-height: 250px;
-  }
-}
-
-/* 动画效果 */
-.note-editor-card {
-  animation: fadeInUp 0.5s ease-out;
-}
-
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* 焦点效果 - 已移除，避免冲突 */
-
-/* 滑动条样式 */
-.note-textarea::-webkit-scrollbar {
-  width: 6px;
-}
-
-.note-textarea::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.05);
-  border-radius: 3px;
-}
-
-.note-textarea::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.2);
-  border-radius: 3px;
-}
-
-.note-textarea::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 0, 0, 0.3);
-}
-</style>

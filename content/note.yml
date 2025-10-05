@@ -1,0 +1,99 @@
+title: 忆滤笔记管理
+subtitle: 智能整理与主动遗忘，聚焦真正重要的内容。
+badge:
+  label: AI 遗忘引擎
+  color: primary
+  icon: i-lucide-brain
+actions:
+  - key: create
+    label: 新建笔记
+    icon: i-lucide-plus
+    variant: solid
+    color: primary
+  - key: import
+    label: 导入笔记
+    icon: i-lucide-upload
+    variant: outline
+    color: neutral
+  - key: tidy
+    label: AI 整理
+    icon: i-lucide-wand-2
+    variant: outline
+    color: primary
+    to: /memory
+  - key: history
+    label: 遗忘日志
+    icon: i-lucide-history
+    variant: outline
+    color: warning
+    to: /history
+filters:
+  searchPlaceholder: 搜索笔记内容...
+  summaryLabel: 找到 {count} 条笔记
+  selectedLabel: 已选择 {count} 条
+  viewToggle:
+    card: 卡片视图
+    list: 列表视图
+  importance:
+    - label: 全部
+      value: all
+      icon: i-lucide-layers
+    - label: 核心笔记
+      value: high
+      icon: i-lucide-rocket
+    - label: 重要笔记
+      value: medium
+      icon: i-lucide-target
+    - label: 次要笔记
+      value: low
+      icon: i-lucide-sparkles
+    - label: 噪声信息
+      value: noise
+      icon: i-lucide-waves
+stats:
+  items:
+    - key: total
+      title: 总笔记数
+      description: 本月新增重点内容
+      icon: i-lucide-notebook-pen
+      variant: gradient
+    - key: core
+      title: 核心笔记
+      description: AI 评级为高价值
+      icon: i-lucide-star
+      variant: glass
+    - key: forgotten
+      title: 已遗忘
+      description: 自动清理的噪声
+      icon: i-lucide-cloud-fog
+      variant: minimal
+    - key: engine
+      title: AI 状态
+      description: 智能分析运行中
+      icon: i-lucide-brain-circuit
+      variant: elevated
+emptyState:
+  title: 没有找到匹配的笔记
+  description: 尝试调整搜索条件，或立即创建一条新笔记。
+  action:
+    label: 新建笔记
+    icon: i-lucide-plus
+    variant: solid
+    color: primary
+editor:
+  titlePlaceholder: 笔记标题...
+  contentPlaceholders:
+    default: 在这里记录您的想法与灵感……
+    fading: 输入笔记内容，此笔记可能会被遗忘……
+    strongFading: 内容正在淡化中……
+  actions:
+    save: 保存笔记
+    cancel: 取消
+  status:
+    saved: 已保存
+    unsaved: 未保存
+  metaLabels:
+    wordCount: 字数
+    readTime: 预计阅读
+    lastEdited: 修改
+  aiBadgePrefix: AI 评分
