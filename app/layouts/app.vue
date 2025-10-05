@@ -5,14 +5,13 @@
     
     <div class="flex flex-1">
       <!-- 侧边栏 -->
-      <Sidebar />
+      <LayoutSidebar />
       
       <!-- 主内容区域 -->
       <UMain class="flex-1 bg-gray-50 dark:bg-gray-900 p-8">
         <slot />
       </UMain>
     </div>
-    
     <!-- 应用内底部 -->
     <LayoutFooter />
   </div>

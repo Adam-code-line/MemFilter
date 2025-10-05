@@ -100,9 +100,9 @@ export const useNotesDashboard = (options: NoteDashboardOptions = {}) => {
   const importanceFilter = ref<ImportanceFilter>('all')
   const searchQuery = ref('')
   const selectedNotes = ref<number[]>([])
-  const isEditorOpen = ref(false)
   const editorMode = ref<'create' | 'edit'>('create')
   const editingNote = ref<NoteRecord | null>(null)
+  const activeNoteId = ref<number | null>(null)
 
   const filteredNotes = computed(() => {
     let data = [...notes.value]
@@ -154,18 +154,19 @@ export const useNotesDashboard = (options: NoteDashboardOptions = {}) => {
   const openEditorForNew = () => {
     editorMode.value = 'create'
     editingNote.value = null
-    isEditorOpen.value = true
+    activeNoteId.value = null
   }
 
   const openEditorForNote = (note: NoteRecord) => {
     editorMode.value = 'edit'
     editingNote.value = { ...note }
-    isEditorOpen.value = true
+    activeNoteId.value = note.id
   }
 
   const closeEditor = () => {
-    isEditorOpen.value = false
+    editorMode.value = 'create'
     editingNote.value = null
+    activeNoteId.value = null
   }
 
   const restoreNote = (note: NoteRecord) => {
@@ -203,7 +204,7 @@ export const useNotesDashboard = (options: NoteDashboardOptions = {}) => {
     if (editorMode.value === 'edit' && editingNote.value) {
       const index = notes.value.findIndex(note => note.id === editingNote.value!.id)
       if (index !== -1) {
-        notes.value[index] = {
+        const updated = {
           ...notes.value[index],
           title: payload.title,
           content: payload.content,
@@ -212,28 +213,30 @@ export const useNotesDashboard = (options: NoteDashboardOptions = {}) => {
           date: '刚刚',
           lastAccessed: '刚刚'
         }
+        notes.value[index] = updated
+        editingNote.value = { ...updated }
+        activeNoteId.value = updated.id
       }
     } else {
       const id = Date.now()
-      notes.value = [
-        {
-          id,
-          title: payload.title,
-          content: payload.content,
-          date: '刚刚',
-          lastAccessed: '刚刚',
-          icon: '📝',
-          importance: payload.importance,
-          importanceScore: Math.floor(Math.random() * 20) + 70,
-          fadeLevel: 0,
-          forgettingProgress: 0,
-          isCollapsed: false
-        },
-        ...notes.value
-      ]
+      const newNote: NoteRecord = {
+        id,
+        title: payload.title,
+        content: payload.content,
+        date: '刚刚',
+        lastAccessed: '刚刚',
+        icon: '📝',
+        importance: payload.importance,
+        importanceScore: Math.floor(Math.random() * 20) + 70,
+        fadeLevel: 0,
+        forgettingProgress: 0,
+        isCollapsed: false
+      }
+      notes.value = [newNote, ...notes.value]
+      editorMode.value = 'edit'
+      editingNote.value = { ...newNote }
+      activeNoteId.value = newNote.id
     }
-
-    closeEditor()
   }
 
   return {
@@ -246,9 +249,9 @@ export const useNotesDashboard = (options: NoteDashboardOptions = {}) => {
     searchQuery,
     selectedNotes,
     selectedCount,
-    isEditorOpen,
     editorMode,
     editingNote,
+    activeNoteId,
 
     // actions
     setViewMode,

@@ -83,7 +83,7 @@
           {{ displaySnippet }}
         </div>
         <div v-else class="collapsed-hint text-xs text-gray-400 italic">
-          内容已折叠... <span class="text-blue-400 cursor-pointer" @click="toggleCollapse">展开查看</span>
+          内容已折叠... <span class="text-blue-400 cursor-pointer" @click="handleToggleCollapse">展开查看</span>
         </div>
         
         <!-- 遗忘提示 -->
@@ -99,7 +99,7 @@
               size="sm" 
               variant="ghost" 
               icon="i-lucide-eye"
-              @click="$emit('open')"
+              @click="handleOpen"
             >
               查看详情
             </UButton>
@@ -110,7 +110,7 @@
               variant="ghost" 
               icon="i-lucide-refresh-cw"
               color="success"
-              @click="$emit('restore')"
+              @click="handleRestore"
             >
               恢复记忆
             </UButton>
@@ -121,7 +121,7 @@
               variant="ghost" 
               icon="i-lucide-brain"
               color="warning"
-              @click="$emit('accelerate-forgetting')"
+              @click="handleAccelerate"
             >
               加速遗忘
             </UButton>
@@ -138,18 +138,20 @@
 </template>
 
 <script lang="ts" setup>
-type ImportanceLevel = 'high' | 'medium' | 'low' | 'noise'
-type FadeLevel = 0 | 1 | 2 | 3 | 4 // 0=正常, 1=开始淡化, 2=模糊, 3=高度模糊, 4=几乎消失
+import { toRefs } from 'vue'
+import { useMemoryMeta } from '~/composables/memory/useMemoryMeta'
+import { useMemoryCardVisuals } from '~/composables/memory/useMemoryVisuals'
+import type { MemoryFadeLevel, MemoryImportance } from '~/composables/memory/types'
 
 interface Props {
   title: string
   date: string
   snippet: string
   icon?: string
-  importance?: ImportanceLevel
-  fadeLevel?: FadeLevel
+  importance?: MemoryImportance
+  fadeLevel?: MemoryFadeLevel
   importanceScore?: number
-  forgettingProgress?: number // 0-100
+  forgettingProgress?: number
   daysUntilForgotten?: number
   lastAccessed?: string
   isCollapsed?: boolean
@@ -172,92 +174,36 @@ const emit = defineEmits<{
   'toggle-collapse': []
 }>()
 
-// 重要度配置
-const importanceConfig = {
-  high: { label: '核心', color: 'red', score: 80 },
-  medium: { label: '重要', color: 'blue', score: 60 },
-  low: { label: '次要', color: 'gray', score: 30 },
-  noise: { label: '噪声', color: 'neutral', score: 10 }
-}
+const note = toRefs(props)
 
-// 计算属性
-const importanceLabel = computed(() => importanceConfig[props.importance].label)
-const importanceColor = computed(() => importanceConfig[props.importance].color as any)
-
-const isForgetting = computed(() => props.forgettingProgress > 0)
-const forgettingTooltip = computed(() => {
-  if (props.fadeLevel === 0) return ''
-  const stages = ['', '开始淡化', '轻度模糊', '深度模糊', '即将消失']
-  return `遗忘阶段: ${stages[props.fadeLevel]} (${props.forgettingProgress}%)`
+const {
+  importanceLabel,
+  importanceColor,
+  isForgetting,
+  forgettingTooltip,
+  forgettingIcon,
+  displayTitle,
+  displaySnippet,
+  displayIcon,
+  displayDate
+} = useMemoryMeta({
+  title: note.title,
+  snippet: note.snippet,
+  date: note.date,
+  icon: note.icon,
+  importance: note.importance,
+  fadeLevel: note.fadeLevel,
+  forgettingProgress: note.forgettingProgress
+}, {
+  blurredDateMessage: '时间模糊...'
 })
 
-const forgettingIcon = computed(() => {
-  const icons = {
-    1: 'i-lucide-clock',
-    2: 'i-lucide-eye-off', 
-    3: 'i-lucide-zap-off',
-    4: 'i-lucide-ghost'
-  }
-  return icons[props.fadeLevel as keyof typeof icons] || 'i-lucide-brain'
-})
+const { cardStyle } = useMemoryCardVisuals(note.fadeLevel, note.forgettingProgress)
 
-// 根据遗忘程度显示不同的内容
-const displayTitle = computed(() => {
-  if (props.fadeLevel >= 3) {
-    // 高度模糊时显示部分字符
-    return props.title.replace(/./g, (char, index) => 
-      index % 2 === 0 ? char : '·'
-    )
-  }
-  return props.title
-})
-
-const displaySnippet = computed(() => {
-  if (props.fadeLevel >= 4) {
-    return '内容已模糊...'
-  }
-  if (props.fadeLevel >= 3) {
-    return props.snippet.replace(/./g, (char, index) => 
-      Math.random() > 0.6 ? '·' : char
-    )
-  }
-  if (props.fadeLevel >= 2) {
-    return props.snippet.replace(/[\u4e00-\u9fa5a-zA-Z]/g, (char, index) => 
-      index % 3 === 0 ? '·' : char
-    )
-  }
-  return props.snippet
-})
-
-const displayIcon = computed(() => {
-  if (props.fadeLevel >= 3) return '🌫️'
-  if (props.fadeLevel >= 2) return '👻'
-  return props.icon
-})
-
-const displayDate = computed(() => {
-  if (props.fadeLevel >= 2) return '时间模糊...'
-  return props.date
-})
-
-// 卡片样式
-const cardStyle = computed(() => {
-  const opacity = Math.max(0.3, 1 - (props.fadeLevel * 0.15))
-  const blur = props.fadeLevel * 1.5
-  const scale = Math.max(0.95, 1 - (props.fadeLevel * 0.02))
-  
-  return {
-    '--fade-opacity': opacity,
-    '--blur-amount': `${blur}px`,
-    '--scale-amount': scale,
-    '--forgetting-progress': `${props.forgettingProgress}%`
-  }
-})
-
-// 切换折叠状态
-const toggleCollapse = () => {
-  emit('toggle-collapse')
-}
+const handleOpen = () => emit('open')
+const handleRestore = () => emit('restore')
+const handleAccelerate = () => emit('accelerate-forgetting')
+const handleToggleCollapse = () => emit('toggle-collapse')
 </script>
 
 <style scoped>

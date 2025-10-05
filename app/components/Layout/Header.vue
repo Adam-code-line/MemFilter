@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { NavigationMenuItem } from '@nuxt/ui'
+import type { DropdownMenuItem, NavigationMenuItem } from '@nuxt/ui'
 
 const route = useRoute()
 
@@ -31,6 +31,17 @@ const items = computed<NavigationMenuItem[]>(() => [
   }
 ])
 
+const userMenuItems = computed<DropdownMenuItem[][]>(() => [
+  [
+    { label: '个人资料', icon: 'i-lucide-user', to: '/profile' },
+    { label: '遗忘日志', icon: 'i-lucide-history', to: '/history' },
+    { label: '设置', icon: 'i-lucide-settings', to: '/settings' }
+  ],
+  [
+    { label: '退出登录', icon: 'i-lucide-log-out', to: '/logout', color: 'red' }
+  ]
+])
+
 // 用户信息（模拟数据）
 const user = ref({
   name: '用户',
@@ -39,11 +50,16 @@ const user = ref({
 </script>
 
 <template>
-  <UHeader class="border-b border-gray-200 dark:border-gray-800">
+  <UHeader
+    class="border-b border-gray-200 dark:border-gray-800"
+    to="/home"
+    title="MemFilter"
+  >
     <template #title>
-      <NuxtLink to="/home" class="flex items-center space-x-2">
-        <AppLogo class="h-15 w-auto"  />
-      </NuxtLink>
+      <div class="flex items-center gap-2">
+        <AppLogo class="h-10 w-auto" />
+        <span class="sr-only">MemFilter</span>
+      </div>
     </template>
 
     <!-- 主导航 -->
@@ -72,30 +88,15 @@ const user = ref({
       <UColorModeButton />
 
       <!-- 用户菜单 -->
-      <UDropdown>
-        <template #trigger>
-          <UButton
-            :label="user.name"
-            icon="i-lucide-user"
-            color="neutral"
-            variant="ghost"
-            trailing-icon="i-lucide-chevron-down"
-          />
-        </template>
-
-        <template #content>
-          <UNavigationMenu
-            :items="[
-              { label: '个人资料', icon: 'i-lucide-user', to: '/profile' },
-              { label: '遗忘日志', icon: 'i-lucide-history', to: '/history' },
-              { label: '设置', icon: 'i-lucide-settings', to: '/settings' },
-              { label: '退出登录', icon: 'i-lucide-log-out', to: '/logout' }
-            ]"
-            orientation="vertical"
-            class="p-1"
-          />
-        </template>
-      </UDropdown>
+      <UDropdownMenu :items="userMenuItems" :popper="{ placement: 'bottom-end' }">
+        <UButton
+          :label="user.name"
+          icon="i-lucide-user"
+          color="neutral"
+          variant="ghost"
+          trailing-icon="i-lucide-chevron-down"
+        />
+      </UDropdownMenu>
     </template>
 
     <!-- 移动端菜单 -->

@@ -97,23 +97,24 @@
             icon="i-lucide-refresh-cw"
             variant="ghost"
             size="xs"
-            @click.stop="$emit('restore')"
+            @click.stop="handleRestore"
           />
           
           <UButton 
             icon="i-lucide-eye"
             variant="ghost"
             size="xs"
-            @click.stop="$emit('view')"
+            @click.stop="handleView"
           />
           
-          <UDropdown :items="contextMenuItems">
+          <UDropdownMenu :items="contextMenuItems">
             <UButton 
               icon="i-lucide-more-horizontal"
               variant="ghost"
               size="xs"
+              @click.stop
             />
-          </UDropdown>
+          </UDropdownMenu>
         </div>
       </div>
     </div>
@@ -121,16 +122,19 @@
 </template>
 
 <script lang="ts" setup>
-type ImportanceLevel = 'high' | 'medium' | 'low' | 'noise'
-type FadeLevel = 0 | 1 | 2 | 3 | 4
+import { toRefs } from 'vue'
+import { useMemoryMeta } from '~/composables/memory/useMemoryMeta'
+import { useMemoryItemVisuals } from '~/composables/memory/useMemoryVisuals'
+import { useMemoryActions } from '~/composables/memory/useMemoryActions'
+import type { MemoryFadeLevel, MemoryImportance } from '~/composables/memory/types'
 
 interface Props {
   title: string
   date: string
   snippet: string
   icon?: string
-  importance?: ImportanceLevel
-  fadeLevel?: FadeLevel
+  importance?: MemoryImportance
+  fadeLevel?: MemoryFadeLevel
   importanceScore?: number
   forgettingProgress?: number
   daysUntilForgotten?: number
@@ -158,113 +162,42 @@ const emit = defineEmits<{
   'accelerate-forgetting': []
 }>()
 
-// 重要度配置
-const importanceConfig = {
-  high: { label: '核心', color: 'red' },
-  medium: { label: '重要', color: 'blue' },
-  low: { label: '次要', color: 'gray' },
-  noise: { label: '噪声', color: 'neutral' }
-}
+const note = toRefs(props)
 
-// 计算属性
-const importanceLabel = computed(() => importanceConfig[props.importance].label)
-const importanceColor = computed(() => importanceConfig[props.importance].color as any)
-
-const isForgetting = computed(() => props.forgettingProgress > 0)
-
-const forgettingIcon = computed(() => {
-  const icons = {
-    1: 'i-lucide-clock',
-    2: 'i-lucide-eye-off', 
-    3: 'i-lucide-zap-off',
-    4: 'i-lucide-ghost'
-  }
-  return icons[props.fadeLevel as keyof typeof icons] || 'i-lucide-brain'
+const {
+  importanceLabel,
+  importanceColor,
+  isForgetting,
+  forgettingIcon,
+  forgettingStatus,
+  displayTitle,
+  displaySnippet,
+  displayIcon,
+  displayDate
+} = useMemoryMeta({
+  title: note.title,
+  snippet: note.snippet,
+  date: note.date,
+  icon: note.icon,
+  importance: note.importance,
+  fadeLevel: note.fadeLevel,
+  forgettingProgress: note.forgettingProgress
+}, {
+  snippetLimit: 100,
+  blurredDateMessage: '模糊...'
 })
 
-const forgettingStatus = computed(() => {
-  const statuses = {
-    1: '淡化中',
-    2: '模糊中',
-    3: '消退中',
-    4: '即将遗忘'
-  }
-  return statuses[props.fadeLevel as keyof typeof statuses] || ''
+const { itemStyle } = useMemoryItemVisuals(note.fadeLevel, note.forgettingProgress)
+
+const { contextMenuItems } = useMemoryActions(note.fadeLevel, {
+  onEdit: () => emit('edit'),
+  onRestore: () => emit('restore'),
+  onAccelerate: () => emit('accelerate-forgetting'),
+  onDelete: () => emit('delete')
 })
 
-// 根据遗忘程度显示不同的内容
-const displayTitle = computed(() => {
-  if (props.fadeLevel >= 3) {
-    return props.title.replace(/./g, (char, index) => 
-      index % 2 === 0 ? char : '·'
-    )
-  }
-  return props.title
-})
-
-const displaySnippet = computed(() => {
-  let snippet = props.snippet
-  if (snippet.length > 100) {
-    snippet = snippet.substring(0, 100) + '...'
-  }
-  
-  if (props.fadeLevel >= 4) {
-    return '内容已模糊...'
-  }
-  if (props.fadeLevel >= 3) {
-    return snippet.replace(/./g, (char, index) => 
-      Math.random() > 0.6 ? '·' : char
-    )
-  }
-  if (props.fadeLevel >= 2) {
-    return snippet.replace(/[\u4e00-\u9fa5a-zA-Z]/g, (char, index) => 
-      index % 3 === 0 ? '·' : char
-    )
-  }
-  return snippet
-})
-
-const displayIcon = computed(() => {
-  if (props.fadeLevel >= 3) return '🌫️'
-  if (props.fadeLevel >= 2) return '👻'
-  return props.icon
-})
-
-const displayDate = computed(() => {
-  if (props.fadeLevel >= 2) return '模糊...'
-  return props.date
-})
-
-// 组件样式
-const itemStyle = computed(() => {
-  const opacity = Math.max(0.4, 1 - (props.fadeLevel * 0.12))
-  const blur = props.fadeLevel * 0.8
-  
-  return {
-    '--fade-opacity': opacity,
-    '--blur-amount': `${blur}px`,
-    '--forgetting-progress': `${props.forgettingProgress}%`
-  }
-})
-
-// 上下文菜单
-const contextMenuItems = computed(() => [
-  [{
-    label: '编辑',
-    icon: 'i-lucide-edit',
-    click: () => emit('edit')
-  }],
-  [{
-    label: props.fadeLevel > 0 ? '恢复记忆' : '加速遗忘',
-    icon: props.fadeLevel > 0 ? 'i-lucide-refresh-cw' : 'i-lucide-brain',
-    click: () => props.fadeLevel > 0 ? emit('restore') : emit('accelerate-forgetting')
-  }],
-  [{
-    label: '删除',
-    icon: 'i-lucide-trash',
-    click: () => emit('delete')
-  }]
-])
+const handleRestore = () => emit('restore')
+const handleView = () => emit('view')
 </script>
 
 <style scoped>
@@ -501,7 +434,7 @@ const contextMenuItems = computed(() => [
 }
 
 .fade-level-4 {
-  opacity: var(--fade-opacity, 0.52);
+  opacity: var(--fade-opacity, 0.52); 
   filter: blur(var(--blur-amount, 2.4px));
 }
 

@@ -8,34 +8,24 @@ definePageMeta({
 })
 
 useHead({
-  title: '笔记管理 - 忆滤'
+  title: '笔记管理'
 })
-
-const router = useRouter()
 
 const { data: noteCopy } = await useAsyncData('note-config', () => queryCollection('note').first())
 
 const {
+  notes,
   filteredNotes,
-  noteStats,
-  viewMode,
   importanceFilter,
   searchQuery,
-  selectedNotes,
-  selectedCount,
-  isEditorOpen,
   editorMode,
   editingNote,
-  setViewMode,
+  activeNoteId,
   setImportanceFilter,
   updateSearchQuery,
-  toggleSelection,
   openEditorForNew,
   openEditorForNote,
   closeEditor,
-  restoreNote,
-  accelerateForgetting,
-  toggleCollapse,
   saveNote
 } = useNotesDashboard()
 
@@ -52,54 +42,59 @@ const defaultImportanceOptions = [
 const importanceOptions = computed(() => noteConfig.value?.filters?.importance ?? defaultImportanceOptions)
 const searchPlaceholder = computed(() => noteConfig.value?.filters?.searchPlaceholder ?? '搜索笔记内容...')
 
-const summaryLabel = computed(() => noteConfig.value?.filters?.summaryLabel ?? '找到 {count} 条笔记')
-const summaryText = computed(() => summaryLabel.value.replace('{count}', filteredNotes.value.length.toString()))
-
-const selectedLabel = computed(() => noteConfig.value?.filters?.selectedLabel ?? '已选择 {count} 条')
-const selectedSummary = computed(() => selectedCount.value > 0
-  ? selectedLabel.value.replace('{count}', selectedCount.value.toString())
-  : '')
-
-const viewLabels = computed(() => ({
-  card: noteConfig.value?.filters?.viewToggle?.card ?? '卡片视图',
-  list: noteConfig.value?.filters?.viewToggle?.list ?? '列表视图'
-}))
-
 const headerBadge = computed(() => noteConfig.value?.badge)
-const headerTitle = computed(() => noteConfig.value?.title ?? '笔记管理')
+const headerTitle = computed(() => noteConfig.value?.title ?? '笔记编辑')
 const headerSubtitle = computed(() => noteConfig.value?.subtitle ?? '')
-const quickActions = computed(() => noteConfig.value?.actions ?? [])
 const emptyState = computed(() => noteConfig.value?.emptyState)
 const editorConfig = computed(() => noteConfig.value?.editor ?? {})
-const modalTitle = computed(() => editorConfig.value?.modalTitle ?? (editorMode.value === 'edit' ? '编辑笔记' : '新建笔记'))
-const modalDescription = computed(() => editorConfig.value?.modalDescription ?? '使用忆滤笔记编辑器创建或更新内容。')
+const listConfig = computed(() => noteConfig.value?.list)
 
-const statsCards = computed(() => {
-  const items = noteConfig.value?.stats?.items ?? []
-  const metrics = noteStats.value
-  return items.map(item => ({
-    ...item,
-    metric: Object.prototype.hasOwnProperty.call(metrics, item.key)
-      ? (metrics as Record<string, number>)[item.key]
-      : null
-  }))
+const importanceLabels: Record<string, string> = {
+  high: '核心',
+  medium: '重要',
+  low: '次要',
+  noise: '噪声'
+}
+
+const importanceColorMap: Record<string, 'primary' | 'blue' | 'gray' | 'neutral'> = {
+  high: 'primary',
+  medium: 'blue',
+  low: 'gray',
+  noise: 'neutral'
+}
+
+const editorHeadline = computed(() => {
+  if (editorMode.value === 'edit') {
+    return editingNote.value?.title ? `编辑：${editingNote.value.title}` : '编辑笔记'
+  }
+  return '新建笔记'
 })
 
-const handleQuickAction = (action: any) => {
-  if (action.key === 'create') {
-    openEditorForNew()
-    return
+const editorSubtext = computed(() => {
+  if (editorMode.value === 'edit') {
+    return '更新当前记忆内容并保持其价值标签最新。'
   }
+  return '记录新的灵感与想法，AI 会自动评估其重要度。'
+})
 
-  if (action.to) {
-    router.push(action.to)
-    return
-  }
+const isEditingExisting = computed(() => editorMode.value === 'edit' && !!editingNote.value)
 
-  if (action.href && process.client) {
-    window.open(action.href, action.target ?? '_blank')
-  }
-}
+const noteListHeader = computed(() => listConfig.value?.title ?? '笔记列表')
+const noteCreateLabel = computed(() => listConfig.value?.createLabel ?? '新建笔记')
+const totalNotesLabel = computed(() => listConfig.value?.totalLabel ?? '全部笔记')
+const emptyListTitle = computed(() => emptyState.value?.title ?? '暂无笔记')
+const emptyListDescription = computed(() => emptyState.value?.description ?? '开始创建您的第一条笔记。')
+
+const noteItems = computed(() => filteredNotes.value.map(note => ({
+  id: note.id,
+  record: note,
+  title: note.title || '未命名笔记',
+  description: note.date ?? '',
+  iconName: typeof note.icon === 'string' && note.icon.startsWith('i-') ? note.icon : undefined,
+  iconFallback: typeof note.icon === 'string' && !note.icon.startsWith('i-') ? note.icon : '📝',
+  importance: importanceLabels[note.importance] ?? '未分类',
+  importanceColor: importanceColorMap[note.importance] ?? 'neutral'
+})))
 
 const handleEditorSave = (payload: NoteSavePayload) => {
   saveNote(payload)
@@ -110,35 +105,13 @@ const handleEditorCancel = () => {
 }
 
 const handleContentChange = (_value: string) => {
-  // no-op placeholder for now; consumers can react to content edits later
+  // 占位钩子，未来可在此响应内容变化
 }
 </script>
 
 <template>
-  <div class="max-w-7xl mx-auto space-y-8">
-    <UModal v-model="isEditorOpen" class="max-w-4xl w-full">
-      <template #title>
-        <span class="sr-only">{{ modalTitle }}</span>
-      </template>
-      <template #description>
-        <span class="sr-only">{{ modalDescription }}</span>
-      </template>
-      <div class="w-full max-w-3xl mx-auto">
-        <NoteEditor
-          class="w-full"
-          :initial-title="editingNote?.title"
-          :initial-content="editingNote?.content"
-          :fade-level="editingNote?.fadeLevel ?? 0"
-          :mode="editorMode"
-          :config="editorConfig"
-          @save="handleEditorSave"
-          @cancel="handleEditorCancel"
-          @content-change="handleContentChange"
-        />
-      </div>
-    </UModal>
-
-    <div class="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+  <div class="max-w-5xl mx-auto space-y-8">
+    <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
       <div class="space-y-3">
         <div class="flex flex-wrap items-center gap-3">
           <UBadge
@@ -157,60 +130,19 @@ const handleContentChange = (_value: string) => {
         </p>
       </div>
 
-      <UFieldGroup size="md" variant="ghost" class="self-start">
-        <UButton
-          :variant="viewMode === 'card' ? 'solid' : 'ghost'"
-          icon="i-lucide-grid-3x3"
-          @click="setViewMode('card')"
-        >
-          {{ viewLabels.card }}
-        </UButton>
-        <UButton
-          :variant="viewMode === 'list' ? 'solid' : 'ghost'"
-          icon="i-lucide-list"
-          @click="setViewMode('list')"
-        >
-          {{ viewLabels.list }}
-        </UButton>
-      </UFieldGroup>
-    </div>
-
-    <div v-if="quickActions.length" class="flex flex-wrap gap-3">
       <UButton
-        v-for="action in quickActions"
-        :key="action.key ?? action.label"
-        :label="action.label"
-        :icon="action.icon"
-        :variant="action.variant ?? 'outline'"
-        :color="action.color ?? 'neutral'"
         size="lg"
-        @click="handleQuickAction(action)"
-      />
-    </div>
-
-    <div v-if="statsCards.length" class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-      <CommonFloatingCard
-        v-for="(card, index) in statsCards"
-        :key="card.key ?? index"
-        :title="card.title"
-        :description="card.description"
-        :icon="card.icon"
-        :size="card.size ?? 'sm'"
-        :variant="card.variant ?? 'glass'"
-        :animation-type="card.animation?.type ?? 'float'"
-        :animation-delay="card.animation?.delay ?? index * 0.15"
-        class="stats-card"
+        color="primary"
+        icon="i-lucide-plus"
+        class="self-start"
+        @click="openEditorForNew"
       >
-        <template #default>
-          <div v-if="card.metric !== null" class="text-3xl font-semibold text-blue-600 dark:text-blue-400 text-center">
-            {{ card.metric }}
-          </div>
-        </template>
-      </CommonFloatingCard>
+        {{ noteCreateLabel }}
+      </UButton>
     </div>
 
     <UCard class="border border-gray-200/80 dark:border-white/10">
-      <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+      <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div class="flex flex-wrap items-center gap-3">
           <UInput
             :model-value="searchQuery"
@@ -231,138 +163,133 @@ const handleContentChange = (_value: string) => {
           />
         </div>
 
-        <div class="flex flex-wrap items-center gap-3 text-sm text-gray-500 dark:text-gray-400">
-          <span>{{ summaryText }}</span>
-          <UBadge
-            v-if="selectedSummary"
-            :label="selectedSummary"
-            color="primary"
-            variant="soft"
-          />
-        </div>
+        <UBadge
+          :label="`${totalNotesLabel}: ${notes.length}`"
+          color="neutral"
+          variant="soft"
+        />
       </div>
     </UCard>
 
-    <div v-if="filteredNotes.length" class="space-y-6">
-      <div v-if="viewMode === 'card'" class="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
-        <MemoryCard
-          v-for="note in filteredNotes"
-          :key="note.id"
-          :title="note.title"
-          :date="note.date"
-          :snippet="note.content"
-          :icon="note.icon"
-          :importance="note.importance"
-          :importance-score="note.importanceScore"
-          :fade-level="note.fadeLevel"
-          :forgetting-progress="note.forgettingProgress"
-          :days-until-forgotten="note.daysUntilForgotten"
-          :last-accessed="note.lastAccessed"
-          :is-collapsed="note.isCollapsed"
-          class="memory-card-item"
-          @open="openEditorForNote(note)"
-          @restore="restoreNote(note)"
-          @accelerate-forgetting="accelerateForgetting(note)"
-          @toggle-collapse="toggleCollapse(note)"
-        />
-      </div>
+    <div class="grid gap-6 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
+      <section>
+        <UCard class="border border-gray-200/80 dark:border-white/10">
+          <template #header>
+            <div class="flex items-center justify-between gap-2">
+              <div class="flex items-center gap-2">
+                <UIcon name="i-lucide-notebook-pen" class="text-lg text-primary" />
+                <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+                  {{ noteListHeader }}
+                </h2>
+              </div>
+              <UBadge :label="`${filteredNotes.length} 条`" variant="soft" />
+            </div>
+          </template>
 
-      <UCard v-else class="border border-gray-200/70 dark:border-white/10">
-        <template #header>
-          <div class="flex items-center justify-between">
-            <h2 class="text-xl font-semibold text-gray-900 dark:text-white">
-              {{ noteConfig?.list?.title ?? '笔记列表' }}
-            </h2>
-            <UBadge :label="`${filteredNotes.length} 条`" variant="soft" />
+          <div v-if="filteredNotes.length" class="flex flex-col divide-y divide-gray-200/70 dark:divide-white/5">
+            <button
+              v-for="note in noteItems"
+              :key="note.id"
+              type="button"
+              class="flex items-start gap-3 px-3 py-3 text-left transition hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
+              :class="note.id === activeNoteId ? 'bg-primary/10 ring-1 ring-primary/30 rounded-lg' : ''"
+              @click="openEditorForNote(note.record)"
+            >
+              <div class="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary">
+                <UIcon v-if="note.iconName" :name="note.iconName" class="text-base" />
+                <span v-else class="text-base">{{ note.iconFallback }}</span>
+              </div>
+              <div class="flex-1 space-y-1">
+                <div class="flex items-center justify-between gap-2">
+                  <p class="font-medium text-gray-900 dark:text-white line-clamp-1">
+                    {{ note.title }}
+                  </p>
+                  <UBadge :label="note.importance" :color="note.importanceColor" variant="subtle" />
+                </div>
+                <p class="text-xs text-gray-500 dark:text-gray-400">
+                  {{ note.description }}
+                </p>
+              </div>
+            </button>
           </div>
-        </template>
 
-        <div class="space-y-2">
-          <MemoryItem
-            v-for="note in filteredNotes"
-            :key="note.id"
-            :title="note.title"
-            :date="note.date"
-            :snippet="note.content"
-            :icon="note.icon"
-            :importance="note.importance"
-            :importance-score="note.importanceScore"
-            :fade-level="note.fadeLevel"
-            :forgetting-progress="note.forgettingProgress"
-            :days-until-forgotten="note.daysUntilForgotten"
-            :is-collapsed="note.isCollapsed"
-            :is-selected="selectedNotes.includes(note.id)"
-            @select="toggleSelection(note.id)"
-            @view="openEditorForNote(note)"
-            @edit="openEditorForNote(note)"
-            @restore="restoreNote(note)"
-            @expand="toggleCollapse(note)"
-            @accelerate-forgetting="accelerateForgetting(note)"
-          />
-        </div>
-
-        <template #footer>
-          <div class="flex flex-wrap items-center justify-between gap-3 text-sm text-gray-500 dark:text-gray-400">
-            <span>{{ selectedSummary || summaryText }}</span>
+          <div v-else class="flex flex-col items-center justify-center gap-4 py-16 text-center">
+            <UIcon :name="emptyState?.icon ?? 'i-lucide-notebook'" class="text-4xl text-gray-300 dark:text-gray-600" />
+            <div class="space-y-2">
+              <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+                {{ emptyListTitle }}
+              </h3>
+              <p class="text-sm text-gray-600 dark:text-gray-400">
+                {{ emptyListDescription }}
+              </p>
+            </div>
             <UButton
-              variant="ghost"
-              size="sm"
+              color="primary"
               icon="i-lucide-plus"
               @click="openEditorForNew"
             >
-              {{ noteConfig?.list?.createLabel ?? '新建笔记' }}
+              {{ noteCreateLabel }}
             </UButton>
           </div>
-        </template>
-      </UCard>
-    </div>
+        </UCard>
+      </section>
 
-    <div v-else class="flex flex-col items-center justify-center gap-4 py-24 text-center">
-      <UIcon
-        :name="emptyState?.icon ?? 'i-lucide-notebook'"
-        class="text-5xl text-gray-300 dark:text-gray-600"
-      />
-      <div class="space-y-2">
-        <h3 class="text-xl font-semibold text-gray-900 dark:text-white">
-          {{ emptyState?.title ?? '没有找到匹配的笔记' }}
-        </h3>
-        <p class="text-gray-600 dark:text-gray-400">
-          {{ emptyState?.description ?? '开始创建您的第一条笔记吧。' }}
-        </p>
-      </div>
-      <UButton
-        :label="emptyState?.actionLabel ?? '新建笔记'"
-        icon="i-lucide-plus"
-        size="lg"
-        @click="openEditorForNew"
-      />
+      <aside>
+        <UCard class="border border-primary/20 dark:border-primary/40 shadow-lg/40 lg:sticky lg:top-24">
+          <template #header>
+            <div class="flex flex-col gap-2">
+              <div class="flex items-center justify-between gap-2">
+                <h2 class="text-2xl font-semibold text-gray-900 dark:text-white">
+                  {{ editorHeadline }}
+                </h2>
+                <UButton
+                  variant="ghost"
+                  size="sm"
+                  icon="i-lucide-plus"
+                  class="shrink-0"
+                  @click="openEditorForNew"
+                >
+                  新建
+                </UButton>
+              </div>
+              <p class="text-sm text-gray-500 dark:text-gray-400">
+                {{ editorSubtext }}
+              </p>
+              <div v-if="isEditingExisting" class="flex flex-wrap items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
+                <UBadge
+                  :label="editingNote?.importance === 'high' ? '高价值' : '正在回顾'"
+                  :color="editingNote?.importance === 'high' ? 'primary' : 'neutral'"
+                  variant="soft"
+                />
+                <span v-if="editingNote?.lastAccessed">最近访问：{{ editingNote.lastAccessed }}</span>
+                <span v-if="editingNote?.date">创建时间：{{ editingNote.date }}</span>
+              </div>
+            </div>
+          </template>
+
+          <NoteEditor
+            :key="editingNote?.id ?? editorMode"
+            class="w-full"
+            :initial-title="editingNote?.title"
+            :initial-content="editingNote?.content"
+            :fade-level="editingNote?.fadeLevel ?? 0"
+            :mode="editorMode"
+            :config="editorConfig"
+            @save="handleEditorSave"
+            @cancel="handleEditorCancel"
+            @content-change="handleContentChange"
+          />
+        </UCard>
+      </aside>
     </div>
   </div>
 </template>
 
 <style scoped>
-.stats-card {
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-
-.stats-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.12);
-}
-
-.memory-card-item {
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-
-.memory-card-item:hover {
-  transform: translateY(-6px);
-  box-shadow: 0 24px 36px rgba(15, 23, 42, 0.18);
-}
-
-@media (max-width: 768px) {
-  .memory-card-item:hover {
-    transform: none;
-    box-shadow: none;
-  }
+.line-clamp-1 {
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 </style>

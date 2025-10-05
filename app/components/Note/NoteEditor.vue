@@ -57,8 +57,12 @@
           <USelectMenu
             v-model="forgettingMode"
             :options="forgettingOptions"
+            option-attribute="label"
+            value-attribute="value"
             size="sm"
             placeholder="遗忘模式"
+            :command="false"
+            :ui="{ menu: 'min-w-[180px]' }"
           />
           <UButton
             icon="i-lucide-brain"
@@ -183,6 +187,7 @@ const {
   finishSaving,
   setUnsaved,
   setFadeLevel,
+  resetContent,
   buildSavePayload,
   statusLabels
 } = useNoteEditor({
@@ -245,11 +250,40 @@ const handleSave = async () => {
   }
 }
 
-watch(() => props.fadeLevel, (value) => {
-  if (value !== undefined) {
-    setFadeLevel(value)
+const normalizeFadeLevel = (value?: number) => {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value
   }
-})
+  return 0
+}
+
+watch(
+  () => [props.mode, props.initialTitle, props.initialContent, props.fadeLevel] as const,
+  ([mode, title, content, fade]) => {
+    const hasEditPayload = title !== undefined || content !== undefined
+    const normalizedFade = normalizeFadeLevel(fade)
+
+    if (mode === 'edit' && hasEditPayload) {
+      noteTitle.value = title ?? ''
+      noteContent.value = content ?? ''
+      setFadeLevel(normalizedFade)
+
+      if (noteContent.value) {
+        analyzeImportance()
+        saveStatus.value = statusLabels.saved
+      } else {
+        setUnsaved()
+      }
+
+      lastModified.value = ''
+      return
+    }
+
+    resetContent()
+    setFadeLevel(normalizedFade)
+  },
+  { immediate: true }
+)
 
 watch(noteContent, (value, oldValue) => {
   if (value === oldValue) return

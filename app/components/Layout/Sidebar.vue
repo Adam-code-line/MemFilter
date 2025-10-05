@@ -12,10 +12,10 @@ const mainItems = computed<NavigationMenuItem[]>(() => [
     active: route.path === '/note'
   },
   {
-    label: '复习模式',
-    to: '/review',
+    label: '记忆回溯',
+    to: '/memory',
     icon: 'i-lucide-brain',
-    active: route.path === '/review'
+    active: route.path === '/memory'
   },
   {
     label: '遗忘日志',
