@@ -21,7 +21,7 @@ quickActions:
     - label: "遗忘日志"
       description: "查看已遗忘的内容"
       icon: "i-lucide-history"
-      to: "/memory?tab=forgotten"
+      to: "/history"
       color: "warning"
 
 recentActivity:

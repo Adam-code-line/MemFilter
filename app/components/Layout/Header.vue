@@ -57,7 +57,7 @@ const user = ref({
   >
     <template #title>
       <div class="flex items-center gap-2">
-        <AppLogo class="h-10 w-auto" />
+        <AppLogo class="h-15 w-auto" />
         <span class="sr-only">MemFilter</span>
       </div>
     </template>

@@ -1,0 +1,50 @@
+title: 记忆回溯
+subtitle: 遗忘日志与记忆轨迹
+badge:
+  label: 记忆回溯
+  color: primary
+  icon: i-lucide-history
+intro:
+  description: 跟随忆滤的遗忘引擎回顾记忆变化：查看活跃片段、正在淡化的内容以及已归档的噪声，掌控每一次恢复与遗忘决策。
+overview:
+  stats:
+    - key: fresh
+      label: 活跃记忆
+      description: 保持清晰的重点内容，可随时继续编辑。
+      icon: i-lucide-flame
+      color: primary
+    - key: fading
+      label: 正在淡化
+      description: 自动模糊的记忆，决定是挽救还是让其自然遗忘。
+      icon: i-lucide-timer
+      color: warning
+    - key: archived
+      label: 归档片段
+      description: 噪声或陈旧内容处于折叠状态，随需恢复。
+      icon: i-lucide-archive
+      color: neutral
+sections:
+  - key: fresh
+    title: 活跃记忆
+    description: 近期创建且仍保持清晰的高价值信息。
+    icon: i-lucide-flame
+    accent: primary
+    empty:
+      title: 最近记忆充沛
+      description: 保持记录习惯，重要记忆将继续清晰呈现。
+  - key: fading
+    title: 正在淡化
+    description: 处于艾宾浩斯遗忘曲线中的内容，可选择恢复或加速遗忘。
+    icon: i-lucide-timer
+    accent: warning
+    empty:
+      title: 暂时没有淡化内容
+      description: 没有需要处理的淡化记忆，稍后再来看看。
+  - key: archived
+    title: 归档记忆
+    description: 已经折叠的低价值或噪声片段，随时可以恢复。
+    icon: i-lucide-archive
+    accent: neutral
+    empty:
+      title: 归档区空空如也
+      description: 暂无归档记忆，可以继续整理重要内容。

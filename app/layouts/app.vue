@@ -12,6 +12,7 @@
         <slot />
       </UMain>
     </div>
+    <CommonButton icon='rocket' />
     <!-- 应用内底部 -->
     <LayoutFooter />
   </div>

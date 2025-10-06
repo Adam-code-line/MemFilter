@@ -98,7 +98,6 @@ onMounted(() => {
     <div class="p-4 border-b border-gray-200 dark:border-gray-800">
       <div class="flex items-center justify-between">
         <div v-if="!isCollapsed" class="flex items-center space-x-2">
-          <span class="text-xl">🧠</span>
           <span class="font-semibold text-gray-900 dark:text-white">智能导航</span>
         </div>
         <UButton

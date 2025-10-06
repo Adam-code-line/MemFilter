@@ -97,3 +97,14 @@ editor:
     readTime: 预计阅读
     lastEdited: 修改
   aiBadgePrefix: AI 评分
+list:
+  title: 我的笔记
+  createLabel: 新建笔记
+  totalLabel: 全部笔记
+  icon: i-lucide-notebook-pen
+  empty:
+    title: 暂无笔记
+    description: 开始创建您的第一条笔记。
+    action:
+      label: 新建笔记
+      icon: i-lucide-plus

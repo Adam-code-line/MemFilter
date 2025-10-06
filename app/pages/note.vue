@@ -45,9 +45,9 @@ const searchPlaceholder = computed(() => noteConfig.value?.filters?.searchPlaceh
 const headerBadge = computed(() => noteConfig.value?.badge)
 const headerTitle = computed(() => noteConfig.value?.title ?? '笔记编辑')
 const headerSubtitle = computed(() => noteConfig.value?.subtitle ?? '')
-const emptyState = computed(() => noteConfig.value?.emptyState)
+const emptyState = computed(() => noteConfig.value?.emptyState ?? null)
 const editorConfig = computed(() => noteConfig.value?.editor ?? {})
-const listConfig = computed(() => noteConfig.value?.list)
+const listConfig = computed(() => noteConfig.value?.list ?? null)
 
 const importanceLabels: Record<string, string> = {
   high: '核心',
@@ -79,11 +79,16 @@ const editorSubtext = computed(() => {
 
 const isEditingExisting = computed(() => editorMode.value === 'edit' && !!editingNote.value)
 
+const listEmpty = computed(() => listConfig.value?.empty ?? null)
 const noteListHeader = computed(() => listConfig.value?.title ?? '笔记列表')
 const noteCreateLabel = computed(() => listConfig.value?.createLabel ?? '新建笔记')
 const totalNotesLabel = computed(() => listConfig.value?.totalLabel ?? '全部笔记')
-const emptyListTitle = computed(() => emptyState.value?.title ?? '暂无笔记')
-const emptyListDescription = computed(() => emptyState.value?.description ?? '开始创建您的第一条笔记。')
+const listHeaderIcon = computed(() => listConfig.value?.icon ?? 'i-lucide-notebook-pen')
+const emptyListTitle = computed(() => listEmpty.value?.title ?? emptyState.value?.title ?? '暂无笔记')
+const emptyListDescription = computed(() => listEmpty.value?.description ?? emptyState.value?.description ?? '开始创建您的第一条笔记。')
+const emptyListActionLabel = computed(() => listEmpty.value?.action?.label ?? emptyState.value?.action?.label ?? noteCreateLabel.value)
+const emptyListActionIcon = computed(() => listEmpty.value?.action?.icon ?? emptyState.value?.action?.icon ?? 'i-lucide-plus')
+const emptyListIcon = computed(() => emptyState.value?.icon ?? 'i-lucide-notebook')
 
 const noteItems = computed(() => filteredNotes.value.map(note => ({
   id: note.id,
@@ -110,7 +115,7 @@ const handleContentChange = (_value: string) => {
 </script>
 
 <template>
-  <div class="max-w-5xl mx-auto space-y-8">
+  <div class="max-w-6xl mx-auto space-y-8">
     <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
       <div class="space-y-3">
         <div class="flex flex-wrap items-center gap-3">
@@ -171,69 +176,7 @@ const handleContentChange = (_value: string) => {
       </div>
     </UCard>
 
-    <div class="grid gap-6 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
-      <section>
-        <UCard class="border border-gray-200/80 dark:border-white/10">
-          <template #header>
-            <div class="flex items-center justify-between gap-2">
-              <div class="flex items-center gap-2">
-                <UIcon name="i-lucide-notebook-pen" class="text-lg text-primary" />
-                <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
-                  {{ noteListHeader }}
-                </h2>
-              </div>
-              <UBadge :label="`${filteredNotes.length} 条`" variant="soft" />
-            </div>
-          </template>
-
-          <div v-if="filteredNotes.length" class="flex flex-col divide-y divide-gray-200/70 dark:divide-white/5">
-            <button
-              v-for="note in noteItems"
-              :key="note.id"
-              type="button"
-              class="flex items-start gap-3 px-3 py-3 text-left transition hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
-              :class="note.id === activeNoteId ? 'bg-primary/10 ring-1 ring-primary/30 rounded-lg' : ''"
-              @click="openEditorForNote(note.record)"
-            >
-              <div class="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary">
-                <UIcon v-if="note.iconName" :name="note.iconName" class="text-base" />
-                <span v-else class="text-base">{{ note.iconFallback }}</span>
-              </div>
-              <div class="flex-1 space-y-1">
-                <div class="flex items-center justify-between gap-2">
-                  <p class="font-medium text-gray-900 dark:text-white line-clamp-1">
-                    {{ note.title }}
-                  </p>
-                  <UBadge :label="note.importance" :color="note.importanceColor" variant="subtle" />
-                </div>
-                <p class="text-xs text-gray-500 dark:text-gray-400">
-                  {{ note.description }}
-                </p>
-              </div>
-            </button>
-          </div>
-
-          <div v-else class="flex flex-col items-center justify-center gap-4 py-16 text-center">
-            <UIcon :name="emptyState?.icon ?? 'i-lucide-notebook'" class="text-4xl text-gray-300 dark:text-gray-600" />
-            <div class="space-y-2">
-              <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-                {{ emptyListTitle }}
-              </h3>
-              <p class="text-sm text-gray-600 dark:text-gray-400">
-                {{ emptyListDescription }}
-              </p>
-            </div>
-            <UButton
-              color="primary"
-              icon="i-lucide-plus"
-              @click="openEditorForNew"
-            >
-              {{ noteCreateLabel }}
-            </UButton>
-          </div>
-        </UCard>
-      </section>
-
+    <div class="grid gap-6 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]">
       <aside>
         <UCard class="border border-primary/20 dark:border-primary/40 shadow-lg/40 lg:sticky lg:top-24">
           <template #header>
@@ -281,6 +224,68 @@ const handleContentChange = (_value: string) => {
           />
         </UCard>
       </aside>
+
+      <section>
+        <UCard class="border border-gray-200/80 dark:border-white/10">
+          <template #header>
+            <div class="flex items-center justify-between gap-2">
+              <div class="flex items-center gap-2">
+                <UIcon :name="listHeaderIcon" class="text-lg text-primary" />
+                <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+                  {{ noteListHeader }}
+                </h2>
+              </div>
+              <UBadge :label="`${filteredNotes.length} 条`" variant="soft" />
+            </div>
+          </template>
+
+          <div v-if="filteredNotes.length" class="flex flex-col divide-y divide-gray-200/70 dark:divide-white/5">
+            <button
+              v-for="note in noteItems"
+              :key="note.id"
+              type="button"
+              class="flex items-start gap-3 px-3 py-3 text-left transition hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
+              :class="note.id === activeNoteId ? 'bg-primary/10 ring-1 ring-primary/30 rounded-lg' : ''"
+              @click="openEditorForNote(note.record)"
+            >
+              <div class="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary">
+                <UIcon v-if="note.iconName" :name="note.iconName" class="text-base" />
+                <span v-else class="text-base">{{ note.iconFallback }}</span>
+              </div>
+              <div class="flex-1 space-y-1">
+                <div class="flex items-center justify-between gap-2">
+                  <p class="font-medium text-gray-900 dark:text-white line-clamp-1">
+                    {{ note.title }}
+                  </p>
+                  <UBadge :label="note.importance" :color="note.importanceColor" variant="subtle" />
+                </div>
+                <p class="text-xs text-gray-500 dark:text-gray-400">
+                  {{ note.description }}
+                </p>
+              </div>
+            </button>
+          </div>
+
+          <div v-else class="flex flex-col items-center justify-center gap-4 py-16 text-center">
+            <UIcon :name="emptyListIcon" class="text-4xl text-gray-300 dark:text-gray-600" />
+            <div class="space-y-2">
+              <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+                {{ emptyListTitle }}
+              </h3>
+              <p class="text-sm text-gray-600 dark:text-gray-400">
+                {{ emptyListDescription }}
+              </p>
+            </div>
+            <UButton
+              color="primary"
+              :icon="emptyListActionIcon"
+              @click="openEditorForNew"
+            >
+              {{ emptyListActionLabel }}
+            </UButton>
+          </div>
+        </UCard>
+      </section>
     </div>
   </div>
 </template>

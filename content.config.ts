@@ -304,6 +304,26 @@ export default defineContentConfig({
               .optional()
           })
           .optional(),
+        list: z
+          .object({
+            title: z.string().optional(),
+            createLabel: z.string().optional(),
+            totalLabel: z.string().optional(),
+            icon: z.string().optional(),
+            empty: z
+              .object({
+                title: z.string().optional(),
+                description: z.string().optional(),
+                action: z
+                  .object({
+                    label: z.string().optional(),
+                    icon: z.string().optional()
+                  })
+                  .optional()
+              })
+              .optional()
+          })
+          .optional(),
         stats: z
           .object({
             items: z
@@ -368,5 +388,216 @@ export default defineContentConfig({
           .optional()
       }),
     }),
+
+    memory: defineCollection({
+      source: 'memory.yml',
+      type: 'page',
+      schema: z.object({
+        title: z.string().optional(),
+        subtitle: z.string().optional(),
+        badge: z
+          .object({
+            label: z.string().optional(),
+            color: colorEnum.optional(),
+            icon: z.string().optional()
+          })
+          .optional(),
+        intro: z
+          .object({
+            description: z.string().optional()
+          })
+          .optional(),
+        overview: z
+          .object({
+            stats: z
+              .array(
+                z.object({
+                  key: z.string().nonempty(),
+                  label: z.string().nonempty(),
+                  description: z.string().optional(),
+                  icon: z.string().optional(),
+                  color: colorEnum.optional()
+                })
+              )
+              .optional()
+          })
+          .optional(),
+        sections: z
+          .array(
+            z.object({
+              key: z.enum(['fresh', 'fading', 'archived']),
+              title: z.string().nonempty(),
+              description: z.string().optional(),
+              icon: z.string().optional(),
+              accent: colorEnum.optional(),
+              empty: z
+                .object({
+                  title: z.string().optional(),
+                  description: z.string().optional()
+                })
+                .optional()
+            })
+          )
+          .optional()
+      })
+    }),
+
+    history: defineCollection({
+      source: 'history.yml',
+      type: 'page',
+      schema: z.object({
+        title: z.string().optional(),
+        subtitle: z.string().optional(),
+        badge: z
+          .object({
+            label: z.string().optional(),
+            color: colorEnum.optional(),
+            icon: z.string().optional()
+          })
+          .optional(),
+        hero: z
+          .object({
+            description: z.string().optional(),
+            helper: z.string().optional(),
+            action: z
+              .object({
+                label: z.string().optional(),
+                icon: z.string().optional(),
+                to: z.string().optional(),
+                variant: variantEnum.optional(),
+                color: colorEnum.optional()
+              })
+              .optional()
+          })
+          .optional(),
+        overview: z
+          .object({
+            title: z.string().optional(),
+            description: z.string().optional(),
+            stats: z
+              .array(
+                z.object({
+                  key: z.enum(['recoverable', 'archived', 'purged', 'restored']),
+                  label: z.string().nonempty(),
+                  description: z.string().optional(),
+                  icon: z.string().optional(),
+                  color: colorEnum.optional()
+                })
+              )
+              .optional()
+          })
+          .optional(),
+        timeline: z
+          .object({
+            title: z.string().optional(),
+            description: z.string().optional(),
+            empty: z
+              .object({
+                title: z.string().optional(),
+                description: z.string().optional()
+              })
+              .optional()
+          })
+          .optional(),
+        sections: z
+          .array(
+            z.object({
+              key: z.enum(['recoverable', 'archived', 'purged']),
+              title: z.string().nonempty(),
+              description: z.string().optional(),
+              icon: z.string().optional(),
+              accent: colorEnum.optional(),
+              empty: z
+                .object({
+                  title: z.string().optional(),
+                  description: z.string().optional()
+                })
+                .optional()
+            })
+          )
+          .optional(),
+        restoreLog: z
+          .object({
+            title: z.string().optional(),
+            description: z.string().optional(),
+            empty: z
+              .object({
+                title: z.string().optional(),
+                description: z.string().optional()
+              })
+              .optional()
+          })
+          .optional()
+      })
+    }),
+
+    settings: defineCollection({
+      source: 'settings.yml',
+      type: 'page',
+      schema: z.object({
+        title: z.string().optional(),
+        subtitle: z.string().optional(),
+        badge: z
+          .object({
+            label: z.string().optional(),
+            color: colorEnum.optional(),
+            icon: z.string().optional()
+          })
+          .optional(),
+        sections: z
+          .array(
+            z.object({
+              key: z.string().nonempty(),
+              title: z.string().nonempty(),
+              description: z.string().optional(),
+              icon: z.string().optional(),
+              cards: z
+                .array(
+                  z.object({
+                    key: z.string().nonempty(),
+                    title: z.string().nonempty(),
+                    description: z.string().optional(),
+                    icon: z.string().optional(),
+                    type: z.enum(['profile', 'security', 'toggle-group', 'select-group', 'info']).optional(),
+                    fields: z
+                      .array(
+                        z.object({
+                          key: z.string().nonempty(),
+                          label: z.string().nonempty(),
+                          placeholder: z.string().optional(),
+                          helper: z.string().optional(),
+                          type: z.enum(['text', 'email', 'password']).optional()
+                        })
+                      )
+                      .optional(),
+                    toggles: z
+                      .array(
+                        z.object({
+                          key: z.string().nonempty(),
+                          label: z.string().nonempty(),
+                          description: z.string().optional(),
+                          helpful: z.string().optional(),
+                          icon: z.string().optional(),
+                          default: z.boolean().optional()
+                        })
+                      )
+                      .optional(),
+                    options: z
+                      .array(
+                        z.object({
+                          key: z.string().nonempty(),
+                          label: z.string().nonempty(),
+                          description: z.string().optional()
+                        })
+                      )
+                      .optional()
+                  })
+                )
+                .optional()
+            })
+          )
+          .optional()
+      })
+    })
   },
 })
