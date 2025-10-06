@@ -10,16 +10,18 @@ export interface NoteRecord {
   lastAccessed: string
   icon: string
   importance: ImportanceLevel
-  importanceScore: number
   fadeLevel: FadeLevel
   forgettingProgress: number
   daysUntilForgotten?: number
   isCollapsed: boolean
+  importanceScore?: number
+  decayRate?: number
 }
 
 export interface NoteEditorOptions {
   initialTitle?: string
   initialContent?: string
+  initialImportance?: ImportanceLevel
   fadeLevel?: number
   placeholders?: {
     default: string
@@ -30,11 +32,15 @@ export interface NoteEditorOptions {
     saved?: string
     unsaved?: string
   }
-  aiBadgePrefix?: string
 }
 
 export interface NoteDashboardOptions {
   initialNotes?: NoteRecord[]
+  evaluateNote?: (record: NoteRecord) => {
+    importanceScore: number
+    decayRate?: number
+    forgettingWindow?: number
+  }
 }
 
 export interface NoteSavePayload {

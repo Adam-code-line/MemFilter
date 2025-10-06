@@ -2,10 +2,10 @@ import { computed, type ComputedRef, type Ref } from 'vue'
 import type { MemoryFadeLevel, MemoryImportance, MemoryMetaResult } from './types'
 
 const importanceConfig: Record<MemoryImportance, { label: string; color: string; score?: number }> = {
-  high: { label: '核心', color: 'red', score: 80 },
-  medium: { label: '重要', color: 'blue', score: 60 },
-  low: { label: '次要', color: 'gray', score: 30 },
-  noise: { label: '噪声', color: 'neutral', score: 10 }
+  high: { label: '核心记忆', color: 'primary', score: 85 },
+  medium: { label: '重点追踪', color: 'amber', score: 65 },
+  low: { label: '随手记录', color: 'gray', score: 35 },
+  noise: { label: '噪声过滤', color: 'neutral', score: 15 }
 }
 
 const forgettingStages = ['', '开始淡化', '轻度模糊', '深度模糊', '即将消失']
@@ -93,10 +93,15 @@ export const useMemoryMeta = (
 
     if (fadeLevel >= 3) return maskCharacters(trimmedSnippet.value, maskEvery, maskChar)
 
-    if (fadeLevel >= 2) {
+    if (fadeLevel === 2) {
+      const spacing = maskEvery * 2
       return trimmedSnippet.value.replace(letterMaskRegex, (char, index) =>
-        index % maskEvery === 0 ? maskChar : char
+        index % spacing === 0 ? maskChar : char
       )
+    }
+
+    if (fadeLevel === 1) {
+      return `${trimmedSnippet.value} ·（轻度淡化）`
     }
 
     return trimmedSnippet.value
@@ -106,12 +111,14 @@ export const useMemoryMeta = (
     const fadeLevel = source.fadeLevel.value
     if (fadeLevel >= 3) return '🌫️'
     if (fadeLevel >= 2) return '👻'
+    if (fadeLevel === 1) return '✨'
     return source.icon.value ?? '📝'
   })
 
   const displayDate = computed(() => {
     const fadeLevel = source.fadeLevel.value
-    if (fadeLevel >= 2) return blurredDateMessage
+    if (fadeLevel >= 3) return blurredDateMessage
+    if (fadeLevel === 2) return `${source.date.value} · 模糊中`
     return source.date.value
   })
 

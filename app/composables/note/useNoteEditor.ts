@@ -1,5 +1,5 @@
 import { computed, ref } from 'vue'
-import type { FadeLevel, NoteEditorOptions, NoteSavePayload } from './types'
+import type { FadeLevel, ImportanceLevel, NoteEditorOptions, NoteSavePayload } from './types'
 
 const defaultStatusLabels = {
   saved: '已保存',
@@ -15,11 +15,12 @@ const defaultPlaceholders = {
 export const useNoteEditor = (options: NoteEditorOptions = {}) => {
   const statusLabels = { ...defaultStatusLabels, ...options.statusLabels }
   const placeholders = { ...defaultPlaceholders, ...options.placeholders }
+  const defaultImportance: ImportanceLevel = options.initialImportance ?? 'medium'
 
   const noteTitle = ref(options.initialTitle ?? '')
   const noteContent = ref(options.initialContent ?? '')
+  const importanceLevel = ref<ImportanceLevel>(defaultImportance)
   const fadeLevel = ref<FadeLevel>((options.fadeLevel ?? 0) as FadeLevel)
-  const aiScore = ref(65)
   const isSaving = ref(false)
   const saveStatus = ref(statusLabels.unsaved)
   const lastModified = ref('')
@@ -33,22 +34,8 @@ export const useNoteEditor = (options: NoteEditorOptions = {}) => {
     return placeholders.default
   })
 
-  const scoreColor = computed(() => getScoreColor(aiScore.value))
-
   const touchContent = () => {
     saveStatus.value = statusLabels.unsaved
-
-    if (noteContent.value.length > 50) {
-      analyzeImportance()
-    }
-  }
-
-  const analyzeImportance = () => {
-    const keywordScore = (noteContent.value.match(/[重要|关键|核心|主要]/g) || []).length * 10
-    const lengthScore = Math.min(noteContent.value.length / 10, 30)
-    const titleScore = noteTitle.value.trim().length > 0 ? 20 : 0
-
-    aiScore.value = Math.min(100, Math.max(10, keywordScore + lengthScore + titleScore))
   }
 
   const beginSaving = () => {
@@ -69,29 +56,25 @@ export const useNoteEditor = (options: NoteEditorOptions = {}) => {
     fadeLevel.value = Math.max(0, Math.min(4, level)) as FadeLevel
   }
 
+  const setImportanceLevel = (level: ImportanceLevel) => {
+    importanceLevel.value = level
+  }
+
   const resetContent = () => {
     noteTitle.value = ''
     noteContent.value = ''
-    aiScore.value = 65
+    importanceLevel.value = defaultImportance
     saveStatus.value = statusLabels.unsaved
     lastModified.value = ''
-  }
-
-  const getImportanceLevel = (score: number) => {
-    if (score >= 80) return 'high'
-    if (score >= 60) return 'medium'
-    if (score >= 40) return 'low'
-    return 'noise'
   }
 
   const buildSavePayload = (): NoteSavePayload => ({
     title: noteTitle.value.trim(),
     content: noteContent.value.trim(),
-    importance: getImportanceLevel(aiScore.value)
+    importance: importanceLevel.value
   })
 
   if (noteContent.value) {
-    analyzeImportance()
     saveStatus.value = statusLabels.saved
     lastModified.value = new Date().toLocaleTimeString()
   }
@@ -100,8 +83,8 @@ export const useNoteEditor = (options: NoteEditorOptions = {}) => {
     // state
     noteTitle,
     noteContent,
+    importanceLevel,
     fadeLevel,
-    aiScore,
     isSaving,
     saveStatus,
     lastModified,
@@ -110,27 +93,18 @@ export const useNoteEditor = (options: NoteEditorOptions = {}) => {
 
     // computed helpers
     contentPlaceholder,
-    scoreColor,
 
     // methods
     touchContent,
-    analyzeImportance,
     beginSaving,
     finishSaving,
     setUnsaved,
     setFadeLevel,
     resetContent,
-    getImportanceLevel,
+    setImportanceLevel,
     buildSavePayload,
 
     // config
     statusLabels
   }
-}
-
-const getScoreColor = (score: number) => {
-  if (score >= 80) return 'success'
-  if (score >= 60) return 'primary'
-  if (score >= 40) return 'warning'
-  return 'error'
 }

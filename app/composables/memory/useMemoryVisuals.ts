@@ -7,9 +7,10 @@ export const useMemoryCardVisuals = (
 ): MemoryCardVisualsResult => {
   const cardStyle = computed(() => {
     const level = fadeLevel.value
-    const opacity = Math.max(0.3, 1 - level * 0.15)
-    const blur = level * 1.5
-    const scale = Math.max(0.95, 1 - level * 0.02)
+    const blurMap = [0, 0.8, 1.6, 2.6, 3.4]
+    const opacity = Math.max(0.55, 1 - level * 0.12)
+    const blur = blurMap[level] ?? 3.4
+    const scale = Math.max(0.94, 1 - level * 0.015)
 
     return {
       '--fade-opacity': opacity,
@@ -30,8 +31,9 @@ export const useMemoryItemVisuals = (
 ): MemoryItemVisualsResult => {
   const itemStyle = computed(() => {
     const level = fadeLevel.value
-    const opacity = Math.max(0.4, 1 - level * 0.12)
-    const blur = level * 0.8
+    const blurMap = [0, 0.5, 1.2, 2, 2.8]
+    const opacity = Math.max(0.6, 1 - level * 0.1)
+    const blur = blurMap[level] ?? 2.8
 
     return {
       '--fade-opacity': opacity,

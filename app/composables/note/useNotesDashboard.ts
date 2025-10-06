@@ -1,4 +1,5 @@
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
+import { useState } from '#app'
 import type {
   FadeLevel,
   ImportanceLevel,
@@ -7,102 +8,221 @@ import type {
   NoteSavePayload
 } from './types'
 
-const createDefaultNotes = (): NoteRecord[] => ([
-  {
-    id: 1,
-    title: '深度学习原理笔记',
-    content: '深度学习是机器学习的一个分支，通过构建具有多层次的人工神经网络来学习数据的高层次特征表示...',
-    date: '2小时前',
-    lastAccessed: '30分钟前',
-    icon: '🧠',
-    importance: 'high',
-    importanceScore: 92,
-    fadeLevel: 0,
-    forgettingProgress: 0,
-    isCollapsed: false
-  },
-  {
-    id: 2,
-    title: 'Vue 3 组合式 API 学习',
-    content: 'Vue 3 引入了组合式 API，这是一套基于函数的 API，可以更灵活地组织组件逻辑...',
-    date: '5小时前',
-    lastAccessed: '2小时前',
-    icon: '⚡',
-    importance: 'medium',
-    importanceScore: 78,
-    fadeLevel: 1,
-    forgettingProgress: 25,
-    daysUntilForgotten: 6,
-    isCollapsed: false
-  },
-  {
-    id: 3,
-    title: '数据结构 - 树的遍历',
-    content: '树的遍历是数据结构中的重要概念，包括前序遍历、中序遍历、后序遍历等...',
-    date: '1天前',
-    lastAccessed: '8小时前',
-    icon: '🌳',
-    importance: 'medium',
-    importanceScore: 65,
-    fadeLevel: 2,
-    forgettingProgress: 45,
-    daysUntilForgotten: 3,
-    isCollapsed: false
-  },
-  {
-    id: 4,
-    title: '会议记录 - 产品需求讨论',
-    content: '今天讨论了新功能的需求，包括用户界面设计、后端 API 设计等方面...',
-    date: '3天前',
-    lastAccessed: '2天前',
-    icon: '📝',
-    importance: 'low',
-    importanceScore: 42,
-    fadeLevel: 3,
-    forgettingProgress: 70,
-    daysUntilForgotten: 1,
-    isCollapsed: false
-  },
-  {
-    id: 5,
-    title: '随手记录的想法',
-    content: '今天路上想到的一些零散想法，可能没什么用处...',
-    date: '1周前',
-    lastAccessed: '5天前',
-    icon: '💭',
-    importance: 'noise',
-    importanceScore: 18,
-    fadeLevel: 4,
-    forgettingProgress: 90,
-    daysUntilForgotten: 0,
-    isCollapsed: true
-  },
-  {
-    id: 6,
-    title: 'TypeScript 高级特性',
-    content: 'TypeScript 提供了许多高级特性，如泛型、装饰器、类型守卫等，这些特性可以帮助我们写出更安全的代码...',
-    date: '2天前',
-    lastAccessed: '1天前',
-    icon: '🔷',
-    importance: 'high',
-    importanceScore: 88,
-    fadeLevel: 0,
-    forgettingProgress: 0,
-    isCollapsed: false
+const STORAGE_KEY = 'memfilter-notes'
+const MAX_FORGET_WINDOW = 999
+const BASE_FORGET_WINDOW = 14
+
+const importanceWeights: Record<ImportanceLevel, number> = {
+  high: 1,
+  medium: 0.7,
+  low: 0.4,
+  noise: 0.2
+}
+
+const importancePriority: Record<ImportanceLevel, number> = {
+  high: 0,
+  medium: 1,
+  low: 2,
+  noise: 3
+}
+
+const defaultDecayRates: Record<ImportanceLevel, number> = {
+  high: 0,
+  medium: 20,
+  low: 35,
+  noise: 50
+}
+
+const defaultForgetWindows: Record<ImportanceLevel, number> = {
+  high: MAX_FORGET_WINDOW,
+  medium: BASE_FORGET_WINDOW,
+  low: 7,
+  noise: 3
+}
+
+const formatDateLabel = (date: Date) =>
+  new Intl.DateTimeFormat('zh-CN', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  }).format(date)
+
+const normalizeRecord = (record: Partial<NoteRecord> & { id?: number }): NoteRecord => {
+  const now = new Date()
+  return {
+    id: record.id ?? now.getTime(),
+    title: record.title ?? '未命名笔记',
+    content: record.content ?? '',
+    date: record.date ?? formatDateLabel(now),
+    lastAccessed: record.lastAccessed ?? '刚刚',
+    icon: record.icon ?? '📝',
+    importance: record.importance ?? 'medium',
+    fadeLevel: (record.fadeLevel ?? 0) as FadeLevel,
+    forgettingProgress: record.forgettingProgress ?? 0,
+    daysUntilForgotten: record.daysUntilForgotten ?? BASE_FORGET_WINDOW,
+    isCollapsed: record.isCollapsed ?? false,
+    importanceScore: record.importanceScore ?? 0,
+    decayRate: record.decayRate ?? undefined
   }
-])
+}
+
+const createInitialState = (initialNotes?: NoteRecord[]) =>
+  initialNotes ? initialNotes.map(normalizeRecord) : []
+
+const clamp = (value: number, min: number, max: number) =>
+  Math.min(max, Math.max(min, value))
 
 export const useNotesDashboard = (options: NoteDashboardOptions = {}) => {
   type ImportanceFilter = 'all' | ImportanceLevel
 
-  const notes = ref<NoteRecord[]>(options.initialNotes ? [...options.initialNotes] : createDefaultNotes())
+  const notes = useState<NoteRecord[]>(
+    'memfilter-notes-state',
+    () => createInitialState(options.initialNotes)
+  )
   const viewMode = ref<'card' | 'list'>('card')
+  const isHydrated = ref(false)
   const importanceFilter = ref<ImportanceFilter>('all')
   const searchQuery = ref('')
   const selectedNotes = ref<number[]>([])
   const editorMode = ref<'create' | 'edit'>('create')
   const editingNote = ref<NoteRecord | null>(null)
   const activeNoteId = ref<number | null>(null)
+
+  const computeEvaluation = (note: NoteRecord) => {
+    const custom = options.evaluateNote?.(note)
+    if (custom) {
+      return {
+        importanceScore: clamp(Math.round(custom.importanceScore ?? 0), 0, 100),
+        decayRate: custom.decayRate ?? defaultDecayRates[note.importance],
+        forgettingWindow: custom.forgettingWindow ?? defaultForgetWindows[note.importance]
+      }
+    }
+
+    const weight = importanceWeights[note.importance] ?? 0.5
+    const contentBoost = Math.min(25, Math.round((note.content?.length ?? 0) / 80))
+    const freshnessPenalty = Math.max(0, (note.fadeLevel ?? 0) > 0 ? (note.fadeLevel - 1) * 7 : 0)
+    const rawScore = weight * 70 + contentBoost - freshnessPenalty
+    const importanceScore = clamp(Math.round(rawScore), 5, 100)
+
+    const baseDecay = defaultDecayRates[note.importance] ?? 20
+    const decayRate = note.importance === 'high'
+      ? 0
+      : clamp(baseDecay + Math.round((100 - importanceScore) / 4), 10, 60)
+
+    const baseWindow = defaultForgetWindows[note.importance] ?? BASE_FORGET_WINDOW
+    const forgettingWindow = note.importance === 'high'
+      ? MAX_FORGET_WINDOW
+      : clamp(
+        Math.round(baseWindow * (importanceScore >= 75 ? 1.6 : importanceScore >= 50 ? 1 : 0.6)),
+        2,
+        MAX_FORGET_WINDOW
+      )
+
+    return {
+      importanceScore,
+      decayRate,
+      forgettingWindow
+    }
+  }
+
+  const applyEvaluation = (
+    note: NoteRecord,
+    context: { accelerated?: boolean; preserveProgress?: boolean } = {}
+  ): NoteRecord => {
+    const base = computeEvaluation(note)
+    const importanceScore = base.importanceScore
+    const decayRate = base.decayRate
+    const forgettingWindow = base.forgettingWindow
+
+    const preserveProgress = context.preserveProgress ?? false
+
+    let fadeLevel = (note.fadeLevel ?? 0) as FadeLevel
+    let progress = note.forgettingProgress ?? 0
+    let daysUntilForgotten = note.daysUntilForgotten ?? forgettingWindow
+
+    if (note.importance === 'high' && !context.accelerated) {
+      fadeLevel = Math.min(fadeLevel, 1) as FadeLevel
+      daysUntilForgotten = MAX_FORGET_WINDOW
+      progress = 0
+    } else if (context.accelerated) {
+      const nextFade = Math.min(4, (fadeLevel + 1)) as FadeLevel
+      fadeLevel = note.importance === 'high'
+        ? (Math.max(2, nextFade) as FadeLevel)
+        : (Math.max(1, nextFade) as FadeLevel)
+      progress = Math.min(100, Math.max(progress, 60 + Math.round((100 - importanceScore) * 0.4)))
+      daysUntilForgotten = Math.max(1, Math.round(forgettingWindow * 0.3))
+    } else {
+      const baselineProgress = note.importance === 'high'
+        ? 0
+        : clamp(Math.round((100 - importanceScore) * 0.35), 5, 85)
+
+      progress = preserveProgress
+        ? Math.max(progress, baselineProgress)
+        : baselineProgress
+
+      if (progress > 0 && note.importance !== 'high') {
+        fadeLevel = Math.max(1, fadeLevel) as FadeLevel
+      } else if (note.importance === 'high') {
+        fadeLevel = Math.min(fadeLevel, 1) as FadeLevel
+      }
+
+      daysUntilForgotten = forgettingWindow
+    }
+
+    return {
+      ...note,
+      fadeLevel,
+      forgettingProgress: progress,
+      daysUntilForgotten,
+      importanceScore,
+      decayRate
+    }
+  }
+
+  const rehydrateNotes = (collection: NoteRecord[], preserve = false) =>
+    collection.map(item => applyEvaluation(item, { preserveProgress: preserve }))
+
+  notes.value = rehydrateNotes(notes.value, true)
+
+  onMounted(() => {
+    if (!process.client) {
+      isHydrated.value = true
+      return
+    }
+
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY)
+      if (stored) {
+        const parsed = JSON.parse(stored) as Array<Partial<NoteRecord>>
+        const normalized = parsed.map(normalizeRecord)
+        notes.value = rehydrateNotes(normalized, true)
+      } else if (notes.value.length === 0 && options.initialNotes?.length) {
+        notes.value = rehydrateNotes(createInitialState(options.initialNotes))
+      } else {
+        notes.value = rehydrateNotes(notes.value, true)
+      }
+    } catch (error) {
+      console.warn('加载本地笔记数据失败:', error)
+    } finally {
+      isHydrated.value = true
+    }
+  })
+
+  if (process.client) {
+    watch(
+      notes,
+      value => {
+        if (!isHydrated.value) return
+
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(value))
+        } catch (error) {
+          console.warn('保存本地笔记数据失败:', error)
+        }
+      },
+      { deep: true }
+    )
+  }
 
   const filteredNotes = computed(() => {
     let data = [...notes.value]
@@ -119,14 +239,26 @@ export const useNotesDashboard = (options: NoteDashboardOptions = {}) => {
       )
     }
 
+    data.sort((a, b) => {
+      const importanceDelta = importancePriority[a.importance] - importancePriority[b.importance]
+      if (importanceDelta !== 0) {
+        return importanceDelta
+      }
+      const scoreDelta = (b.importanceScore ?? 0) - (a.importanceScore ?? 0)
+      if (scoreDelta !== 0) {
+        return scoreDelta
+      }
+      return (b.id ?? 0) - (a.id ?? 0)
+    })
+
     return data
   })
 
   const noteStats = computed(() => ({
     total: notes.value.length,
     core: notes.value.filter(note => note.importance === 'high').length,
-    forgotten: notes.value.filter(note => note.fadeLevel >= 3).length,
-    thisMonth: Math.max(0, Math.floor(notes.value.length * 0.7))
+    fading: notes.value.filter(note => note.fadeLevel >= 2 && note.fadeLevel <= 3).length,
+    forgotten: notes.value.filter(note => note.fadeLevel >= 4).length
   }))
 
   const selectedCount = computed(() => selectedNotes.value.length)
@@ -172,27 +304,39 @@ export const useNotesDashboard = (options: NoteDashboardOptions = {}) => {
   const restoreNote = (note: NoteRecord) => {
     const index = notes.value.findIndex(item => item.id === note.id)
     if (index !== -1) {
-      notes.value[index].fadeLevel = 0
-      notes.value[index].forgettingProgress = 0
-      notes.value[index].isCollapsed = false
+      const evaluated = applyEvaluation({
+        ...notes.value[index],
+        fadeLevel: 0 as FadeLevel,
+        forgettingProgress: 0,
+        isCollapsed: false,
+        lastAccessed: '刚刚'
+      })
+      notes.value.splice(index, 1, evaluated)
     }
   }
 
   const accelerateForgetting = (note: NoteRecord) => {
     const index = notes.value.findIndex(item => item.id === note.id)
     if (index !== -1) {
-      const current = notes.value[index]
-      const nextFade = Math.min(4, (current.fadeLevel + 1) as FadeLevel)
-      current.fadeLevel = nextFade
-      current.forgettingProgress = Math.min(100, current.forgettingProgress + 30)
-      current.daysUntilForgotten = Math.max(0, (current.daysUntilForgotten ?? 0) - 1)
+      const accelerated = applyEvaluation(
+        {
+          ...notes.value[index],
+          lastAccessed: '刚刚'
+        },
+        { accelerated: true, preserveProgress: true }
+      )
+      notes.value.splice(index, 1, accelerated)
     }
   }
 
   const toggleCollapse = (note: NoteRecord) => {
     const index = notes.value.findIndex(item => item.id === note.id)
     if (index !== -1) {
-      notes.value[index].isCollapsed = !notes.value[index].isCollapsed
+      const current = notes.value[index]
+      notes.value.splice(index, 1, {
+        ...current,
+        isCollapsed: !current.isCollapsed
+      })
     }
   }
 
@@ -204,38 +348,37 @@ export const useNotesDashboard = (options: NoteDashboardOptions = {}) => {
     if (editorMode.value === 'edit' && editingNote.value) {
       const index = notes.value.findIndex(note => note.id === editingNote.value!.id)
       if (index !== -1) {
-        const updated = {
+        const evaluated = applyEvaluation({
           ...notes.value[index],
           title: payload.title,
           content: payload.content,
           importance: payload.importance,
-          importanceScore: Math.max(notes.value[index].importanceScore, 60),
-          date: '刚刚',
           lastAccessed: '刚刚'
-        }
-        notes.value[index] = updated
-        editingNote.value = { ...updated }
-        activeNoteId.value = updated.id
+        })
+        notes.value.splice(index, 1, evaluated)
+        editingNote.value = { ...evaluated }
+        activeNoteId.value = evaluated.id
       }
     } else {
       const id = Date.now()
-      const newNote: NoteRecord = {
+      const now = new Date()
+      const evaluated = applyEvaluation({
         id,
         title: payload.title,
         content: payload.content,
-        date: '刚刚',
+        date: formatDateLabel(now),
         lastAccessed: '刚刚',
         icon: '📝',
         importance: payload.importance,
-        importanceScore: Math.floor(Math.random() * 20) + 70,
-        fadeLevel: 0,
+        fadeLevel: 0 as FadeLevel,
         forgettingProgress: 0,
+        daysUntilForgotten: BASE_FORGET_WINDOW,
         isCollapsed: false
-      }
-      notes.value = [newNote, ...notes.value]
+      })
+      notes.value = [evaluated, ...notes.value]
       editorMode.value = 'edit'
-      editingNote.value = { ...newNote }
-      activeNoteId.value = newNote.id
+      editingNote.value = { ...evaluated }
+      activeNoteId.value = evaluated.id
     }
   }
 

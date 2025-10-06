@@ -17,6 +17,27 @@ const {
   toggleCollapse
 } = useNotesDashboard()
 
+const importancePriority = {
+  high: 0,
+  medium: 1,
+  low: 2,
+  noise: 3
+} as const
+
+const sortByImportance = (collection: any[]) =>
+  [...collection].sort((a, b) => {
+    const importanceDelta = (importancePriority[a.importance as keyof typeof importancePriority] ?? 99) -
+      (importancePriority[b.importance as keyof typeof importancePriority] ?? 99)
+    if (importanceDelta !== 0) {
+      return importanceDelta
+    }
+    const scoreDelta = (b.importanceScore ?? 0) - (a.importanceScore ?? 0)
+    if (scoreDelta !== 0) {
+      return scoreDelta
+    }
+    return (a.fadeLevel ?? 0) - (b.fadeLevel ?? 0)
+  })
+
 const { data: memoryCopy } = await useAsyncData('memory-config', () => queryCollection('memory').first())
 
 const memoryConfig = computed(() => memoryCopy.value ?? null)
@@ -84,14 +105,28 @@ const defaultSections = [
 ]
 
 const categorizedMemories = computed(() => {
-  const fresh = []
-  const fading = []
-  const archived = []
+  const fresh: any[] = []
+  const fading: any[] = []
+  const archived: any[] = []
 
   for (const note of notes.value) {
-    if (note.fadeLevel <= 1) {
+    let bucket: 'fresh' | 'fading' | 'archived'
+
+    if ((note.fadeLevel ?? 0) >= 4 || note.isCollapsed) {
+      bucket = 'archived'
+    } else if ((note.fadeLevel ?? 0) >= 2) {
+      bucket = 'fading'
+    } else {
+      bucket = 'fresh'
+    }
+
+    if (bucket === 'fresh' && note.importance !== 'high' && (note.forgettingProgress ?? 0) > 50) {
+      bucket = 'fading'
+    }
+
+    if (bucket === 'fresh') {
       fresh.push(note)
-    } else if (note.fadeLevel <= 3) {
+    } else if (bucket === 'fading') {
       fading.push(note)
     } else {
       archived.push(note)
@@ -99,9 +134,9 @@ const categorizedMemories = computed(() => {
   }
 
   return {
-    fresh,
-    fading,
-    archived
+    fresh: sortByImportance(fresh),
+    fading: sortByImportance(fading),
+    archived: sortByImportance(archived)
   }
 })
 

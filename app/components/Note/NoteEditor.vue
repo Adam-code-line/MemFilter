@@ -1,20 +1,24 @@
 <template>
   <UCard class="w-full bg-white/90 dark:bg-slate-900/80 backdrop-blur-xl border border-white/20 dark:border-white/10 shadow-xl">
     <template #header>
-      <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+      <div class="flex flex-col gap-3">
         <UInput
           v-model="noteTitle"
           :placeholder="config.titlePlaceholder"
           variant="none"
-          class="text-lg font-semibold h-12 px-0 lg:flex-1"
+          class="text-lg font-semibold h-12 px-0"
           :class="{ 'opacity-80 blur-[0.5px]': fadeLevel > 0 }"
         />
 
-        <div class="flex items-center gap-2">
-          <UBadge
-            :label="`${aiBadgePrefix}: ${aiScore}%`"
-            :color="scoreColor"
-            variant="soft"
+        <div class="flex flex-wrap items-center gap-2 text-sm">
+          <USelectMenu
+            v-model="importanceLevel"
+            :items="importanceOptions"
+            label-key="label"
+            value-key="value"
+            size="sm"
+            class="min-w-[160px]"
+            :ui="{ menu: 'min-w-[160px]' }"
           />
           <UBadge
             :label="saveStatus"
@@ -26,55 +30,6 @@
     </template>
 
     <div class="flex flex-col gap-4">
-      <div class="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 dark:border-white/10 pb-3">
-        <div class="flex flex-wrap items-center gap-2">
-          <UFieldGroup size="sm" variant="ghost">
-            <UButton
-              v-for="tool in formattingTools"
-              :key="tool.icon"
-              :icon="tool.icon"
-            />
-          </UFieldGroup>
-
-          <UFieldGroup size="sm" variant="ghost">
-            <UButton
-              v-for="tool in structureTools"
-              :key="tool.icon"
-              :icon="tool.icon"
-            />
-          </UFieldGroup>
-
-          <UFieldGroup size="sm" variant="ghost">
-            <UButton
-              v-for="tool in inlineTools"
-              :key="tool.icon"
-              :icon="tool.icon"
-            />
-          </UFieldGroup>
-        </div>
-
-        <div class="flex items-center gap-2">
-          <USelectMenu
-            v-model="forgettingMode"
-            :options="forgettingOptions"
-            option-attribute="label"
-            value-attribute="value"
-            size="sm"
-            placeholder="遗忘模式"
-            :command="false"
-            :ui="{ menu: 'min-w-[180px]' }"
-          />
-          <UButton
-            icon="i-lucide-brain"
-            variant="ghost"
-            size="sm"
-            @click="analyzeImportance"
-          >
-            AI 分析
-          </UButton>
-        </div>
-      </div>
-
       <UTextarea
         v-model="noteContent"
         :placeholder="contentPlaceholder"
@@ -115,9 +70,9 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, watch } from 'vue'
 import { useNoteEditor } from '~/composables/note'
-import type { NoteSavePayload } from '~/composables/note'
+import type { ImportanceLevel, NoteSavePayload } from '~/composables/note'
 
 interface EditorConfig {
   titlePlaceholder?: string
@@ -147,12 +102,14 @@ const props = withDefaults(defineProps<{
   initialContent?: string
   fadeLevel?: number
   mode?: 'create' | 'edit'
+  initialImportance?: ImportanceLevel
   config?: EditorConfig
 }>(), {
   initialTitle: '',
   initialContent: '',
   fadeLevel: 0,
   mode: 'create',
+  initialImportance: 'medium',
   config: () => ({})
 })
 
@@ -172,59 +129,37 @@ const metaLabels = computed(() => ({
 const {
   noteTitle,
   noteContent,
+  importanceLevel,
   fadeLevel,
-  aiScore,
   isSaving,
   saveStatus,
   lastModified,
   contentLength,
   estimatedReadTime,
   contentPlaceholder,
-  scoreColor,
   touchContent,
-  analyzeImportance,
   beginSaving,
   finishSaving,
   setUnsaved,
   setFadeLevel,
   resetContent,
   buildSavePayload,
+  setImportanceLevel,
   statusLabels
 } = useNoteEditor({
   initialTitle: props.initialTitle,
   initialContent: props.initialContent,
+  initialImportance: props.initialImportance,
   fadeLevel: props.fadeLevel,
   placeholders: config.value.contentPlaceholders,
-  statusLabels: config.value.status,
-  aiBadgePrefix: config.value.aiBadgePrefix
+  statusLabels: config.value.status
 })
 
-const aiBadgePrefix = computed(() => config.value.aiBadgePrefix ?? 'AI 评分')
-
-const forgettingMode = ref('normal')
-const forgettingOptions = [
-  { label: '正常遗忘', value: 'normal' },
-  { label: '慢速遗忘', value: 'slow' },
-  { label: '加速遗忘', value: 'fast' },
-  { label: '永不遗忘', value: 'never' }
-]
-
-const formattingTools = [
-  { icon: 'i-lucide-bold' },
-  { icon: 'i-lucide-italic' },
-  { icon: 'i-lucide-underline' },
-  { icon: 'i-lucide-strikethrough' }
-]
-
-const structureTools = [
-  { icon: 'i-lucide-list' },
-  { icon: 'i-lucide-list-ordered' },
-  { icon: 'i-lucide-quote' }
-]
-
-const inlineTools = [
-  { icon: 'i-lucide-image' },
-  { icon: 'i-lucide-link' }
+const importanceOptions: Array<{ label: string; value: ImportanceLevel }> = [
+  { label: '核心笔记', value: 'high' },
+  { label: '重要笔记', value: 'medium' },
+  { label: '次要笔记', value: 'low' },
+  { label: '噪声信息', value: 'noise' }
 ]
 
 const statusColor = computed(() =>
@@ -258,8 +193,8 @@ const normalizeFadeLevel = (value?: number) => {
 }
 
 watch(
-  () => [props.mode, props.initialTitle, props.initialContent, props.fadeLevel] as const,
-  ([mode, title, content, fade]) => {
+  () => [props.mode, props.initialTitle, props.initialContent, props.fadeLevel, props.initialImportance] as const,
+  ([mode, title, content, fade, importance]) => {
     const hasEditPayload = title !== undefined || content !== undefined
     const normalizedFade = normalizeFadeLevel(fade)
 
@@ -267,13 +202,9 @@ watch(
       noteTitle.value = title ?? ''
       noteContent.value = content ?? ''
       setFadeLevel(normalizedFade)
+      setImportanceLevel(importance ?? 'medium')
 
-      if (noteContent.value) {
-        analyzeImportance()
-        saveStatus.value = statusLabels.saved
-      } else {
-        setUnsaved()
-      }
+      saveStatus.value = noteContent.value ? statusLabels.saved : statusLabels.unsaved
 
       lastModified.value = ''
       return
@@ -281,6 +212,7 @@ watch(
 
     resetContent()
     setFadeLevel(normalizedFade)
+    setImportanceLevel(importance ?? 'medium')
   },
   { immediate: true }
 )
@@ -294,5 +226,11 @@ watch(noteContent, (value, oldValue) => {
 watch(noteTitle, (value, oldValue) => {
   if (value === oldValue) return
   setUnsaved()
+})
+
+watch(() => props.initialImportance, value => {
+  if (props.mode === 'edit' && value) {
+    setImportanceLevel(value)
+  }
 })
 </script>

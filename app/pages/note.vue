@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useNotesDashboard } from '~/composables/note'
-import type { NoteSavePayload } from '~/composables/note'
+import type { ImportanceLevel, NoteSavePayload } from '~/composables/note'
 
 definePageMeta({
   layout: 'app'
@@ -49,19 +49,15 @@ const emptyState = computed(() => noteConfig.value?.emptyState ?? null)
 const editorConfig = computed(() => noteConfig.value?.editor ?? {})
 const listConfig = computed(() => noteConfig.value?.list ?? null)
 
-const importanceLabels: Record<string, string> = {
-  high: '核心',
-  medium: '重要',
-  low: '次要',
-  noise: '噪声'
+const importanceBadgeMap: Record<ImportanceLevel, { label: string; color: string; variant: 'solid' | 'soft' | 'subtle' | 'outline'; icon: string }> = {
+  high: { label: '核心记忆', color: 'primary', variant: 'solid', icon: 'i-lucide-flame' },
+  medium: { label: '重点追踪', color: 'amber', variant: 'soft', icon: 'i-lucide-target' },
+  low: { label: '随手记录', color: 'gray', variant: 'subtle', icon: 'i-lucide-pen-line' },
+  noise: { label: '噪声过滤', color: 'neutral', variant: 'outline', icon: 'i-lucide-waves' }
 }
 
-const importanceColorMap: Record<string, 'primary' | 'blue' | 'gray' | 'neutral'> = {
-  high: 'primary',
-  medium: 'blue',
-  low: 'gray',
-  noise: 'neutral'
-}
+const resolveImportanceBadge = (importance: ImportanceLevel) =>
+  importanceBadgeMap[importance] ?? { label: '未分类', color: 'neutral', variant: 'subtle', icon: 'i-lucide-circle' }
 
 const editorHeadline = computed(() => {
   if (editorMode.value === 'edit') {
@@ -79,6 +75,8 @@ const editorSubtext = computed(() => {
 
 const isEditingExisting = computed(() => editorMode.value === 'edit' && !!editingNote.value)
 
+const editingBadge = computed(() => (editingNote.value ? resolveImportanceBadge(editingNote.value.importance) : null))
+
 const listEmpty = computed(() => listConfig.value?.empty ?? null)
 const noteListHeader = computed(() => listConfig.value?.title ?? '笔记列表')
 const noteCreateLabel = computed(() => listConfig.value?.createLabel ?? '新建笔记')
@@ -90,16 +88,21 @@ const emptyListActionLabel = computed(() => listEmpty.value?.action?.label ?? em
 const emptyListActionIcon = computed(() => listEmpty.value?.action?.icon ?? emptyState.value?.action?.icon ?? 'i-lucide-plus')
 const emptyListIcon = computed(() => emptyState.value?.icon ?? 'i-lucide-notebook')
 
-const noteItems = computed(() => filteredNotes.value.map(note => ({
-  id: note.id,
-  record: note,
-  title: note.title || '未命名笔记',
-  description: note.date ?? '',
-  iconName: typeof note.icon === 'string' && note.icon.startsWith('i-') ? note.icon : undefined,
-  iconFallback: typeof note.icon === 'string' && !note.icon.startsWith('i-') ? note.icon : '📝',
-  importance: importanceLabels[note.importance] ?? '未分类',
-  importanceColor: importanceColorMap[note.importance] ?? 'neutral'
-})))
+const noteItems = computed(() =>
+  filteredNotes.value.map(note => {
+    const badge = resolveImportanceBadge(note.importance)
+    return {
+      id: note.id,
+      record: note,
+      title: note.title || '未命名笔记',
+      description: note.date ?? '',
+      iconName: typeof note.icon === 'string' && note.icon.startsWith('i-') ? note.icon : undefined,
+      iconFallback: typeof note.icon === 'string' && !note.icon.startsWith('i-') ? note.icon : '📝',
+      badge,
+      score: Math.round(note.importanceScore ?? 0)
+    }
+  })
+)
 
 const handleEditorSave = (payload: NoteSavePayload) => {
   saveNote(payload)
@@ -159,9 +162,9 @@ const handleContentChange = (_value: string) => {
 
           <USelectMenu
             :model-value="importanceFilter"
-            :options="importanceOptions"
-            option-attribute="label"
-            value-attribute="value"
+            :items="importanceOptions"
+            label-key="label"
+            value-key="value"
             size="md"
             class="min-w-[180px]"
             @update:model-value="setImportanceFilter"
@@ -200,9 +203,18 @@ const handleContentChange = (_value: string) => {
               </p>
               <div v-if="isEditingExisting" class="flex flex-wrap items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
                 <UBadge
-                  :label="editingNote?.importance === 'high' ? '高价值' : '正在回顾'"
-                  :color="editingNote?.importance === 'high' ? 'primary' : 'neutral'"
-                  variant="soft"
+                  v-if="editingBadge"
+                  :label="editingBadge.label"
+                  :color="editingBadge.color"
+                  :variant="editingBadge.variant"
+                  :icon="editingBadge.icon"
+                />
+                <UBadge
+                  v-if="typeof editingNote?.importanceScore === 'number'"
+                  :label="`价值 ${Math.round(editingNote.importanceScore ?? 0)}%`"
+                  color="primary"
+                  variant="outline"
+                  icon="i-lucide-activity"
                 />
                 <span v-if="editingNote?.lastAccessed">最近访问：{{ editingNote.lastAccessed }}</span>
                 <span v-if="editingNote?.date">创建时间：{{ editingNote.date }}</span>
@@ -216,6 +228,7 @@ const handleContentChange = (_value: string) => {
             :initial-title="editingNote?.title"
             :initial-content="editingNote?.content"
             :fade-level="editingNote?.fadeLevel ?? 0"
+            :initial-importance="editingNote?.importance"
             :mode="editorMode"
             :config="editorConfig"
             @save="handleEditorSave"
@@ -257,7 +270,15 @@ const handleContentChange = (_value: string) => {
                   <p class="font-medium text-gray-900 dark:text-white line-clamp-1">
                     {{ note.title }}
                   </p>
-                  <UBadge :label="note.importance" :color="note.importanceColor" variant="subtle" />
+                  <div class="flex items-center gap-2">
+                    <UBadge
+                      :label="note.badge.label"
+                      :color="note.badge.color"
+                      :variant="note.badge.variant"
+                      :icon="note.badge.icon"
+                    />
+                    <span class="text-[11px] text-gray-400 dark:text-gray-500">价值 {{ note.score }}%</span>
+                  </div>
                 </div>
                 <p class="text-xs text-gray-500 dark:text-gray-400">
                   {{ note.description }}
