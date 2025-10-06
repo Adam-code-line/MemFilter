@@ -18,6 +18,7 @@ export default defineNuxtConfig({
     '@nuxt/content',
     '@nuxt/eslint',
     '@nuxt/ui',
+    '@pinia/nuxt'
   ],
 
   css: ['~/assets/css/main.css'],

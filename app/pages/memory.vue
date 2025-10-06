@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useNotesDashboard } from '~/composables/note'
+import { storeToRefs } from 'pinia'
+import { useNotesStore } from '~~/stores/notes'
 
 definePageMeta({
   layout: 'app'
@@ -10,12 +11,10 @@ useHead({
   title: '记忆回溯'
 })
 
-const {
-  notes,
-  restoreNote,
-  accelerateForgetting,
-  toggleCollapse
-} = useNotesDashboard()
+const notesStore = useNotesStore()
+notesStore.ensureInitialized()
+
+const { notes } = storeToRefs(notesStore)
 
 const importancePriority = {
   high: 0,
@@ -188,9 +187,9 @@ const sections = computed(() =>
   })
 )
 
-const handleRestore = (note: any) => restoreNote(note)
-const handleAccelerate = (note: any) => accelerateForgetting(note)
-const handleToggleCollapse = (note: any) => toggleCollapse(note)
+const handleRestore = (note: any) => notesStore.restoreNote(note)
+const handleAccelerate = (note: any) => notesStore.accelerateForgetting(note)
+const handleToggleCollapse = (note: any) => notesStore.toggleCollapse(note)
 </script>
 
 <template>

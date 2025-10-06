@@ -128,6 +128,7 @@ export default defineContentConfig({
                   label: z.string(),
                   value: z.string(),
                   icon: z.string().optional(),
+                  key: z.string().optional()
                 })
               )
               .optional(),
@@ -137,6 +138,17 @@ export default defineContentConfig({
           .object({
             title: z.string().optional(),
             viewDetails: z.string().optional(),
+            categories: z
+              .array(
+                z.object({
+                  name: z.string(),
+                  count: z.number().optional(),
+                  color: z.string().optional(),
+                  icon: z.string().optional(),
+                  key: z.string().optional()
+                })
+              )
+              .optional()
           })
           .optional(),
         aiStatus: z

@@ -1,4 +1,9 @@
 <script setup lang="ts">
+import { computed } from 'vue'
+import { storeToRefs } from 'pinia'
+import type { ImportanceLevel } from '~/composables/note/types'
+import { useNotesStore } from '~~/stores/notes'
+
 // 使用 app 布局
 
 definePageMeta({
@@ -16,22 +21,100 @@ const { data: homeConfig } = await useAsyncData('home', () => queryCollection('h
 // 路由导航
 const router = useRouter()
 
-// 模拟数据（实际项目中应该从 API 获取）
-const recentMemories = ref([])
-const todayStats = ref({
-  newNotes: 0,
-  processing: 0,
-  retained: 0,
-  forgotten: 0
+// 全局笔记数据
+const notesStore = useNotesStore()
+notesStore.ensureInitialized()
+
+const { notes, noteStats, importanceCounts } = storeToRefs(notesStore)
+
+const formatDateLabel = (date: Date) =>
+  new Intl.DateTimeFormat('zh-CN', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  }).format(date)
+
+const RECENT_LIMIT = 6
+
+const importanceMeta: Record<ImportanceLevel, { label: string; color: string }> = {
+  high: { label: '核心', color: 'primary' },
+  medium: { label: '重点', color: 'amber' },
+  low: { label: '随手', color: 'sky' },
+  noise: { label: '噪声', color: 'gray' }
+}
+
+const createSnippet = (content: string) => {
+  const normalized = (content ?? '').replace(/\s+/g, ' ').trim()
+  if (!normalized) {
+    return '暂无内容'
+  }
+  return normalized.length > 90 ? `${normalized.slice(0, 90)}…` : normalized
+}
+
+const derivedStats = computed(() => {
+  const stats = noteStats.value ?? { total: 0, core: 0, fading: 0, forgotten: 0 }
+  const today = formatDateLabel(new Date())
+  const newNotes = notes.value.filter(note => note.date === today).length
+  const processing = stats.fading ?? 0
+  const forgotten = stats.forgotten ?? 0
+  const retained = Math.max((stats.total ?? 0) - processing - forgotten, 0)
+
+  return {
+    newNotes,
+    processing,
+    retained,
+    forgotten
+  }
 })
 
-// 记忆分类统计
-const memoryCategories = ref([
-  { name: '重要记忆', count: 8, color: 'red', icon: 'i-lucide-star' },
-  { name: '工作笔记', count: 12, color: 'blue', icon: 'i-lucide-briefcase' },
-  { name: '学习内容', count: 5, color: 'green', icon: 'i-lucide-graduation-cap' },
-  { name: '生活记录', count: 3, color: 'purple', icon: 'i-lucide-heart' }
-])
+const statItems = computed(() => {
+  const items = homeConfig.value?.stats?.items ?? []
+  const stats = derivedStats.value
+
+  return items.map(item => {
+    const key = item.key as keyof typeof stats | undefined
+    const fallback = Number.parseInt(item.value ?? '0', 10) || 0
+    const value = key && stats[key] !== undefined ? stats[key] : fallback
+
+    return {
+      ...item,
+      resolvedValue: value
+    }
+  })
+})
+
+const memoryCategoryItems = computed(() => {
+  const categories = homeConfig.value?.memoryOverview?.categories ?? []
+
+  return categories.map(category => {
+    let count = category.count ?? 0
+    const key = category.key ?? ''
+
+    if (key.startsWith('importance.')) {
+      const importance = key.split('.')[1] as ImportanceLevel | undefined
+      if (importance && importanceCounts.value[importance] !== undefined) {
+        count = importanceCounts.value[importance]
+      }
+    }
+
+    return {
+      ...category,
+      count
+    }
+  })
+})
+
+const recentMemories = computed(() =>
+  notesStore.getRecentNotes(RECENT_LIMIT).map(note => ({
+    id: note.id,
+    title: note.title,
+    snippet: createSnippet(note.content),
+    importance: note.importance,
+    badge: importanceMeta[note.importance] ?? importanceMeta.medium,
+    lastAccessed: note.lastAccessed,
+    date: note.date
+  }))
+)
 
 // 快速导航
 const navigateTo = (path: string) => {
@@ -100,7 +183,7 @@ const navigateTo = (path: string) => {
       
       <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
         <div 
-          v-for="(stat, index) in homeConfig.stats?.items" 
+          v-for="stat in statItems" 
           :key="stat.label"
           class="text-center space-y-2"
         >
@@ -110,7 +193,7 @@ const navigateTo = (path: string) => {
             class="text-2xl text-blue-600 dark:text-blue-400 mx-auto" 
           />
           <div class="text-2xl font-bold text-gray-900 dark:text-white">
-            {{ Object.values(todayStats)[index] || stat.value }}
+            {{ stat.resolvedValue ?? stat.value }}
           </div>
           <div class="text-sm font-medium text-gray-700 dark:text-gray-300">
             {{ stat.label }}
@@ -140,7 +223,7 @@ const navigateTo = (path: string) => {
         
         <div class="space-y-4">
           <div 
-            v-for="category in memoryCategories" 
+            v-for="category in memoryCategoryItems" 
             :key="category.name"
             class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
           >
@@ -246,9 +329,32 @@ const navigateTo = (path: string) => {
       
       <!-- 记忆列表 -->
       <div v-else class="space-y-4">
-        <!-- 暂时没有数据，显示空状态 -->
-        <div class="text-center py-8 text-gray-500 dark:text-gray-400">
-          暂无最近活动
+        <div
+          v-for="item in recentMemories"
+          :key="item.id"
+          class="p-4 border border-gray-200 dark:border-gray-700 rounded-lg transition-colors hover:bg-gray-50/80 dark:hover:bg-gray-800/80"
+        >
+          <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+            <div class="space-y-2">
+              <div class="flex items-center gap-2 text-gray-900 dark:text-white">
+                <UIcon name="i-lucide-sticky-note" class="text-gray-400" />
+                <span class="font-medium">{{ item.title }}</span>
+              </div>
+              <p class="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
+                {{ item.snippet }}
+              </p>
+            </div>
+            <div class="flex flex-col items-start md:items-end gap-2">
+              <UBadge
+                :label="item.badge.label"
+                :color="(item.badge.color as any)"
+                variant="soft"
+              />
+              <div class="text-xs text-gray-500 dark:text-gray-400">
+                最近访问: {{ item.lastAccessed }} · 创建于 {{ item.date }}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </UCard>
