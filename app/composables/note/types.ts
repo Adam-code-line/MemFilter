@@ -6,6 +6,7 @@ export interface NoteRecord {
   id: number
   title: string
   content: string
+  description?: string
   date: string
   lastAccessed: string
   icon: string
@@ -21,12 +22,14 @@ export interface NoteRecord {
 export interface NoteEditorOptions {
   initialTitle?: string
   initialContent?: string
+  initialDescription?: string
   initialImportance?: ImportanceLevel
   fadeLevel?: number
   placeholders?: {
     default: string
     fading?: string
     strongFading?: string
+    description?: string
   }
   statusLabels?: {
     saved?: string
@@ -46,5 +49,6 @@ export interface NoteDashboardOptions {
 export interface NoteSavePayload {
   title: string
   content: string
+  description?: string
   importance: ImportanceLevel
 }

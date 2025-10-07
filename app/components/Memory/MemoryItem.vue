@@ -68,8 +68,7 @@
         </p>
         
         <div v-else class="collapsed-hint-small">
-          内容已折叠... 
-          <span class="expand-hint" @click.stop="$emit('expand')">展开</span>
+          内容已折叠...
         </div>
       </div>
 
@@ -158,7 +157,6 @@ const emit = defineEmits<{
   edit: []
   delete: []
   restore: []
-  expand: []
   'accelerate-forgetting': []
   forget: []
 }>()
@@ -363,16 +361,6 @@ const handleView = () => emit('view')
   font-size: 0.75rem;
   color: rgba(0, 0, 0, 0.4);
   font-style: italic;
-}
-
-.expand-hint {
-  color: rgb(59, 130, 246);
-  cursor: pointer;
-  text-decoration: underline;
-}
-
-.expand-hint:hover {
-  color: rgb(37, 99, 235);
 }
 
 /* 右侧操作区域 */

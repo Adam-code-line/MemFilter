@@ -9,7 +9,8 @@ const defaultStatusLabels = {
 const defaultPlaceholders = {
   default: '在这里记录您的想法与灵感……',
   fading: '输入笔记内容，此笔记可能会被遗忘……',
-  strongFading: '内容正在淡化中……'
+  strongFading: '内容正在淡化中……',
+  description: '写一段个人备注，帮助未来的自己快速回忆'
 }
 
 export const useNoteEditor = (options: NoteEditorOptions = {}) => {
@@ -19,6 +20,7 @@ export const useNoteEditor = (options: NoteEditorOptions = {}) => {
 
   const noteTitle = ref(options.initialTitle ?? '')
   const noteContent = ref(options.initialContent ?? '')
+  const noteDescription = ref(options.initialDescription ?? '')
   const importanceLevel = ref<ImportanceLevel>(defaultImportance)
   const fadeLevel = ref<FadeLevel>((options.fadeLevel ?? 0) as FadeLevel)
   const isSaving = ref(false)
@@ -33,6 +35,8 @@ export const useNoteEditor = (options: NoteEditorOptions = {}) => {
     if (fadeLevel.value > 0) return placeholders.fading
     return placeholders.default
   })
+
+  const descriptionPlaceholder = computed(() => placeholders.description ?? defaultPlaceholders.description)
 
   const touchContent = () => {
     saveStatus.value = statusLabels.unsaved
@@ -63,6 +67,7 @@ export const useNoteEditor = (options: NoteEditorOptions = {}) => {
   const resetContent = () => {
     noteTitle.value = ''
     noteContent.value = ''
+    noteDescription.value = ''
     importanceLevel.value = defaultImportance
     saveStatus.value = statusLabels.unsaved
     lastModified.value = ''
@@ -71,10 +76,11 @@ export const useNoteEditor = (options: NoteEditorOptions = {}) => {
   const buildSavePayload = (): NoteSavePayload => ({
     title: noteTitle.value.trim(),
     content: noteContent.value.trim(),
+    description: noteDescription.value.trim(),
     importance: importanceLevel.value
   })
 
-  if (noteContent.value) {
+  if (noteContent.value || noteDescription.value) {
     saveStatus.value = statusLabels.saved
     lastModified.value = new Date().toLocaleTimeString()
   }
@@ -83,6 +89,7 @@ export const useNoteEditor = (options: NoteEditorOptions = {}) => {
     // state
     noteTitle,
     noteContent,
+    noteDescription,
     importanceLevel,
     fadeLevel,
     isSaving,
@@ -93,6 +100,7 @@ export const useNoteEditor = (options: NoteEditorOptions = {}) => {
 
     // computed helpers
     contentPlaceholder,
+    descriptionPlaceholder,
 
     // methods
     touchContent,

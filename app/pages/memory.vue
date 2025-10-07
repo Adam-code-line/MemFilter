@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 import type { NoteRecord } from '~/composables/note'
 import { storeToRefs } from 'pinia'
 import { useNotesStore } from '~~/stores/notes'
@@ -197,10 +197,9 @@ const sections = computed(() =>
 const handleRestore = (note: NoteRecord) => notesStore.restoreNote(note)
 const handleAccelerate = (note: NoteRecord) => notesStore.accelerateForgetting(note)
 const handleForget = (note: NoteRecord) => notesStore.directForget(note)
-const handleToggleCollapse = (note: NoteRecord) => notesStore.toggleCollapse(note)
 
-const isDetailOpen = ref(false)
 const selectedNote = ref<NoteRecord | null>(null)
+const detailSectionRef = ref<HTMLElement | null>(null)
 
 const detailStatusMap: Record<'fresh' | 'fading' | 'archived', { label: string; color: string }> = {
   fresh: { label: '活跃记忆', color: 'primary' },
@@ -262,24 +261,17 @@ const detailActions = computed(() => {
     })
   }
 
-  actions.push({
-    key: 'toggle-collapse',
-    label: note.isCollapsed ? '展开内容' : '折叠内容',
-    icon: note.isCollapsed ? 'i-lucide-unfold-horizontal' : 'i-lucide-fold-horizontal',
-    color: 'neutral',
-    variant: 'ghost'
-  })
-
   return actions
 })
 
 const openDetail = (note: NoteRecord) => {
   selectedNote.value = note
-  isDetailOpen.value = true
+  nextTick(() => {
+    detailSectionRef.value?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  })
 }
 
 const closeDetail = () => {
-  isDetailOpen.value = false
   selectedNote.value = null
 }
 
@@ -298,19 +290,53 @@ const handleDetailAction = (key: string) => {
       break
     case 'forget':
       handleForget(note)
-      closeDetail()
-      break
-    case 'toggle-collapse':
-      handleToggleCollapse(note)
       break
     default:
       break
   }
 }
+
+watch(notes, newNotes => {
+  if (!newNotes.length) {
+    selectedNote.value = null
+    return
+  }
+
+  if (selectedNote.value) {
+    const refreshed = newNotes.find(item => item.id === selectedNote.value?.id)
+    if (refreshed) {
+      selectedNote.value = refreshed
+      return
+    }
+  }
+
+  selectedNote.value = newNotes[0]
+}, { immediate: true })
 </script>
 
 <template>
   <div class="max-w-6xl mx-auto space-y-10">
+    <section ref="detailSectionRef" class="space-y-4">
+      <div class="rounded-3xl border border-gray-200/70 dark:border-white/10 bg-white/90 dark:bg-slate-900/70 backdrop-blur p-5 shadow-lg">
+        <div class="flex items-center justify-between gap-3 mb-4">
+          <div>
+            <p class="text-xs uppercase tracking-[0.4em] text-primary-500/70 dark:text-primary-300/70">Memory Focus</p>
+            <h2 class="text-xl font-semibold text-gray-900 dark:text-white">记忆详情</h2>
+          </div>
+          <UButton v-if="selectedNote" variant="ghost" size="xs" icon="i-lucide-x" @click="closeDetail">
+            清除选择
+          </UButton>
+        </div>
+        <MemoryDetailPanel
+          :note="selectedNote"
+          :actions="detailActions"
+          :status-label="detailStatus?.label"
+          :status-color="detailStatus?.color"
+          @action="handleDetailAction"
+        />
+      </div>
+    </section>
+
     <section class="space-y-4">
       <div class="flex flex-col gap-3">
         <div class="flex items-center gap-3">
@@ -386,7 +412,6 @@ const handleDetailAction = (key: string) => {
             @restore="handleRestore(note)"
             @accelerate-forgetting="handleAccelerate(note)"
             @forget="handleForget(note)"
-            @toggle-collapse="handleToggleCollapse(note)"
           />
         </div>
 
@@ -401,25 +426,6 @@ const handleDetailAction = (key: string) => {
         />
       </UCard>
     </section>
-
-    <UModal v-model="isDetailOpen" :ui="{ width: 'max-w-3xl' }" @close="closeDetail">
-      <UCard class="border border-gray-200/70 dark:border-white/10">
-        <template #header>
-          <div class="flex items-center justify-between gap-3">
-            <span class="text-sm font-medium text-gray-500 dark:text-gray-300">记忆详情</span>
-            <UButton variant="ghost" icon="i-lucide-x" color="neutral" @click="closeDetail" />
-          </div>
-        </template>
-
-        <MemoryDetailPanel
-          :note="selectedNote"
-          :actions="detailActions"
-          :status-label="detailStatus?.label"
-          :status-color="detailStatus?.color"
-          @action="handleDetailAction"
-        />
-      </UCard>
-    </UModal>
   </div>
 </template>
 

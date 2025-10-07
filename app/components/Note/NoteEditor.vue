@@ -30,6 +30,19 @@
     </template>
 
     <div class="flex flex-col gap-4">
+      <div class="space-y-2">
+        <div class="flex items-center justify-between">
+          <label class="text-sm font-medium text-gray-700 dark:text-gray-200">记忆描述</label>
+          <span class="text-xs text-gray-400">为未来的自己写下提示，可选填</span>
+        </div>
+        <UTextarea
+          v-model="noteDescription"
+          :placeholder="descriptionPlaceholder"
+          :rows="3"
+          class="min-h-[6rem]"
+        />
+      </div>
+
       <UTextarea
         v-model="noteContent"
         :placeholder="contentPlaceholder"
@@ -81,6 +94,7 @@ interface EditorConfig {
     fading?: string
     strongFading?: string
   }
+  descriptionPlaceholder?: string
   actions?: {
     save?: string
     cancel?: string
@@ -100,6 +114,7 @@ interface EditorConfig {
 const props = withDefaults(defineProps<{
   initialTitle?: string
   initialContent?: string
+  initialDescription?: string
   fadeLevel?: number
   mode?: 'create' | 'edit'
   initialImportance?: ImportanceLevel
@@ -107,6 +122,7 @@ const props = withDefaults(defineProps<{
 }>(), {
   initialTitle: '',
   initialContent: '',
+  initialDescription: '',
   fadeLevel: 0,
   mode: 'create',
   initialImportance: 'medium',
@@ -120,6 +136,14 @@ const emit = defineEmits<{
 }>()
 
 const config = computed(() => props.config ?? {})
+const placeholderConfig = computed(() => {
+  const contentPlaceholders = config.value.contentPlaceholders ?? {}
+  const description = config.value.descriptionPlaceholder ?? contentPlaceholders.description
+  return {
+    ...contentPlaceholders,
+    ...(description ? { description } : {})
+  }
+})
 const metaLabels = computed(() => ({
   wordCount: config.value.metaLabels?.wordCount ?? '字数',
   readTime: config.value.metaLabels?.readTime ?? '预计阅读',
@@ -129,6 +153,7 @@ const metaLabels = computed(() => ({
 const {
   noteTitle,
   noteContent,
+  noteDescription,
   importanceLevel,
   fadeLevel,
   isSaving,
@@ -137,6 +162,7 @@ const {
   contentLength,
   estimatedReadTime,
   contentPlaceholder,
+  descriptionPlaceholder,
   touchContent,
   beginSaving,
   finishSaving,
@@ -149,9 +175,10 @@ const {
 } = useNoteEditor({
   initialTitle: props.initialTitle,
   initialContent: props.initialContent,
+  initialDescription: props.initialDescription,
   initialImportance: props.initialImportance,
   fadeLevel: props.fadeLevel,
-  placeholders: config.value.contentPlaceholders,
+  placeholders: placeholderConfig.value,
   statusLabels: config.value.status
 })
 
@@ -193,18 +220,19 @@ const normalizeFadeLevel = (value?: number) => {
 }
 
 watch(
-  () => [props.mode, props.initialTitle, props.initialContent, props.fadeLevel, props.initialImportance] as const,
-  ([mode, title, content, fade, importance]) => {
-    const hasEditPayload = title !== undefined || content !== undefined
+  () => [props.mode, props.initialTitle, props.initialContent, props.fadeLevel, props.initialImportance, props.initialDescription] as const,
+  ([mode, title, content, fade, importance, description]) => {
+    const hasEditPayload = title !== undefined || content !== undefined || description !== undefined
     const normalizedFade = normalizeFadeLevel(fade)
 
     if (mode === 'edit' && hasEditPayload) {
       noteTitle.value = title ?? ''
       noteContent.value = content ?? ''
+      noteDescription.value = description ?? ''
       setFadeLevel(normalizedFade)
       setImportanceLevel(importance ?? 'medium')
 
-      saveStatus.value = noteContent.value ? statusLabels.saved : statusLabels.unsaved
+      saveStatus.value = (noteContent.value || noteDescription.value) ? statusLabels.saved : statusLabels.unsaved
 
       lastModified.value = ''
       return
@@ -221,6 +249,11 @@ watch(noteContent, (value, oldValue) => {
   if (value === oldValue) return
   touchContent()
   emit('content-change', value)
+})
+
+watch(noteDescription, (value, oldValue) => {
+  if (value === oldValue) return
+  touchContent()
 })
 
 watch(noteTitle, (value, oldValue) => {

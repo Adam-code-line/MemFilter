@@ -83,7 +83,7 @@
           {{ displaySnippet }}
         </div>
         <div v-else class="collapsed-hint text-xs text-gray-400 italic">
-          内容已折叠... <span class="text-blue-400 cursor-pointer" @click="handleToggleCollapse">展开查看</span>
+          内容已折叠...
         </div>
         
         <!-- 遗忘提示 -->
@@ -183,7 +183,6 @@ const emit = defineEmits<{
   restore: []
   'accelerate-forgetting': []
   forget: []
-  'toggle-collapse': []
 }>()
 
 const note = toRefs(props)
@@ -216,7 +215,6 @@ const handleOpen = () => emit('open')
 const handleRestore = () => emit('restore')
 const handleAccelerate = () => emit('accelerate-forgetting')
 const handleForget = () => emit('forget')
-const handleToggleCollapse = () => emit('toggle-collapse')
 </script>
 
 <style scoped>

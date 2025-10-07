@@ -227,6 +227,7 @@ const handleContentChange = (_value: string) => {
             class="w-full"
             :initial-title="editingNote?.title"
             :initial-content="editingNote?.content"
+            :initial-description="editingNote?.description"
             :fade-level="editingNote?.fadeLevel ?? 0"
             :initial-importance="editingNote?.importance"
             :mode="editorMode"

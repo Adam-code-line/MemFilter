@@ -139,6 +139,7 @@ const normalizeRecord = (record: Partial<NoteRecord> & { id?: number }): NoteRec
     id: record.id ?? now.getTime(),
     title: record.title ?? '未命名笔记',
     content: record.content ?? '',
+    description: record.description ?? '',
     date: record.date ?? formatDateLabel(now),
     lastAccessed: record.lastAccessed ?? '刚刚',
     icon: record.icon ?? '📝',
@@ -412,6 +413,7 @@ export const useNotesStore = defineStore('notes', () => {
         ...notes.value[index],
         title: payload.title,
         content: payload.content,
+        description: payload.description ?? '',
         importance: payload.importance,
         lastAccessed: '刚刚'
       }, dashboardOptions.value, { forceProgressReset: true })
@@ -425,6 +427,7 @@ export const useNotesStore = defineStore('notes', () => {
       id,
       title: payload.title,
       content: payload.content,
+      description: payload.description ?? '',
       date: formatDateLabel(now),
       lastAccessed: '刚刚',
       icon: '📝',
@@ -485,20 +488,8 @@ export const useNotesStore = defineStore('notes', () => {
       isCollapsed: true,
       lastAccessed: '刚刚',
       importanceScore: evaluation.importanceScore,
-      decayRate: evaluation.decayRate
-    })
-  }
-
-  const toggleCollapse = (target: NoteRecord) => {
-    const index = notes.value.findIndex(item => item.id === target.id)
-    if (index === -1) {
-      return
-    }
-
-    const current = notes.value[index]
-    notes.value.splice(index, 1, {
-      ...current,
-      isCollapsed: !current.isCollapsed
+      decayRate: evaluation.decayRate,
+      description: current.description
     })
   }
 
@@ -514,8 +505,7 @@ export const useNotesStore = defineStore('notes', () => {
     upsertNote,
     restoreNote,
     accelerateForgetting,
-    directForget,
-    toggleCollapse
+    directForget
   }
 })
 

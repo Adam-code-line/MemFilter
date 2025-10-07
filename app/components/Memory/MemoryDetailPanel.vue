@@ -83,6 +83,18 @@
       </UCard>
     </div>
 
+    <UCard class="border border-gray-200/70 dark:border-white/10 bg-white/65 dark:bg-slate-900/40">
+      <template #header>
+        <div class="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-200">
+          <UIcon name="i-lucide-quote" />
+          个人描述
+        </div>
+      </template>
+      <div class="text-sm leading-relaxed text-gray-700 dark:text-gray-100 whitespace-pre-wrap">
+        {{ descriptionText || '暂无描述，您可以在编辑笔记时补充一段备注。' }}
+      </div>
+    </UCard>
+
     <UCard class="border border-gray-200/70 dark:border-white/10">
       <template #header>
         <div class="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-200">
@@ -130,6 +142,7 @@ interface MemoryDetailRecord {
   id?: number | string
   title?: string
   content?: string
+  description?: string
   date?: string
   lastAccessed?: string
   icon?: string
@@ -165,6 +178,7 @@ const emit = defineEmits<{ action: [string] }>()
 
 const detail = computed(() => props.note ?? {})
 const hasNote = computed(() => !!props.note)
+const descriptionText = computed(() => (detail.value.description ?? '').trim())
 
 const derivedImportance = computed<MemoryImportance>(() => detail.value.importance ?? 'medium')
 const derivedFadeLevel = computed<MemoryFadeLevel>(() => detail.value.fadeLevel ?? 0)

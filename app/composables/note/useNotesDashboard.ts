@@ -43,7 +43,8 @@ export const useNotesDashboard = (options: NoteDashboardOptions = {}) => {
       const query = searchQuery.value.trim().toLowerCase()
       data = data.filter(note =>
         note.title.toLowerCase().includes(query) ||
-        note.content.toLowerCase().includes(query)
+        note.content.toLowerCase().includes(query) ||
+        (note.description ?? '').toLowerCase().includes(query)
       )
     }
 
@@ -112,10 +113,6 @@ export const useNotesDashboard = (options: NoteDashboardOptions = {}) => {
     notesStore.directForget(note)
   }
 
-  const toggleCollapse = (note: NoteRecord) => {
-    notesStore.toggleCollapse(note)
-  }
-
   const saveNote = (payload: NoteSavePayload) => {
     if (!payload.title || !payload.content) {
       return
@@ -162,7 +159,6 @@ export const useNotesDashboard = (options: NoteDashboardOptions = {}) => {
     saveNote,
     restoreNote,
     accelerateForgetting,
-    forgetNote,
-    toggleCollapse
+    forgetNote
   }
 }

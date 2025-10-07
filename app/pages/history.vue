@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 import { useToast } from '#imports'
 import { useNotesDashboard } from '~/composables/note'
 import { useHistoryContent, useHistoryRecords } from '~/composables/history'
@@ -68,7 +68,7 @@ const importanceLabels: Record<string, string> = {
 }
 
 const inspectedRecord = ref<HistoryRecord | null>(null)
-const isModalOpen = ref(false)
+const detailSectionRef = ref<HTMLElement | null>(null)
 
 const detailStatusMap: Record<HistoryRecord['status'], { label: string; color: string }> = {
 	recoverable: { label: '等待决策', color: 'warning' },
@@ -121,12 +121,16 @@ const openRecordDetail = (recordId: number) => {
 	].find(item => item.id === recordId)
 
 	inspectedRecord.value = record ?? null
-	isModalOpen.value = !!record
+
+	if (record) {
+		nextTick(() => {
+			detailSectionRef.value?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+		})
+	}
 }
 
 const closeRecordDetail = () => {
 	inspectedRecord.value = null
-	isModalOpen.value = false
 }
 
 const handleRestore = (record: HistoryRecord) => {
@@ -155,10 +159,57 @@ const handleDetailAction = (key: string) => {
 }
 
 const heroAction = computed(() => heroSection.value?.action ?? null)
+
+const allRecords = computed(() => {
+	const groups = historyRecords.groupedRecords.value
+	return [
+		...groups.recoverable,
+		...groups.archived,
+		...groups.purged
+	]
+})
+
+watch(allRecords, records => {
+	if (!records.length) {
+		inspectedRecord.value = null
+		return
+	}
+
+	if (inspectedRecord.value) {
+		const refreshed = records.find(entry => entry.id === inspectedRecord.value?.id)
+		if (refreshed) {
+			inspectedRecord.value = refreshed
+			return
+		}
+	}
+
+	inspectedRecord.value = records[0]
+}, { immediate: true })
 </script>
 
 <template>
 	<div class="max-w-6xl mx-auto space-y-12 pb-20">
+		<section ref="detailSectionRef" class="space-y-4">
+			<div class="rounded-3xl border border-gray-200/70 dark:border-white/10 bg-white/90 dark:bg-slate-900/70 backdrop-blur p-5 shadow-lg">
+				<div class="flex items-center justify-between gap-3 mb-4">
+					<div>
+						<p class="text-xs uppercase tracking-[0.4em] text-primary-500/70 dark:text-primary-300/70">History Focus</p>
+						<h2 class="text-xl font-semibold text-gray-900 dark:text-white">记忆日志详情</h2>
+					</div>
+					<UButton v-if="inspectedRecord" variant="ghost" size="xs" icon="i-lucide-x" @click="closeRecordDetail">
+						清除选择
+					</UButton>
+				</div>
+				<MemoryDetailPanel
+					:note="inspectedRecord"
+					:actions="detailActions"
+					:status-label="detailStatus?.label"
+					:status-color="detailStatus?.color"
+					@action="handleDetailAction"
+				/>
+			</div>
+		</section>
+
 		<section class="space-y-6">
 			<div class="flex flex-col gap-3">
 				<div class="flex items-center gap-3">
@@ -269,23 +320,5 @@ const heroAction = computed(() => heroSection.value?.action ?? null)
 			/>
 		</section>
 
-		<UModal v-model="isModalOpen" :ui="{ width: 'max-w-3xl' }" @close="closeRecordDetail">
-			<UCard class="border border-gray-200/70 dark:border-white/10">
-				<template #header>
-					<div class="flex items-center justify-between gap-3">
-						<span class="text-sm font-medium text-gray-500 dark:text-gray-300">记忆详情</span>
-						<UButton variant="ghost" icon="i-lucide-x" color="neutral" @click="closeRecordDetail" />
-					</div>
-				</template>
-
-				<MemoryDetailPanel
-					:note="inspectedRecord"
-					:actions="detailActions"
-					:status-label="detailStatus?.label"
-					:status-color="detailStatus?.color"
-					@action="handleDetailAction"
-				/>
-			</UCard>
-		</UModal>
 	</div>
 </template>
