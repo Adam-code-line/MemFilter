@@ -6,6 +6,30 @@ badge:
   icon: i-lucide-history
 intro:
   description: 跟随忆滤的遗忘引擎回顾记忆变化：查看活跃片段、正在淡化的内容以及已归档的噪声，掌控每一次恢复与遗忘决策。
+detail:
+  eyebrow: Memory Focus
+  title: 记忆详情
+  clearLabel: 清除选择
+  emptyFallback:
+    title: 暂无内容
+    description: 稍后再来看看。
+  actions:
+    restore:
+      label: 恢复记忆
+      icon: i-lucide-rotate-ccw
+      color: primary
+      variant: soft
+    accelerate:
+      label: 加速遗忘
+      icon: i-lucide-brain
+      color: warning
+      variant: soft
+    forget:
+      label: 直接遗忘
+      icon: i-lucide-zap-off
+      color: error
+      variant: ghost
+      tooltip: 立即将记忆标记为完全淡化并归档。
 overview:
   stats:
     - key: fresh

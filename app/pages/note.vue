@@ -1,17 +1,11 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useNotesDashboard } from '~/composables/note'
+import { useNoteContent, useNotesDashboard } from '~/composables/note'
 import type { ImportanceLevel, NoteSavePayload } from '~/composables/note'
 
 definePageMeta({
   layout: 'app'
 })
-
-useHead({
-  title: '笔记管理'
-})
-
-const { data: noteCopy } = await useAsyncData('note-config', () => queryCollection('note').first())
 
 const {
   notes,
@@ -29,25 +23,27 @@ const {
   saveNote
 } = useNotesDashboard()
 
-const noteConfig = computed(() => noteCopy.value ?? null)
+const {
+  badge: headerBadge,
+  pageTitle,
+  pageSubtitle,
+  filters: filtersConfig,
+  list: listConfig,
+  emptyState: emptyStateConfig,
+  editor: editorConfig,
+  defaults: noteDefaults
+} = await useNoteContent()
 
-const defaultImportanceOptions = [
-  { label: '全部', value: 'all', icon: 'i-lucide-layers' },
-  { label: '核心笔记', value: 'high', icon: 'i-lucide-rocket' },
-  { label: '重要笔记', value: 'medium', icon: 'i-lucide-target' },
-  { label: '次要笔记', value: 'low', icon: 'i-lucide-sparkles' },
-  { label: '噪声信息', value: 'noise', icon: 'i-lucide-waves' }
-]
+useHead(() => ({
+  title: pageTitle.value ?? noteDefaults.pageTitle
+}))
 
-const importanceOptions = computed(() => noteConfig.value?.filters?.importance ?? defaultImportanceOptions)
-const searchPlaceholder = computed(() => noteConfig.value?.filters?.searchPlaceholder ?? '搜索笔记内容...')
+const importanceOptions = computed(() => filtersConfig.value.importance ?? noteDefaults.importanceOptions)
+const searchPlaceholder = computed(() => filtersConfig.value.searchPlaceholder ?? noteDefaults.filters.searchPlaceholder)
 
-const headerBadge = computed(() => noteConfig.value?.badge)
-const headerTitle = computed(() => noteConfig.value?.title ?? '笔记编辑')
-const headerSubtitle = computed(() => noteConfig.value?.subtitle ?? '')
-const emptyState = computed(() => noteConfig.value?.emptyState ?? null)
-const editorConfig = computed(() => noteConfig.value?.editor ?? {})
-const listConfig = computed(() => noteConfig.value?.list ?? null)
+const headerTitle = computed(() => pageTitle.value ?? noteDefaults.pageTitle)
+const headerSubtitle = computed(() => pageSubtitle.value ?? noteDefaults.pageSubtitle)
+const emptyState = computed(() => emptyStateConfig.value ?? noteDefaults.emptyState)
 
 const importanceBadgeMap: Record<ImportanceLevel, { label: string; color: string; variant: 'solid' | 'soft' | 'subtle' | 'outline'; icon: string }> = {
   high: { label: '核心记忆', color: 'primary', variant: 'solid', icon: 'i-lucide-flame' },
@@ -77,15 +73,15 @@ const isEditingExisting = computed(() => editorMode.value === 'edit' && !!editin
 
 const editingBadge = computed(() => (editingNote.value ? resolveImportanceBadge(editingNote.value.importance) : null))
 
-const listEmpty = computed(() => listConfig.value?.empty ?? null)
-const noteListHeader = computed(() => listConfig.value?.title ?? '笔记列表')
-const noteCreateLabel = computed(() => listConfig.value?.createLabel ?? '新建笔记')
-const totalNotesLabel = computed(() => listConfig.value?.totalLabel ?? '全部笔记')
-const listHeaderIcon = computed(() => listConfig.value?.icon ?? 'i-lucide-notebook-pen')
-const emptyListTitle = computed(() => listEmpty.value?.title ?? emptyState.value?.title ?? '暂无笔记')
-const emptyListDescription = computed(() => listEmpty.value?.description ?? emptyState.value?.description ?? '开始创建您的第一条笔记。')
-const emptyListActionLabel = computed(() => listEmpty.value?.action?.label ?? emptyState.value?.action?.label ?? noteCreateLabel.value)
-const emptyListActionIcon = computed(() => listEmpty.value?.action?.icon ?? emptyState.value?.action?.icon ?? 'i-lucide-plus')
+const listEmpty = computed(() => listConfig.value?.empty ?? noteDefaults.list.empty)
+const noteListHeader = computed(() => listConfig.value?.title ?? noteDefaults.list.title)
+const noteCreateLabel = computed(() => listConfig.value?.createLabel ?? noteDefaults.list.createLabel)
+const totalNotesLabel = computed(() => listConfig.value?.totalLabel ?? noteDefaults.list.totalLabel)
+const listHeaderIcon = computed(() => listConfig.value?.icon ?? noteDefaults.list.icon ?? 'i-lucide-notebook-pen')
+const emptyListTitle = computed(() => listEmpty.value?.title ?? emptyState.value?.title ?? noteDefaults.list.empty.title)
+const emptyListDescription = computed(() => listEmpty.value?.description ?? emptyState.value?.description ?? noteDefaults.list.empty.description)
+const emptyListActionLabel = computed(() => listEmpty.value?.action?.label ?? emptyState.value?.action?.label ?? noteDefaults.list.empty.action.label)
+const emptyListActionIcon = computed(() => listEmpty.value?.action?.icon ?? emptyState.value?.action?.icon ?? noteDefaults.list.empty.action.icon ?? 'i-lucide-plus')
 const emptyListIcon = computed(() => emptyState.value?.icon ?? 'i-lucide-notebook')
 
 const noteItems = computed(() =>
@@ -195,7 +191,7 @@ const handleContentChange = (_value: string) => {
                   class="shrink-0"
                   @click="openEditorForNew"
                 >
-                  新建
+                  {{ noteCreateLabel }}
                 </UButton>
               </div>
               <p class="text-sm text-gray-500 dark:text-gray-400">

@@ -113,6 +113,10 @@ export const useNotesDashboard = (options: NoteDashboardOptions = {}) => {
     notesStore.directForget(note)
   }
 
+  const purgeNote = (note: NoteRecord) => {
+    return notesStore.purgeNote(note)
+  }
+
   const saveNote = (payload: NoteSavePayload) => {
     if (!payload.title || !payload.content) {
       return
@@ -159,6 +163,7 @@ export const useNotesDashboard = (options: NoteDashboardOptions = {}) => {
     saveNote,
     restoreNote,
     accelerateForgetting,
-    forgetNote
+    forgetNote,
+    purgeNote
   }
 }

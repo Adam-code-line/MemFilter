@@ -493,6 +493,16 @@ export const useNotesStore = defineStore('notes', () => {
     })
   }
 
+  const purgeNote = (target: NoteRecord) => {
+    const index = notes.value.findIndex(item => item.id === target.id)
+    if (index === -1) {
+      return null
+    }
+
+    const [removed] = notes.value.splice(index, 1)
+    return removed
+  }
+
   return {
     notes,
     isHydrated,
@@ -505,7 +515,8 @@ export const useNotesStore = defineStore('notes', () => {
     upsertNote,
     restoreNote,
     accelerateForgetting,
-    directForget
+    directForget,
+    purgeNote
   }
 })
 

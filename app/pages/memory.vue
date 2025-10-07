@@ -1,15 +1,12 @@
 <script setup lang="ts">
-import { computed, nextTick, ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import type { NoteRecord } from '~/composables/note'
 import { storeToRefs } from 'pinia'
 import { useNotesStore } from '~~/stores/notes'
+import { useMemoryContent } from '~/composables/memory/useMemoryContent'
 
 definePageMeta({
   layout: 'app'
-})
-
-useHead({
-  title: '记忆回溯'
 })
 
 const notesStore = useNotesStore()
@@ -37,72 +34,6 @@ const sortByImportance = (collection: any[]) =>
     }
     return (a.fadeLevel ?? 0) - (b.fadeLevel ?? 0)
   })
-
-const { data: memoryCopy } = await useAsyncData('memory-config', () => queryCollection('memory').first())
-
-const memoryConfig = computed(() => memoryCopy.value ?? null)
-
-const defaultIntroDescription = '跟随忆滤的遗忘引擎回顾记忆变化：查看活跃片段、正在淡化的内容以及已归档的噪声，掌控每一次恢复与遗忘决策。'
-
-const defaultStats = [
-  {
-    key: 'fresh' as const,
-    label: '活跃记忆',
-    description: '保持清晰的重点内容，可随时继续编辑。',
-    icon: 'i-lucide-flame',
-    color: 'primary' as const
-  },
-  {
-    key: 'fading' as const,
-    label: '正在淡化',
-    description: '自动模糊的记忆，决定是挽救还是让其自然遗忘。',
-    icon: 'i-lucide-timer',
-    color: 'warning' as const
-  },
-  {
-    key: 'archived' as const,
-    label: '归档片段',
-    description: '噪声或陈旧内容处于折叠状态，随需恢复。',
-    icon: 'i-lucide-archive',
-    color: 'neutral' as const
-  }
-]
-
-const defaultSections = [
-  {
-    key: 'fresh' as const,
-    title: '活跃记忆',
-    description: '近期创建且仍保持清晰的高价值信息。',
-    icon: 'i-lucide-flame',
-    accent: 'primary' as const,
-    empty: {
-      title: '最近记忆充沛',
-      description: '保持记录习惯，重要记忆将继续清晰呈现。'
-    }
-  },
-  {
-    key: 'fading' as const,
-    title: '正在淡化',
-    description: '处于艾宾浩斯遗忘曲线中的内容，可选择恢复或加速遗忘。',
-    icon: 'i-lucide-timer',
-    accent: 'warning' as const,
-    empty: {
-      title: '暂时没有淡化内容',
-      description: '没有需要处理的淡化记忆，稍后再来看看。'
-    }
-  },
-  {
-    key: 'archived' as const,
-    title: '归档记忆',
-    description: '已经折叠的低价值或噪声片段，随时可以恢复。',
-    icon: 'i-lucide-archive',
-    accent: 'neutral' as const,
-    empty: {
-      title: '归档区空空如也',
-      description: '暂无归档记忆，可以继续整理重要内容。'
-    }
-  }
-]
 
 const resolveMemoryBucket = (note: any): 'fresh' | 'fading' | 'archived' => {
   const fadeLevel = note.fadeLevel ?? 0
@@ -146,12 +77,83 @@ const categorizedMemories = computed(() => {
   }
 })
 
-const badge = computed(() => memoryConfig.value?.badge ?? null)
-const pageTitle = computed(() => memoryConfig.value?.title ?? '记忆回溯')
-const pageSubtitle = computed(() => memoryConfig.value?.subtitle ?? '遗忘日志与记忆轨迹')
-const introDescription = computed(() => memoryConfig.value?.intro?.description ?? defaultIntroDescription)
-const statsSource = computed(() => memoryConfig.value?.overview?.stats ?? defaultStats)
-const sectionSource = computed(() => memoryConfig.value?.sections ?? defaultSections)
+const {
+  badge,
+  pageTitle,
+  pageSubtitle,
+  introDescription,
+  statsSource,
+  sectionSource,
+  detail,
+  defaults: memoryDefaults
+} = await useMemoryContent()
+
+useHead(() => ({
+  title: pageTitle.value ?? '记忆回溯'
+}))
+
+const forgetConfirm = ref<{
+  open: boolean
+  note: NoteRecord | null
+  title: string
+  description: string
+  confirmLabel: string
+  confirmColor: 'primary' | 'secondary' | 'neutral' | 'error' | 'warning' | 'success' | 'info'
+  confirmVariant: 'solid' | 'soft' | 'subtle' | 'outline' | 'ghost'
+  icon: string
+}>(
+  {
+    open: false,
+    note: null,
+    title: '',
+    description: '',
+    confirmLabel: '确认',
+    confirmColor: 'error',
+    confirmVariant: 'solid',
+    icon: 'i-lucide-alert-triangle'
+  }
+)
+
+const openCoreForgetConfirm = (note: NoteRecord) => {
+  forgetConfirm.value = {
+    open: true,
+    note,
+    title: '确认折叠核心记忆？',
+    description: `《${note.title || '未命名笔记'}》被标记为核心记忆，确认后将进入折叠区，可在遗忘日志中彻底清理。`,
+    confirmLabel: '确认遗忘',
+    confirmColor: 'error',
+    confirmVariant: 'solid',
+    icon: 'i-lucide-shield-alert'
+  }
+}
+
+watch(
+  () => forgetConfirm.value.open,
+  value => {
+    if (!value) {
+      forgetConfirm.value.note = null
+      forgetConfirm.value.title = ''
+      forgetConfirm.value.description = ''
+      forgetConfirm.value.confirmLabel = '确认'
+      forgetConfirm.value.confirmColor = 'error'
+      forgetConfirm.value.confirmVariant = 'solid'
+      forgetConfirm.value.icon = 'i-lucide-alert-triangle'
+    }
+  }
+)
+
+const resetForgetConfirm = () => {
+  forgetConfirm.value = {
+    open: false,
+    note: null,
+    title: '',
+    description: '',
+    confirmLabel: '确认',
+    confirmColor: 'error',
+    confirmVariant: 'solid',
+    icon: 'i-lucide-alert-triangle'
+  }
+}
 
 const statColorMap: Record<string, string> = {
   primary: 'text-primary-500',
@@ -165,9 +167,11 @@ const statColorMap: Record<string, string> = {
 
 const stats = computed(() =>
   statsSource.value.map(stat => {
+    const defaults = memoryDefaults.stats.find(item => item.key === stat.key)
     const key = stat.key as keyof typeof categorizedMemories.value
     const value = categorizedMemories.value[key]?.length ?? 0
     return {
+      ...(defaults ?? {}),
       ...stat,
       value,
       colorClass: stat.color ? statColorMap[stat.color] ?? 'text-primary-500' : 'text-primary-500'
@@ -177,18 +181,18 @@ const stats = computed(() =>
 
 const sections = computed(() =>
   sectionSource.value.map(section => {
-    const defaults = defaultSections.find(item => item.key === section.key)
+    const defaults = memoryDefaults.sections.find(item => item.key === section.key)
     const items = categorizedMemories.value[section.key] ?? []
     const emptyDefaults = defaults?.empty ?? {}
     return {
-      ...defaults,
+      ...(defaults ?? {}),
       ...section,
       items,
       count: items.length,
       accent: section.accent ?? defaults?.accent ?? 'neutral',
       empty: {
-        title: section.empty?.title ?? emptyDefaults.title ?? '',
-        description: section.empty?.description ?? emptyDefaults.description ?? ''
+        title: section.empty?.title ?? emptyDefaults.title ?? detail.value.emptyFallback.title ?? '',
+        description: section.empty?.description ?? emptyDefaults.description ?? detail.value.emptyFallback.description ?? ''
       }
     }
   })
@@ -198,21 +202,43 @@ const handleRestore = (note: NoteRecord) => notesStore.restoreNote(note)
 const handleAccelerate = (note: NoteRecord) => notesStore.accelerateForgetting(note)
 const handleForget = (note: NoteRecord) => notesStore.directForget(note)
 
-const selectedNote = ref<NoteRecord | null>(null)
-const detailSectionRef = ref<HTMLElement | null>(null)
-
-const detailStatusMap: Record<'fresh' | 'fading' | 'archived', { label: string; color: string }> = {
-  fresh: { label: '活跃记忆', color: 'primary' },
-  fading: { label: '正在淡化', color: 'warning' },
-  archived: { label: '归档记忆', color: 'neutral' }
+const requestForget = (note: NoteRecord) => {
+  if (note.importance === 'high') {
+    openCoreForgetConfirm(note)
+  } else {
+    handleForget(note)
+  }
 }
+
+const confirmCoreForget = () => {
+  const note = forgetConfirm.value.note
+  if (!note) {
+    return
+  }
+  handleForget(note)
+  resetForgetConfirm()
+}
+
+const selectedNote = ref<NoteRecord | null>(null)
+const detailDialogOpen = ref(false)
 
 const detailStatus = computed(() => {
   if (!selectedNote.value) {
     return null
   }
+  if ((selectedNote.value.fadeLevel ?? 0) >= 4) {
+    return {
+      label: '已彻底遗忘',
+      color: 'error'
+    }
+  }
   const bucket = resolveMemoryBucket(selectedNote.value)
-  return detailStatusMap[bucket]
+  const sectionDefaults = memoryDefaults.sections.find(item => item.key === bucket)
+  const sectionConfig = sectionSource.value.find(item => item.key === bucket)
+  return {
+    label: sectionConfig?.title ?? sectionDefaults?.title ?? '',
+    color: sectionConfig?.accent ?? sectionDefaults?.accent ?? 'primary'
+  }
 })
 
 const detailActions = computed(() => {
@@ -221,6 +247,7 @@ const detailActions = computed(() => {
     return []
   }
 
+  const actionsConfig = detail.value.actions
   const actions: Array<{
     key: string
     label: string
@@ -233,31 +260,21 @@ const detailActions = computed(() => {
   if ((note.fadeLevel ?? 0) > 0 || note.isCollapsed) {
     actions.push({
       key: 'restore',
-      label: '恢复记忆',
-      icon: 'i-lucide-rotate-ccw',
-      color: 'primary',
-      variant: 'soft'
+      ...actionsConfig.restore
     })
   }
 
   if ((note.forgettingProgress ?? 0) < 100 && (note.fadeLevel ?? 0) < 4) {
     actions.push({
       key: 'accelerate',
-      label: '加速遗忘',
-      icon: 'i-lucide-brain',
-      color: 'warning',
-      variant: 'soft'
+      ...actionsConfig.accelerate
     })
   }
 
   if ((note.fadeLevel ?? 0) < 4) {
     actions.push({
       key: 'forget',
-      label: '直接遗忘',
-      icon: 'i-lucide-zap-off',
-      color: 'error',
-      variant: 'ghost',
-      tooltip: '立即将记忆标记为完全淡化并归档。'
+      ...actionsConfig.forget
     })
   }
 
@@ -266,13 +283,11 @@ const detailActions = computed(() => {
 
 const openDetail = (note: NoteRecord) => {
   selectedNote.value = note
-  nextTick(() => {
-    detailSectionRef.value?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-  })
+  detailDialogOpen.value = true
 }
 
 const closeDetail = () => {
-  selectedNote.value = null
+  detailDialogOpen.value = false
 }
 
 const handleDetailAction = (key: string) => {
@@ -289,7 +304,7 @@ const handleDetailAction = (key: string) => {
       handleAccelerate(note)
       break
     case 'forget':
-      handleForget(note)
+      requestForget(note)
       break
     default:
       break
@@ -299,6 +314,7 @@ const handleDetailAction = (key: string) => {
 watch(notes, newNotes => {
   if (!newNotes.length) {
     selectedNote.value = null
+    detailDialogOpen.value = false
     return
   }
 
@@ -316,27 +332,6 @@ watch(notes, newNotes => {
 
 <template>
   <div class="max-w-6xl mx-auto space-y-10">
-    <section ref="detailSectionRef" class="space-y-4">
-      <div class="rounded-3xl border border-gray-200/70 dark:border-white/10 bg-white/90 dark:bg-slate-900/70 backdrop-blur p-5 shadow-lg">
-        <div class="flex items-center justify-between gap-3 mb-4">
-          <div>
-            <p class="text-xs uppercase tracking-[0.4em] text-primary-500/70 dark:text-primary-300/70">Memory Focus</p>
-            <h2 class="text-xl font-semibold text-gray-900 dark:text-white">记忆详情</h2>
-          </div>
-          <UButton v-if="selectedNote" variant="ghost" size="xs" icon="i-lucide-x" @click="closeDetail">
-            清除选择
-          </UButton>
-        </div>
-        <MemoryDetailPanel
-          :note="selectedNote"
-          :actions="detailActions"
-          :status-label="detailStatus?.label"
-          :status-color="detailStatus?.color"
-          @action="handleDetailAction"
-        />
-      </div>
-    </section>
-
     <section class="space-y-4">
       <div class="flex flex-col gap-3">
         <div class="flex items-center gap-3">
@@ -411,15 +406,15 @@ watch(notes, newNotes => {
             @open="openDetail(note)"
             @restore="handleRestore(note)"
             @accelerate-forgetting="handleAccelerate(note)"
-            @forget="handleForget(note)"
+            @forget="requestForget(note)"
           />
         </div>
 
         <UAlert
           v-else
           icon="i-lucide-check-circle-2"
-          :title="section.empty.title || '暂无内容'"
-          :description="section.empty.description || '稍后再来看看。'"
+          :title="section.empty.title || detail.emptyFallback.title || '暂无内容'"
+          :description="section.empty.description || detail.emptyFallback.description || '稍后再来看看。'"
           color="neutral"
           variant="soft"
           class="border border-dashed border-gray-300/60 dark:border-white/20"
@@ -427,6 +422,31 @@ watch(notes, newNotes => {
       </UCard>
     </section>
   </div>
+
+  <CommonConfirmDialog
+    v-model="forgetConfirm.open"
+    :title="forgetConfirm.title"
+    :description="forgetConfirm.description"
+    :icon="forgetConfirm.icon"
+    :confirm-label="forgetConfirm.confirmLabel"
+    :confirm-color="forgetConfirm.confirmColor"
+    :confirm-variant="forgetConfirm.confirmVariant"
+    @confirm="confirmCoreForget"
+    @cancel="resetForgetConfirm"
+  />
+
+  <MemoryDetailDialog
+    v-model="detailDialogOpen"
+    :title="detail.title"
+    :eyebrow="detail.eyebrow"
+    :clear-label="detail.clearLabel"
+    :note="selectedNote"
+    :actions="detailActions"
+    :status-label="detailStatus?.label"
+    :status-color="detailStatus?.color"
+    @action="handleDetailAction"
+    @close="closeDetail"
+  />
 </template>
 
 <style scoped>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useToast } from '#imports'
 import { useNotesDashboard } from '~/composables/note'
 import { useHistoryContent, useHistoryRecords } from '~/composables/history'
@@ -19,7 +19,8 @@ const { content } = await useHistoryContent()
 
 const historyRecords = useHistoryRecords({
 	notes: notesContext.notes,
-	restoreNote: notesContext.restoreNote
+	restoreNote: notesContext.restoreNote,
+	purgeNote: notesContext.purgeNote
 })
 
 const groupedRecordsRef = historyRecords.groupedRecords
@@ -60,6 +61,28 @@ const timelineConfig = computed(() => content.value.timeline ?? null)
 const restoreLogConfig = computed(() => content.value.restoreLog ?? null)
 const restoreLogItems = restoreLogRef
 
+const purgeConfirm = ref<{
+	open: boolean
+	record: HistoryRecord | null
+	title: string
+	description: string
+	confirmLabel: string
+	confirmColor: 'primary' | 'secondary' | 'neutral' | 'error' | 'warning' | 'success' | 'info'
+	confirmVariant: 'solid' | 'soft' | 'subtle' | 'outline' | 'ghost'
+	icon: string
+}>(
+	{
+		open: false,
+		record: null,
+		title: '',
+		description: '',
+		confirmLabel: '彻底遗忘',
+		confirmColor: 'error',
+		confirmVariant: 'solid',
+		icon: 'i-lucide-trash-2'
+	}
+)
+
 const importanceLabels: Record<string, string> = {
 	high: '核心',
 	medium: '重要',
@@ -68,12 +91,12 @@ const importanceLabels: Record<string, string> = {
 }
 
 const inspectedRecord = ref<HistoryRecord | null>(null)
-const detailSectionRef = ref<HTMLElement | null>(null)
+const detailDialogOpen = ref(false)
 
 const detailStatusMap: Record<HistoryRecord['status'], { label: string; color: string }> = {
 	recoverable: { label: '等待决策', color: 'warning' },
 	archived: { label: '已折叠', color: 'neutral' },
-	purged: { label: '已清理', color: 'error' }
+	purged: { label: '已彻底遗忘', color: 'error' }
 }
 
 const detailStatus = computed(() => {
@@ -101,15 +124,33 @@ const detailActions = computed(() => {
 		]
 	}
 
-	return [
-		{
-			key: 'restore',
-			label: '恢复记忆',
-			icon: 'i-lucide-rotate-ccw',
-			color: 'primary',
-			variant: 'solid' as const
-		}
-	]
+	const actions: Array<{
+		key: string
+		label: string
+		icon: string
+		color: 'primary' | 'secondary' | 'neutral' | 'error' | 'warning' | 'success' | 'info'
+		variant: 'solid' | 'soft' | 'subtle' | 'outline' | 'ghost'
+	}> = []
+
+	actions.push({
+		key: 'restore',
+		label: '恢复记忆',
+		icon: 'i-lucide-rotate-ccw',
+		color: 'primary',
+		variant: 'solid'
+	})
+
+	if (record.status === 'archived') {
+		actions.push({
+			key: 'purge',
+			label: '彻底遗忘',
+			icon: 'i-lucide-trash-2',
+			color: 'error',
+			variant: 'outline'
+		})
+	}
+
+	return actions
 })
 
 const openRecordDetail = (recordId: number) => {
@@ -123,13 +164,12 @@ const openRecordDetail = (recordId: number) => {
 	inspectedRecord.value = record ?? null
 
 	if (record) {
-		nextTick(() => {
-			detailSectionRef.value?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-		})
+		detailDialogOpen.value = true
 	}
 }
 
 const closeRecordDetail = () => {
+	detailDialogOpen.value = false
 	inspectedRecord.value = null
 }
 
@@ -156,6 +196,46 @@ const handleDetailAction = (key: string) => {
 	if (key === 'restore' && record.status !== 'purged') {
 		handleRestore(record)
 	}
+
+	if (key === 'purge' && record.status === 'archived') {
+		openPurgeConfirm(record)
+	}
+}
+
+const openPurgeConfirm = (record: HistoryRecord) => {
+	const displayTitle = record.title || '未命名记忆'
+	purgeConfirm.value.open = true
+	purgeConfirm.value.record = record
+	purgeConfirm.value.title = '彻底遗忘这段记忆？'
+	purgeConfirm.value.description = `确认后《${displayTitle}》将被永久删除且无法恢复。`
+}
+
+const resetPurgeConfirm = () => {
+	purgeConfirm.value.open = false
+	purgeConfirm.value.record = null
+	purgeConfirm.value.title = ''
+	purgeConfirm.value.description = ''
+}
+
+const executePurge = () => {
+	const record = purgeConfirm.value.record
+	if (!record) {
+		return
+	}
+
+	const purged = historyRecords.purgeRecord(record)
+	if (purged) {
+		const displayTitle = record.title || '未命名记忆'
+		toast.add({
+			title: '记忆已彻底遗忘',
+			description: `《${displayTitle}》已从历史记录中清理。`,
+			icon: 'i-lucide-trash-2',
+			color: 'error'
+		})
+		inspectedRecord.value = purged
+	}
+
+	resetPurgeConfirm()
 }
 
 const heroAction = computed(() => heroSection.value?.action ?? null)
@@ -169,9 +249,18 @@ const allRecords = computed(() => {
 	]
 })
 
+watch(() => purgeConfirm.value.open, open => {
+	if (!open) {
+		purgeConfirm.value.record = null
+		purgeConfirm.value.title = ''
+		purgeConfirm.value.description = ''
+	}
+})
+
 watch(allRecords, records => {
 	if (!records.length) {
 		inspectedRecord.value = null
+		detailDialogOpen.value = false
 		return
 	}
 
@@ -188,28 +277,7 @@ watch(allRecords, records => {
 </script>
 
 <template>
-	<div class="max-w-6xl mx-auto space-y-12 pb-20">
-		<section ref="detailSectionRef" class="space-y-4">
-			<div class="rounded-3xl border border-gray-200/70 dark:border-white/10 bg-white/90 dark:bg-slate-900/70 backdrop-blur p-5 shadow-lg">
-				<div class="flex items-center justify-between gap-3 mb-4">
-					<div>
-						<p class="text-xs uppercase tracking-[0.4em] text-primary-500/70 dark:text-primary-300/70">History Focus</p>
-						<h2 class="text-xl font-semibold text-gray-900 dark:text-white">记忆日志详情</h2>
-					</div>
-					<UButton v-if="inspectedRecord" variant="ghost" size="xs" icon="i-lucide-x" @click="closeRecordDetail">
-						清除选择
-					</UButton>
-				</div>
-				<MemoryDetailPanel
-					:note="inspectedRecord"
-					:actions="detailActions"
-					:status-label="detailStatus?.label"
-					:status-color="detailStatus?.color"
-					@action="handleDetailAction"
-				/>
-			</div>
-		</section>
-
+		<div class="max-w-6xl mx-auto space-y-12 pb-20">
 		<section class="space-y-6">
 			<div class="flex flex-col gap-3">
 				<div class="flex items-center gap-3">
@@ -305,8 +373,10 @@ watch(allRecords, records => {
 					:days-until-forgotten="record.daysUntilForgotten ?? 0"
 					:last-accessed="record.lastAccessed"
 					:restorable="record.status !== 'purged'"
+					:purgeable="record.status === 'archived'"
 					@restore="handleRestore(record)"
 					@inspect="openRecordDetail(record.id)"
+					@purge="openPurgeConfirm(record)"
 				/>
 			</div>
 			<UAlert
@@ -319,6 +389,31 @@ watch(allRecords, records => {
 				class="border border-dashed border-gray-300/60 dark:border-white/20"
 			/>
 		</section>
+
+	    <CommonConfirmDialog
+	      v-model="purgeConfirm.open"
+	      :title="purgeConfirm.title"
+	      :description="purgeConfirm.description"
+	      :icon="purgeConfirm.icon"
+	      :confirm-label="purgeConfirm.confirmLabel"
+	      :confirm-color="purgeConfirm.confirmColor"
+	      :confirm-variant="purgeConfirm.confirmVariant"
+	      @confirm="executePurge"
+	      @cancel="resetPurgeConfirm"
+	    />
+
+		    <MemoryDetailDialog
+		      v-model="detailDialogOpen"
+		      title="记忆日志详情"
+		      eyebrow="History Focus"
+		      clear-label="清除选择"
+		      :note="inspectedRecord"
+		      :actions="detailActions"
+		      :status-label="detailStatus?.label"
+		      :status-color="detailStatus?.color"
+		      @action="handleDetailAction"
+		      @close="closeRecordDetail"
+		    />
 
 	</div>
 </template>

@@ -419,6 +419,50 @@ export default defineContentConfig({
             description: z.string().optional()
           })
           .optional(),
+        detail: z
+          .object({
+            eyebrow: z.string().optional(),
+            title: z.string().optional(),
+            clearLabel: z.string().optional(),
+            emptyFallback: z
+              .object({
+                title: z.string().optional(),
+                description: z.string().optional()
+              })
+              .optional(),
+            actions: z
+              .object({
+                restore: z
+                  .object({
+                    label: z.string().optional(),
+                    icon: z.string().optional(),
+                    color: colorEnum.optional(),
+                    variant: variantEnum.optional(),
+                    tooltip: z.string().optional()
+                  })
+                  .optional(),
+                accelerate: z
+                  .object({
+                    label: z.string().optional(),
+                    icon: z.string().optional(),
+                    color: colorEnum.optional(),
+                    variant: variantEnum.optional(),
+                    tooltip: z.string().optional()
+                  })
+                  .optional(),
+                forget: z
+                  .object({
+                    label: z.string().optional(),
+                    icon: z.string().optional(),
+                    color: colorEnum.optional(),
+                    variant: variantEnum.optional(),
+                    tooltip: z.string().optional()
+                  })
+                  .optional()
+              })
+              .optional()
+          })
+          .optional(),
         overview: z
           .object({
             stats: z

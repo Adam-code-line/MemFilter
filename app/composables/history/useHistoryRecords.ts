@@ -29,6 +29,7 @@ export interface HistoryRestoreLogItem {
 interface UseHistoryRecordsOptions {
   notes: Ref<NoteRecord[]>
   restoreNote: (note: NoteRecord) => void
+  purgeNote: (note: NoteRecord) => NoteRecord | null
 }
 
 export const useHistoryRecords = (options: UseHistoryRecordsOptions) => {
@@ -109,13 +110,24 @@ export const useHistoryRecords = (options: UseHistoryRecordsOptions) => {
   }
 
   const pushPurgedRecord = (record: NoteRecord) => {
+    const purgedRecord: HistoryRecord = {
+      ...record,
+      status: 'purged'
+    }
     purgedRecordsState.value = [
-      {
-        ...record,
-        status: 'purged' as const
-      },
+      purgedRecord,
       ...purgedRecordsState.value
     ].slice(0, 20)
+    return purgedRecord
+  }
+
+  const purgeRecord = (record: HistoryRecord) => {
+    const removed = options.purgeNote(record)
+    if (!removed) {
+      return null
+    }
+
+    return pushPurgedRecord(removed)
   }
 
   return {
@@ -124,7 +136,8 @@ export const useHistoryRecords = (options: UseHistoryRecordsOptions) => {
     timelineEvents,
     restoreLog,
     restoreRecord,
-    pushPurgedRecord
+    pushPurgedRecord,
+    purgeRecord
   }
 }
 

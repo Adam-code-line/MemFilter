@@ -12,6 +12,7 @@ interface HistoryRecordCardProps {
   daysUntilForgotten?: number
   lastAccessed?: string
   restorable?: boolean
+  purgeable?: boolean
 }
 
 const props = withDefaults(defineProps<HistoryRecordCardProps>(), {
@@ -23,12 +24,14 @@ const props = withDefaults(defineProps<HistoryRecordCardProps>(), {
   forgettingProgress: 0,
   daysUntilForgotten: 0,
   lastAccessed: '',
-  restorable: true
+  restorable: true,
+  purgeable: false
 })
 
 const emit = defineEmits<{
   restore: []
   inspect: []
+  purge: []
 }>()
 
 const statusBadgeProps: Record<string, { label: string; color: string }> = {
@@ -89,16 +92,28 @@ const displaySnippet = computed(() => {
         >
           查看详情
         </UButton>
-        <UButton
-          v-if="restorable"
-          color="primary"
-          variant="solid"
-          size="sm"
-          icon="i-lucide-rotate-ccw"
-          @click="emit('restore')"
-        >
-          恢复记忆
-        </UButton>
+        <div class="flex items-center gap-2">
+          <UButton
+            v-if="purgeable"
+            color="error"
+            variant="outline"
+            size="sm"
+            icon="i-lucide-trash-2"
+            @click="emit('purge')"
+          >
+            彻底遗忘
+          </UButton>
+          <UButton
+            v-if="restorable"
+            color="primary"
+            variant="solid"
+            size="sm"
+            icon="i-lucide-rotate-ccw"
+            @click="emit('restore')"
+          >
+            恢复记忆
+          </UButton>
+        </div>
       </div>
     </template>
   </UCard>
