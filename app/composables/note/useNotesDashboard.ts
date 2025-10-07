@@ -108,6 +108,10 @@ export const useNotesDashboard = (options: NoteDashboardOptions = {}) => {
     notesStore.accelerateForgetting(note)
   }
 
+  const forgetNote = (note: NoteRecord) => {
+    notesStore.directForget(note)
+  }
+
   const toggleCollapse = (note: NoteRecord) => {
     notesStore.toggleCollapse(note)
   }
@@ -158,6 +162,7 @@ export const useNotesDashboard = (options: NoteDashboardOptions = {}) => {
     saveNote,
     restoreNote,
     accelerateForgetting,
+    forgetNote,
     toggleCollapse
   }
 }

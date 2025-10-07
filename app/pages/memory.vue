@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
+import type { NoteRecord } from '~/composables/note'
 import { storeToRefs } from 'pinia'
 import { useNotesStore } from '~~/stores/notes'
 
@@ -103,25 +104,31 @@ const defaultSections = [
   }
 ]
 
+const resolveMemoryBucket = (note: any): 'fresh' | 'fading' | 'archived' => {
+  const fadeLevel = note.fadeLevel ?? 0
+
+  if (fadeLevel >= 4 || note.isCollapsed) {
+    return 'archived'
+  }
+
+  if (fadeLevel >= 1) {
+    return 'fading'
+  }
+
+  if (note.importance !== 'high' && (note.forgettingProgress ?? 0) > 50) {
+    return 'fading'
+  }
+
+  return 'fresh'
+}
+
 const categorizedMemories = computed(() => {
   const fresh: any[] = []
   const fading: any[] = []
   const archived: any[] = []
 
   for (const note of notes.value) {
-    let bucket: 'fresh' | 'fading' | 'archived'
-
-    if ((note.fadeLevel ?? 0) >= 4 || note.isCollapsed) {
-      bucket = 'archived'
-    } else if ((note.fadeLevel ?? 0) >= 2) {
-      bucket = 'fading'
-    } else {
-      bucket = 'fresh'
-    }
-
-    if (bucket === 'fresh' && note.importance !== 'high' && (note.forgettingProgress ?? 0) > 50) {
-      bucket = 'fading'
-    }
+    const bucket = resolveMemoryBucket(note)
 
     if (bucket === 'fresh') {
       fresh.push(note)
@@ -187,9 +194,119 @@ const sections = computed(() =>
   })
 )
 
-const handleRestore = (note: any) => notesStore.restoreNote(note)
-const handleAccelerate = (note: any) => notesStore.accelerateForgetting(note)
-const handleToggleCollapse = (note: any) => notesStore.toggleCollapse(note)
+const handleRestore = (note: NoteRecord) => notesStore.restoreNote(note)
+const handleAccelerate = (note: NoteRecord) => notesStore.accelerateForgetting(note)
+const handleForget = (note: NoteRecord) => notesStore.directForget(note)
+const handleToggleCollapse = (note: NoteRecord) => notesStore.toggleCollapse(note)
+
+const isDetailOpen = ref(false)
+const selectedNote = ref<NoteRecord | null>(null)
+
+const detailStatusMap: Record<'fresh' | 'fading' | 'archived', { label: string; color: string }> = {
+  fresh: { label: '活跃记忆', color: 'primary' },
+  fading: { label: '正在淡化', color: 'warning' },
+  archived: { label: '归档记忆', color: 'neutral' }
+}
+
+const detailStatus = computed(() => {
+  if (!selectedNote.value) {
+    return null
+  }
+  const bucket = resolveMemoryBucket(selectedNote.value)
+  return detailStatusMap[bucket]
+})
+
+const detailActions = computed(() => {
+  const note = selectedNote.value
+  if (!note) {
+    return []
+  }
+
+  const actions: Array<{
+    key: string
+    label: string
+    icon?: string
+    color?: string
+    variant?: 'solid' | 'soft' | 'subtle' | 'outline' | 'ghost'
+    tooltip?: string
+  }> = []
+
+  if ((note.fadeLevel ?? 0) > 0 || note.isCollapsed) {
+    actions.push({
+      key: 'restore',
+      label: '恢复记忆',
+      icon: 'i-lucide-rotate-ccw',
+      color: 'primary',
+      variant: 'soft'
+    })
+  }
+
+  if ((note.forgettingProgress ?? 0) < 100 && (note.fadeLevel ?? 0) < 4) {
+    actions.push({
+      key: 'accelerate',
+      label: '加速遗忘',
+      icon: 'i-lucide-brain',
+      color: 'warning',
+      variant: 'soft'
+    })
+  }
+
+  if ((note.fadeLevel ?? 0) < 4) {
+    actions.push({
+      key: 'forget',
+      label: '直接遗忘',
+      icon: 'i-lucide-zap-off',
+      color: 'error',
+      variant: 'ghost',
+      tooltip: '立即将记忆标记为完全淡化并归档。'
+    })
+  }
+
+  actions.push({
+    key: 'toggle-collapse',
+    label: note.isCollapsed ? '展开内容' : '折叠内容',
+    icon: note.isCollapsed ? 'i-lucide-unfold-horizontal' : 'i-lucide-fold-horizontal',
+    color: 'neutral',
+    variant: 'ghost'
+  })
+
+  return actions
+})
+
+const openDetail = (note: NoteRecord) => {
+  selectedNote.value = note
+  isDetailOpen.value = true
+}
+
+const closeDetail = () => {
+  isDetailOpen.value = false
+  selectedNote.value = null
+}
+
+const handleDetailAction = (key: string) => {
+  const note = selectedNote.value
+  if (!note) {
+    return
+  }
+
+  switch (key) {
+    case 'restore':
+      handleRestore(note)
+      break
+    case 'accelerate':
+      handleAccelerate(note)
+      break
+    case 'forget':
+      handleForget(note)
+      closeDetail()
+      break
+    case 'toggle-collapse':
+      handleToggleCollapse(note)
+      break
+    default:
+      break
+  }
+}
 </script>
 
 <template>
@@ -265,8 +382,10 @@ const handleToggleCollapse = (note: any) => notesStore.toggleCollapse(note)
             :last-accessed="note.lastAccessed"
             :is-collapsed="note.isCollapsed"
             class="memory-card-item"
+            @open="openDetail(note)"
             @restore="handleRestore(note)"
             @accelerate-forgetting="handleAccelerate(note)"
+            @forget="handleForget(note)"
             @toggle-collapse="handleToggleCollapse(note)"
           />
         </div>
@@ -282,6 +401,25 @@ const handleToggleCollapse = (note: any) => notesStore.toggleCollapse(note)
         />
       </UCard>
     </section>
+
+    <UModal v-model="isDetailOpen" :ui="{ width: 'max-w-3xl' }" @close="closeDetail">
+      <UCard class="border border-gray-200/70 dark:border-white/10">
+        <template #header>
+          <div class="flex items-center justify-between gap-3">
+            <span class="text-sm font-medium text-gray-500 dark:text-gray-300">记忆详情</span>
+            <UButton variant="ghost" icon="i-lucide-x" color="neutral" @click="closeDetail" />
+          </div>
+        </template>
+
+        <MemoryDetailPanel
+          :note="selectedNote"
+          :actions="detailActions"
+          :status-label="detailStatus?.label"
+          :status-color="detailStatus?.color"
+          @action="handleDetailAction"
+        />
+      </UCard>
+    </UModal>
   </div>
 </template>
 

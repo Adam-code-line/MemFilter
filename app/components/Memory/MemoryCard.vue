@@ -125,6 +125,17 @@
             >
               加速遗忘
             </UButton>
+
+            <UButton
+              v-if="fadeLevel < 4"
+              size="sm"
+              variant="ghost"
+              icon="i-lucide-zap-off"
+              color="error"
+              @click="handleForget"
+            >
+              直接遗忘
+            </UButton>
           </div>
           
           <!-- 重要度评分 -->
@@ -171,6 +182,7 @@ const emit = defineEmits<{
   open: []
   restore: []
   'accelerate-forgetting': []
+  forget: []
   'toggle-collapse': []
 }>()
 
@@ -203,6 +215,7 @@ const { cardStyle } = useMemoryCardVisuals(note.fadeLevel, note.forgettingProgre
 const handleOpen = () => emit('open')
 const handleRestore = () => emit('restore')
 const handleAccelerate = () => emit('accelerate-forgetting')
+const handleForget = () => emit('forget')
 const handleToggleCollapse = () => emit('toggle-collapse')
 </script>
 

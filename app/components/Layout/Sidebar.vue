@@ -162,7 +162,7 @@ onMounted(() => {
           <span class="text-sm font-medium text-gray-900 dark:text-white">AI 引擎运行中</span>
         </div>
         <p class="text-xs text-gray-600 dark:text-gray-400">
-          今日已处理 42 条笔记
+          今日已处理...条笔记
         </p>
       </div>
       <div v-else class="flex justify-center">

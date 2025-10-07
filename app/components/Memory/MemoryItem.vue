@@ -160,6 +160,7 @@ const emit = defineEmits<{
   restore: []
   expand: []
   'accelerate-forgetting': []
+  forget: []
 }>()
 
 const note = toRefs(props)
@@ -193,6 +194,7 @@ const { contextMenuItems } = useMemoryActions(note.fadeLevel, {
   onEdit: () => emit('edit'),
   onRestore: () => emit('restore'),
   onAccelerate: () => emit('accelerate-forgetting'),
+  onForget: () => emit('forget'),
   onDelete: () => emit('delete')
 })
 

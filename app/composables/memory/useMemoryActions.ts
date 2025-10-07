@@ -6,6 +6,7 @@ interface MemoryActionHandlers {
   onEdit: () => void
   onRestore: () => void
   onAccelerate: () => void
+  onForget: () => void
   onDelete: () => void
 }
 
@@ -26,6 +27,13 @@ export const useMemoryActions = (
         label: fadeLevel.value > 0 ? '恢复记忆' : '加速遗忘',
         icon: fadeLevel.value > 0 ? 'i-lucide-refresh-cw' : 'i-lucide-brain',
         click: fadeLevel.value > 0 ? handlers.onRestore : handlers.onAccelerate
+      },
+      {
+        label: '直接遗忘',
+        icon: 'i-lucide-zap-off',
+        color: 'red',
+        disabled: fadeLevel.value >= 4,
+        click: handlers.onForget
       }
     ],
     [

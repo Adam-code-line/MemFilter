@@ -70,6 +70,48 @@ const importanceLabels: Record<string, string> = {
 const inspectedRecord = ref<HistoryRecord | null>(null)
 const isModalOpen = ref(false)
 
+const detailStatusMap: Record<HistoryRecord['status'], { label: string; color: string }> = {
+	recoverable: { label: '等待决策', color: 'warning' },
+	archived: { label: '已折叠', color: 'neutral' },
+	purged: { label: '已清理', color: 'error' }
+}
+
+const detailStatus = computed(() => {
+	const record = inspectedRecord.value
+	return record ? detailStatusMap[record.status] : null
+})
+
+const detailActions = computed(() => {
+	const record = inspectedRecord.value
+	if (!record) {
+		return []
+	}
+
+	if (record.status === 'purged') {
+		return [
+			{
+				key: 'purged',
+				label: '记录已清理',
+				icon: 'i-lucide-shield-off',
+				color: 'neutral',
+				variant: 'soft' as const,
+				disabled: true,
+				tooltip: '该条目已永久清理，无法恢复。'
+			}
+		]
+	}
+
+	return [
+		{
+			key: 'restore',
+			label: '恢复记忆',
+			icon: 'i-lucide-rotate-ccw',
+			color: 'primary',
+			variant: 'solid' as const
+		}
+	]
+})
+
 const openRecordDetail = (recordId: number) => {
 	const allGroups = historyRecords.groupedRecords.value
 	const record = [
@@ -98,6 +140,17 @@ const handleRestore = (record: HistoryRecord) => {
 
 	if (inspectedRecord.value?.id === record.id) {
 		closeRecordDetail()
+	}
+}
+
+const handleDetailAction = (key: string) => {
+	const record = inspectedRecord.value
+	if (!record) {
+		return
+	}
+
+	if (key === 'restore' && record.status !== 'purged') {
+		handleRestore(record)
 	}
 }
 
@@ -216,40 +269,22 @@ const heroAction = computed(() => heroSection.value?.action ?? null)
 			/>
 		</section>
 
-		<UModal v-model="isModalOpen" :ui="{ width: 'max-w-2xl' }" @close="closeRecordDetail">
-			<UCard>
+		<UModal v-model="isModalOpen" :ui="{ width: 'max-w-3xl' }" @close="closeRecordDetail">
+			<UCard class="border border-gray-200/70 dark:border-white/10">
 				<template #header>
-					<div class="space-y-1">
-						<h3 class="text-xl font-semibold text-gray-900 dark:text-white">{{ inspectedRecord?.title }}</h3>
-						<p class="text-xs text-gray-500 dark:text-gray-400">
-							最后访问 {{ inspectedRecord?.lastAccessed }} · 重要度 {{ importanceLabels[inspectedRecord?.importance || 'medium'] ?? '普通' }}
-						</p>
+					<div class="flex items-center justify-between gap-3">
+						<span class="text-sm font-medium text-gray-500 dark:text-gray-300">记忆详情</span>
+						<UButton variant="ghost" icon="i-lucide-x" color="neutral" @click="closeRecordDetail" />
 					</div>
 				</template>
 
-				<div class="space-y-4">
-					<p class="text-sm leading-relaxed text-gray-700 dark:text-gray-200 whitespace-pre-wrap">
-						{{ inspectedRecord?.content }}
-					</p>
-					<div class="grid gap-3 text-xs text-gray-500 dark:text-gray-400 sm:grid-cols-2">
-						<div>淡化进度：<span class="font-medium text-amber-600 dark:text-amber-300">{{ inspectedRecord?.forgettingProgress }}%</span></div>
-						<div>折叠状态：<span class="font-medium text-gray-700 dark:text-gray-200">{{ inspectedRecord?.isCollapsed ? '已折叠' : '可展开' }}</span></div>
-					</div>
-				</div>
-
-				<template #footer>
-					<div class="flex items-center justify-end gap-2">
-						<UButton variant="ghost" @click="closeRecordDetail">关闭</UButton>
-						<UButton
-							v-if="inspectedRecord && inspectedRecord.status !== 'purged'"
-							color="primary"
-							icon="i-lucide-rotate-ccw"
-							@click="handleRestore(inspectedRecord)"
-						>
-							恢复这条记忆
-						</UButton>
-					</div>
-				</template>
+				<MemoryDetailPanel
+					:note="inspectedRecord"
+					:actions="detailActions"
+					:status-label="detailStatus?.label"
+					:status-color="detailStatus?.color"
+					@action="handleDetailAction"
+				/>
 			</UCard>
 		</UModal>
 	</div>
