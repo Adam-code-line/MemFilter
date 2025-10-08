@@ -229,11 +229,11 @@ const buildDetailActions = (note: NoteRecord | null) => {
   }
 
   actions.push({
-    key: 'edit',
-    label: '在编辑器中打开',
+    key: 'open-note',
+    label: '在笔记中编辑',
     icon: 'i-lucide-square-pen',
     color: 'primary',
-    variant: 'soft'
+    variant: 'solid'
   })
 
   return actions
@@ -305,7 +305,7 @@ const handleDetailAction = (key: string) => {
     case 'forget':
       requestForget(note)
       break
-    case 'edit':
+    case 'open-note':
       openEditorForNote(note)
       detailDialogOpen.value = false
       break
@@ -422,7 +422,7 @@ const resetFilters = () => {
 </script>
 
 <template>
-  <div class="max-w-6xl mx-auto space-y-8">
+  <div class="max-w-7xl mx-auto space-y-8 px-4 sm:px-6 lg:px-8">
     <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
       <div class="space-y-3">
         <div class="flex flex-wrap items-center gap-3">
@@ -484,9 +484,9 @@ const resetFilters = () => {
       </div>
     </UCard>
 
-    <div class="grid gap-8 items-start lg:grid-cols-[minmax(0,1.5fr)_minmax(0,0.6fr)] xl:grid-cols-[minmax(0,1.7fr)_minmax(0,0.5fr)]">
+  <div class="grid gap-8 items-start lg:grid-cols-[minmax(0,1.35fr)_minmax(0,0.85fr)] xl:grid-cols-[minmax(0,1.4fr)_minmax(0,0.9fr)]">
       <aside>
-        <UCard class="border border-primary/20 dark:border-primary/40 shadow-lg/40 lg:sticky lg:top-24">
+  <UCard class="border border-primary/20 dark:border-primary/40 shadow-lg/40 lg:sticky lg:top-24">
           <template #header>
             <div class="flex flex-col gap-2">
               <div class="flex items-center justify-between gap-2">

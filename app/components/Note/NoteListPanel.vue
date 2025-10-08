@@ -90,7 +90,7 @@ const handleDetail = (item: NoteListItem) => {
         :key="item.id"
         role="button"
         tabindex="0"
-  class="flex items-start gap-3 px-3 py-3 text-left transition rounded-lg hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
+  class="flex items-start gap-3 px-4 py-4 text-left transition rounded-lg hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
         :class="item.id === activeId ? 'bg-primary/10 ring-1 ring-primary/30 rounded-lg' : ''"
         @click="handleSelect(item)"
         @keydown.enter.prevent="handleSelect(item)"
@@ -101,7 +101,7 @@ const handleDetail = (item: NoteListItem) => {
           <span v-else class="text-base">{{ item.iconFallback }}</span>
         </div>
         <div class="flex-1 min-w-0 space-y-1">
-          <div class="flex items-center gap-2">
+          <div class="flex flex-wrap items-center gap-2">
             <p class="flex-1 min-w-0 font-medium text-gray-900 dark:text-white line-clamp-1 truncate">
               {{ item.title }}
             </p>
@@ -119,9 +119,11 @@ const handleDetail = (item: NoteListItem) => {
                 size="xs"
                 icon="i-lucide-eye"
                 :aria-label="detailLabel"
+                class="shrink-0"
                 @click.stop="handleDetail(item)"
               >
-                {{ detailLabel }}
+                <span class="hidden sm:inline">{{ detailLabel }}</span>
+                <span class="sr-only sm:hidden">{{ detailLabel }}</span>
               </UButton>
             </div>
           </div>
