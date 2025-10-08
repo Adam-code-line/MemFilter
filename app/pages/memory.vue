@@ -12,6 +12,8 @@ definePageMeta({
 const notesStore = useNotesStore()
 notesStore.ensureInitialized()
 
+const router = useRouter()
+
 const { notes } = storeToRefs(notesStore)
 
 const importancePriority = {
@@ -278,6 +280,14 @@ const detailActions = computed(() => {
     })
   }
 
+  actions.push({
+    key: 'open-note',
+    label: '在笔记中编辑',
+    icon: 'i-lucide-square-pen',
+    color: 'primary',
+    variant: 'solid'
+  })
+
   return actions
 })
 
@@ -305,6 +315,10 @@ const handleDetailAction = (key: string) => {
       break
     case 'forget':
       requestForget(note)
+      break
+    case 'open-note':
+      router.push({ path: '/note', query: { noteId: String(note.id ?? '') } })
+      detailDialogOpen.value = false
       break
     default:
       break

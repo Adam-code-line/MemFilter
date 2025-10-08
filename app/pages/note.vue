@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useNoteContent, useNotesDashboard } from '~/composables/note'
-import type { ImportanceLevel, NoteSavePayload } from '~/composables/note'
+import type { ImportanceLevel, NoteRecord, NoteSavePayload } from '~/composables/note'
+import { useMemoryContent } from '~/composables/memory/useMemoryContent'
 
 definePageMeta({
   layout: 'app'
@@ -22,8 +23,14 @@ const {
   openEditorForNew,
   openEditorForNote,
   closeEditor,
-  saveNote
+  saveNote,
+  restoreNote,
+  accelerateForgetting,
+  forgetNote
 } = useNotesDashboard()
+
+const route = useRoute()
+const router = useRouter()
 
 const {
   badge: headerBadge,
@@ -36,6 +43,12 @@ const {
   editor: editorConfig,
   defaults: noteDefaults
 } = await useNoteContent()
+
+const {
+  detail: memoryDetail,
+  sectionSource: memorySectionSource,
+  defaults: memoryDefaults
+} = await useMemoryContent()
 
 const importanceOptions = computed(() => filtersConfig.value.importance ?? noteDefaults.importanceOptions)
 const searchConfigResolved = computed(() => searchConfig.value ?? noteDefaults.search)
@@ -126,6 +139,253 @@ const noteItems = computed(() =>
     }
   })
 )
+
+const detailDialogOpen = ref(false)
+const selectedDetailNote = ref<NoteRecord | null>(null)
+
+const resolveMemoryBucket = (note: NoteRecord | null): 'fresh' | 'fading' | 'archived' | null => {
+  if (!note) {
+    return null
+  }
+
+  const fadeLevel = note.fadeLevel ?? 0
+
+  if (fadeLevel >= 4 || note.isCollapsed) {
+    return 'archived'
+  }
+
+  if (fadeLevel >= 1) {
+    return 'fading'
+  }
+
+  if (note.importance !== 'high' && (note.forgettingProgress ?? 0) > 50) {
+    return 'fading'
+  }
+
+  return 'fresh'
+}
+
+const detailStatus = computed(() => {
+  const note = selectedDetailNote.value
+  if (!note) {
+    return null
+  }
+
+  if ((note.fadeLevel ?? 0) >= 4) {
+    return {
+      label: '已彻底遗忘',
+      color: 'error'
+    }
+  }
+
+  const bucket = resolveMemoryBucket(note)
+  if (!bucket) {
+    return null
+  }
+
+  const defaults = memoryDefaults.sections.find(item => item.key === bucket)
+  const config = memorySectionSource.value.find(item => item.key === bucket)
+
+  return {
+    label: config?.title ?? defaults?.title ?? '',
+    color: config?.accent ?? defaults?.accent ?? 'primary'
+  }
+})
+
+const buildDetailActions = (note: NoteRecord | null) => {
+  if (!note) {
+    return []
+  }
+
+  const actionsConfig = memoryDetail.value.actions
+  const actions: Array<{
+    key: string
+    label: string
+    icon?: string
+    color?: string
+    variant?: 'solid' | 'soft' | 'subtle' | 'outline' | 'ghost'
+    tooltip?: string
+  }> = []
+
+  if ((note.fadeLevel ?? 0) > 0 || note.isCollapsed) {
+    actions.push({
+      key: 'restore',
+      ...actionsConfig.restore
+    })
+  }
+
+  if ((note.forgettingProgress ?? 0) < 100 && (note.fadeLevel ?? 0) < 4) {
+    actions.push({
+      key: 'accelerate',
+      ...actionsConfig.accelerate
+    })
+  }
+
+  if ((note.fadeLevel ?? 0) < 4) {
+    actions.push({
+      key: 'forget',
+      ...actionsConfig.forget
+    })
+  }
+
+  actions.push({
+    key: 'edit',
+    label: '在编辑器中打开',
+    icon: 'i-lucide-square-pen',
+    color: 'primary',
+    variant: 'soft'
+  })
+
+  return actions
+}
+
+const detailActions = computed(() => buildDetailActions(selectedDetailNote.value))
+
+const openNoteDetail = (note: NoteRecord) => {
+  selectedDetailNote.value = note
+  detailDialogOpen.value = true
+}
+
+const closeNoteDetail = () => {
+  detailDialogOpen.value = false
+}
+
+const forgetConfirm = ref({
+  open: false,
+  note: null as NoteRecord | null,
+  title: '',
+  description: '',
+  confirmLabel: '确认',
+  confirmColor: 'error' as const,
+  confirmVariant: 'solid' as const,
+  icon: 'i-lucide-alert-triangle'
+})
+
+const resetForgetConfirm = () => {
+  forgetConfirm.value = {
+    open: false,
+    note: null,
+    title: '',
+    description: '',
+    confirmLabel: '确认',
+    confirmColor: 'error',
+    confirmVariant: 'solid',
+    icon: 'i-lucide-alert-triangle'
+  }
+}
+
+const requestForget = (note: NoteRecord) => {
+  forgetConfirm.value = {
+    open: true,
+    note,
+    title: note.importance === 'high' ? '确认折叠核心记忆？' : '确认遗忘这条记忆？',
+    description: note.importance === 'high'
+      ? `《${note.title || '未命名笔记'}》被标记为核心记忆，确认后将进入折叠区，可在遗忘日志中彻底清理。`
+      : `遗忘后《${note.title || '未命名笔记'}》将立即归档并从活跃列表移除。`,
+    confirmLabel: '确认遗忘',
+    confirmColor: 'error',
+    confirmVariant: 'solid',
+    icon: note.importance === 'high' ? 'i-lucide-shield-alert' : 'i-lucide-alert-triangle'
+  }
+}
+
+const handleDetailAction = (key: string) => {
+  const note = selectedDetailNote.value
+  if (!note) {
+    return
+  }
+
+  switch (key) {
+    case 'restore':
+      restoreNote(note)
+      break
+    case 'accelerate':
+      accelerateForgetting(note)
+      break
+    case 'forget':
+      requestForget(note)
+      break
+    case 'edit':
+      openEditorForNote(note)
+      detailDialogOpen.value = false
+      break
+    default:
+      break
+  }
+}
+
+const confirmForget = () => {
+  const note = forgetConfirm.value.note
+  if (!note) {
+    resetForgetConfirm()
+    return
+  }
+
+  forgetNote(note)
+  resetForgetConfirm()
+}
+
+watch(notes, newNotes => {
+  if (!newNotes.length) {
+    selectedDetailNote.value = null
+    detailDialogOpen.value = false
+    return
+  }
+
+  if (selectedDetailNote.value) {
+    const refreshed = newNotes.find(item => item.id === selectedDetailNote.value?.id)
+    if (refreshed) {
+      selectedDetailNote.value = refreshed
+    }
+  }
+})
+
+watch(() => forgetConfirm.value.open, value => {
+  if (!value) {
+    forgetConfirm.value.note = null
+  }
+})
+
+const pendingNoteId = ref<string | null>(null)
+
+const clearRouteNoteId = () => {
+  if (route.query.noteId === undefined) {
+    return
+  }
+
+  const nextQuery = { ...route.query } as Record<string, any>
+  delete nextQuery.noteId
+  router.replace({ query: nextQuery })
+}
+
+watch(
+  () => route.query.noteId,
+  value => {
+    if (Array.isArray(value)) {
+      pendingNoteId.value = value[0] ?? null
+    } else if (typeof value === 'string') {
+      pendingNoteId.value = value
+    } else {
+      pendingNoteId.value = null
+    }
+  },
+  { immediate: true }
+)
+
+watch([notes, pendingNoteId], ([noteList, noteId]) => {
+  if (!noteId) {
+    return
+  }
+
+  const target = noteList.find(note => String(note.id) === noteId)
+  if (!target) {
+    return
+  }
+
+  openEditorForNote(target)
+  pendingNoteId.value = null
+  clearRouteNoteId()
+})
 
 const handleImportanceChange = (value: string | null) => {
   const nextValue = (value ?? 'all') as 'all' | ImportanceLevel
@@ -294,10 +554,37 @@ const resetFilters = () => {
           :empty-state="noteListEmptyState"
           @select="openEditorForNote"
           @create="openEditorForNew"
+          @detail="openNoteDetail"
         />
       </section>
     </div>
   </div>
+
+  <MemoryDetailDialog
+    v-model="detailDialogOpen"
+    :title="memoryDetail.title"
+    :eyebrow="memoryDetail.eyebrow"
+    :clear-label="memoryDetail.clearLabel"
+    :note="selectedDetailNote"
+    :actions="detailActions"
+    :status-label="detailStatus?.label"
+    :status-color="detailStatus?.color"
+    width="sm:max-w-4xl"
+    @action="handleDetailAction"
+    @close="closeNoteDetail"
+  />
+
+  <CommonConfirmDialog
+    v-model="forgetConfirm.open"
+    :title="forgetConfirm.title"
+    :description="forgetConfirm.description"
+    :icon="forgetConfirm.icon"
+    :confirm-label="forgetConfirm.confirmLabel"
+    :confirm-color="forgetConfirm.confirmColor"
+    :confirm-variant="forgetConfirm.confirmVariant"
+    @confirm="confirmForget"
+    @cancel="resetForgetConfirm"
+  />
 </template>
 
 <style scoped>

@@ -1,17 +1,21 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 
-type SearchSuggestion = {
+export type SearchSuggestion = {
   label: string
   description?: string
   icon?: string
   to?: string
+  type?: string
+  noteId?: string | number
+  [key: string]: unknown
 }
 
 type Emits = {
   (event: 'update:open', value: boolean): void
   (event: 'update:query', value: string): void
   (event: 'search', value: string): void
+  (event: 'select', value: SearchSuggestion): void
 }
 
 type Props = {
@@ -59,9 +63,7 @@ const handleSubmit = () => {
 }
 
 const handleSuggestionSelect = (suggestion: SearchSuggestion) => {
-  if (suggestion.to) {
-    navigateTo(suggestion.to)
-  }
+  emit('select', suggestion)
   emit('update:open', false)
 }
 

@@ -31,6 +31,7 @@ const props = withDefaults(defineProps<{
     actionLabel: string
     actionIcon: string
   }
+  detailLabel?: string
 }>(), {
   items: () => [],
   activeId: null,
@@ -43,15 +44,18 @@ const props = withDefaults(defineProps<{
     description: '开始创建您的第一条笔记。',
     actionLabel: '新建笔记',
     actionIcon: 'i-lucide-plus'
-  })
+  }),
+  detailLabel: '查看详情'
 })
 
 const emit = defineEmits<{
   (event: 'select', record: NoteRecord): void
   (event: 'create'): void
+  (event: 'detail', record: NoteRecord): void
 }>()
 
 const totalCount = computed(() => props.items.length)
+const detailLabel = computed(() => props.detailLabel)
 
 const handleSelect = (item: NoteListItem) => {
   emit('select', item.record)
@@ -59,6 +63,10 @@ const handleSelect = (item: NoteListItem) => {
 
 const handleCreate = () => {
   emit('create')
+}
+
+const handleDetail = (item: NoteListItem) => {
+  emit('detail', item.record)
 }
 </script>
 
@@ -77,13 +85,16 @@ const handleCreate = () => {
     </template>
 
     <div v-if="items.length" class="flex flex-col divide-y divide-gray-200/70 dark:divide-white/5">
-      <button
+      <div
         v-for="item in items"
         :key="item.id"
-        type="button"
-        class="flex items-start gap-3 px-3 py-3 text-left transition hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
+        role="button"
+        tabindex="0"
+  class="flex items-start gap-3 px-3 py-3 text-left transition rounded-lg hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
         :class="item.id === activeId ? 'bg-primary/10 ring-1 ring-primary/30 rounded-lg' : ''"
         @click="handleSelect(item)"
+        @keydown.enter.prevent="handleSelect(item)"
+        @keydown.space.prevent="handleSelect(item)"
       >
         <div class="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary">
           <UIcon v-if="item.iconName" :name="item.iconName" class="text-base" />
@@ -102,13 +113,23 @@ const handleCreate = () => {
                 :icon="item.badge.icon"
               />
               <span class="text-[11px] text-gray-400 dark:text-gray-500">价值 {{ item.score }}%</span>
+              <UButton
+                variant="ghost"
+                color="primary"
+                size="xs"
+                icon="i-lucide-eye"
+                :aria-label="detailLabel"
+                @click.stop="handleDetail(item)"
+              >
+                {{ detailLabel }}
+              </UButton>
             </div>
           </div>
           <p class="text-xs text-gray-500 dark:text-gray-400 line-clamp-2">
             {{ item.description }}
           </p>
         </div>
-      </button>
+      </div>
     </div>
 
     <div v-else class="flex flex-col items-center justify-center gap-4 py-16 text-center">
