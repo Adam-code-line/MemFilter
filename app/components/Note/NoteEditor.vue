@@ -33,7 +33,6 @@
       <div class="space-y-2">
         <div class="flex items-center justify-between">
           <label class="text-sm font-medium text-gray-700 dark:text-gray-200">记忆描述</label>
-          <span class="text-xs text-gray-400">为未来的自己写下提示，可选填</span>
         </div>
         <UTextarea
           v-model="noteDescription"

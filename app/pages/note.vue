@@ -342,7 +342,7 @@ watch([notes, pendingNoteId], ([noteList, noteId]) => {
   openEditorForNote(target)
   pendingNoteId.value = null
   clearRouteNoteId()
-})
+}, { immediate: true })
 
 const handleImportanceChange = (value: string | null) => {
   const nextValue = (value ?? 'all') as 'all' | ImportanceLevel

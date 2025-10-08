@@ -108,7 +108,7 @@ const containerStyle = computed(() => {
 
 @media (max-width: 768px) {
   .responsive.layout-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr;f
   }
   
   .responsive.layout-flex > :deep(*) {
