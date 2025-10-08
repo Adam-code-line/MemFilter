@@ -3,6 +3,7 @@ import { computed, ref, watch } from 'vue'
 import { useNoteContent, useNotesDashboard } from '~/composables/note'
 import type { ImportanceLevel, NoteRecord, NoteSavePayload } from '~/composables/note'
 import { useMemoryContent } from '~/composables/memory/useMemoryContent'
+import { useForgetConfirm } from '~/composables/memory/useForgetConfirm'
 
 definePageMeta({
   layout: 'app'
@@ -250,44 +251,11 @@ const closeNoteDetail = () => {
   detailDialogOpen.value = false
 }
 
-const forgetConfirm = ref({
-  open: false,
-  note: null as NoteRecord | null,
-  title: '',
-  description: '',
-  confirmLabel: '确认',
-  confirmColor: 'error' as const,
-  confirmVariant: 'solid' as const,
-  icon: 'i-lucide-alert-triangle'
+const { state: forgetConfirm, dialogBindings: forgetDialogBindings, openForNote: requestForget, confirm: confirmForget } = useForgetConfirm({
+  onExecuteForget: (note) => {
+    forgetNote(note)
+  }
 })
-
-const resetForgetConfirm = () => {
-  forgetConfirm.value = {
-    open: false,
-    note: null,
-    title: '',
-    description: '',
-    confirmLabel: '确认',
-    confirmColor: 'error',
-    confirmVariant: 'solid',
-    icon: 'i-lucide-alert-triangle'
-  }
-}
-
-const requestForget = (note: NoteRecord) => {
-  forgetConfirm.value = {
-    open: true,
-    note,
-    title: note.importance === 'high' ? '确认折叠核心记忆？' : '确认遗忘这条记忆？',
-    description: note.importance === 'high'
-      ? `《${note.title || '未命名笔记'}》被标记为核心记忆，确认后将进入折叠区，可在遗忘日志中彻底清理。`
-      : `遗忘后《${note.title || '未命名笔记'}》将立即归档并从活跃列表移除。`,
-    confirmLabel: '确认遗忘',
-    confirmColor: 'error',
-    confirmVariant: 'solid',
-    icon: note.importance === 'high' ? 'i-lucide-shield-alert' : 'i-lucide-alert-triangle'
-  }
-}
 
 const handleDetailAction = (key: string) => {
   const note = selectedDetailNote.value
@@ -312,17 +280,6 @@ const handleDetailAction = (key: string) => {
     default:
       break
   }
-}
-
-const confirmForget = () => {
-  const note = forgetConfirm.value.note
-  if (!note) {
-    resetForgetConfirm()
-    return
-  }
-
-  forgetNote(note)
-  resetForgetConfirm()
 }
 
 watch(notes, newNotes => {
@@ -576,14 +533,9 @@ const resetFilters = () => {
 
   <CommonConfirmDialog
     v-model="forgetConfirm.open"
-    :title="forgetConfirm.title"
-    :description="forgetConfirm.description"
-    :icon="forgetConfirm.icon"
-    :confirm-label="forgetConfirm.confirmLabel"
-    :confirm-color="forgetConfirm.confirmColor"
-    :confirm-variant="forgetConfirm.confirmVariant"
+    v-bind="forgetDialogBindings"
     @confirm="confirmForget"
-    @cancel="resetForgetConfirm"
+    @cancel="forgetConfirm.open = false"
   />
 </template>
 

@@ -4,6 +4,7 @@ import type { NoteRecord } from '~/composables/note'
 import { storeToRefs } from 'pinia'
 import { useNotesStore } from '~~/stores/notes'
 import { useMemoryContent } from '~/composables/memory/useMemoryContent'
+import { useForgetConfirm } from '~/composables/memory/useForgetConfirm'
 
 definePageMeta({
   layout: 'app'
@@ -94,68 +95,11 @@ useHead(() => ({
   title: pageTitle.value ?? '记忆回溯'
 }))
 
-const forgetConfirm = ref<{
-  open: boolean
-  note: NoteRecord | null
-  title: string
-  description: string
-  confirmLabel: string
-  confirmColor: 'primary' | 'secondary' | 'neutral' | 'error' | 'warning' | 'success' | 'info'
-  confirmVariant: 'solid' | 'soft' | 'subtle' | 'outline' | 'ghost'
-  icon: string
-}>(
-  {
-    open: false,
-    note: null,
-    title: '',
-    description: '',
-    confirmLabel: '确认',
-    confirmColor: 'error',
-    confirmVariant: 'solid',
-    icon: 'i-lucide-alert-triangle'
+const { state: forgetConfirm, dialogBindings: forgetDialogBindings, openForNote: openForgetDialog, confirm: confirmForget } = useForgetConfirm({
+  onExecuteForget: (note) => {
+    notesStore.directForget(note)
   }
-)
-
-const openCoreForgetConfirm = (note: NoteRecord) => {
-  forgetConfirm.value = {
-    open: true,
-    note,
-    title: '确认折叠核心记忆？',
-    description: `《${note.title || '未命名笔记'}》被标记为核心记忆，确认后将进入折叠区，可在遗忘日志中彻底清理。`,
-    confirmLabel: '确认遗忘',
-    confirmColor: 'error',
-    confirmVariant: 'solid',
-    icon: 'i-lucide-shield-alert'
-  }
-}
-
-watch(
-  () => forgetConfirm.value.open,
-  value => {
-    if (!value) {
-      forgetConfirm.value.note = null
-      forgetConfirm.value.title = ''
-      forgetConfirm.value.description = ''
-      forgetConfirm.value.confirmLabel = '确认'
-      forgetConfirm.value.confirmColor = 'error'
-      forgetConfirm.value.confirmVariant = 'solid'
-      forgetConfirm.value.icon = 'i-lucide-alert-triangle'
-    }
-  }
-)
-
-const resetForgetConfirm = () => {
-  forgetConfirm.value = {
-    open: false,
-    note: null,
-    title: '',
-    description: '',
-    confirmLabel: '确认',
-    confirmColor: 'error',
-    confirmVariant: 'solid',
-    icon: 'i-lucide-alert-triangle'
-  }
-}
+})
 
 const statColorMap: Record<string, string> = {
   primary: 'text-primary-500',
@@ -202,23 +146,8 @@ const sections = computed(() =>
 
 const handleRestore = (note: NoteRecord) => notesStore.restoreNote(note)
 const handleAccelerate = (note: NoteRecord) => notesStore.accelerateForgetting(note)
-const handleForget = (note: NoteRecord) => notesStore.directForget(note)
-
 const requestForget = (note: NoteRecord) => {
-  if (note.importance === 'high') {
-    openCoreForgetConfirm(note)
-  } else {
-    handleForget(note)
-  }
-}
-
-const confirmCoreForget = () => {
-  const note = forgetConfirm.value.note
-  if (!note) {
-    return
-  }
-  handleForget(note)
-  resetForgetConfirm()
+  openForgetDialog(note)
 }
 
 const selectedNote = ref<NoteRecord | null>(null)
@@ -439,14 +368,9 @@ watch(notes, newNotes => {
 
   <CommonConfirmDialog
     v-model="forgetConfirm.open"
-    :title="forgetConfirm.title"
-    :description="forgetConfirm.description"
-    :icon="forgetConfirm.icon"
-    :confirm-label="forgetConfirm.confirmLabel"
-    :confirm-color="forgetConfirm.confirmColor"
-    :confirm-variant="forgetConfirm.confirmVariant"
-    @confirm="confirmCoreForget"
-    @cancel="resetForgetConfirm"
+    v-bind="forgetDialogBindings"
+    @confirm="confirmForget"
+    @cancel="forgetConfirm.open = false"
   />
 
   <MemoryDetailDialog
