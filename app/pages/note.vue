@@ -12,10 +12,12 @@ const {
   filteredNotes,
   importanceFilter,
   searchQuery,
+  timeFilter,
   editorMode,
   editingNote,
   activeNoteId,
   setImportanceFilter,
+  setTimeFilter,
   updateSearchQuery,
   openEditorForNew,
   openEditorForNote,
@@ -28,22 +30,37 @@ const {
   pageTitle,
   pageSubtitle,
   filters: filtersConfig,
+  search: searchConfig,
   list: listConfig,
   emptyState: emptyStateConfig,
   editor: editorConfig,
   defaults: noteDefaults
 } = await useNoteContent()
 
-useHead(() => ({
-  title: pageTitle.value ?? noteDefaults.pageTitle
-}))
-
 const importanceOptions = computed(() => filtersConfig.value.importance ?? noteDefaults.importanceOptions)
-const searchPlaceholder = computed(() => filtersConfig.value.searchPlaceholder ?? noteDefaults.filters.searchPlaceholder)
+const searchConfigResolved = computed(() => searchConfig.value ?? noteDefaults.search)
+const searchPlaceholder = computed(() => searchConfigResolved.value.placeholder ?? noteDefaults.search.placeholder)
+const timeFilterOptions = computed(() => searchConfigResolved.value.timeOptions ?? noteDefaults.search.timeOptions)
+const importanceLabel = computed(() => searchConfigResolved.value.importanceLabel ?? noteDefaults.search.importanceLabel)
+const timeLabel = computed(() => searchConfigResolved.value.timeLabel ?? noteDefaults.search.timeLabel)
 
 const headerTitle = computed(() => pageTitle.value ?? noteDefaults.pageTitle)
 const headerSubtitle = computed(() => pageSubtitle.value ?? noteDefaults.pageSubtitle)
 const emptyState = computed(() => emptyStateConfig.value ?? noteDefaults.emptyState)
+const summaryLabel = computed(() => {
+  const template = filtersConfig.value.summaryLabel ?? noteDefaults.filters.summaryLabel
+  return template.replace('{count}', String(filteredNotes.value.length))
+})
+const totalNotesBadge = computed(() => `${totalNotesLabel.value}: ${notes.value.length}`)
+
+useHead(() => ({
+  title: headerTitle.value
+}))
+
+const searchText = computed({
+  get: () => searchQuery.value,
+  set: value => updateSearchQuery(value)
+})
 
 const importanceBadgeMap: Record<ImportanceLevel, { label: string; color: string; variant: 'solid' | 'soft' | 'subtle' | 'outline'; icon: string }> = {
   high: { label: '核心记忆', color: 'primary', variant: 'solid', icon: 'i-lucide-flame' },
@@ -51,6 +68,9 @@ const importanceBadgeMap: Record<ImportanceLevel, { label: string; color: string
   low: { label: '随手记录', color: 'gray', variant: 'subtle', icon: 'i-lucide-pen-line' },
   noise: { label: '噪声过滤', color: 'neutral', variant: 'outline', icon: 'i-lucide-waves' }
 }
+
+const timeFilterValues = ['all', 'last7', 'last30', 'last90'] as const
+type TimeFilterValue = typeof timeFilterValues[number]
 
 const resolveImportanceBadge = (importance: ImportanceLevel) =>
   importanceBadgeMap[importance] ?? { label: '未分类', color: 'neutral', variant: 'subtle', icon: 'i-lucide-circle' }
@@ -83,6 +103,13 @@ const emptyListDescription = computed(() => listEmpty.value?.description ?? empt
 const emptyListActionLabel = computed(() => listEmpty.value?.action?.label ?? emptyState.value?.action?.label ?? noteDefaults.list.empty.action.label)
 const emptyListActionIcon = computed(() => listEmpty.value?.action?.icon ?? emptyState.value?.action?.icon ?? noteDefaults.list.empty.action.icon ?? 'i-lucide-plus')
 const emptyListIcon = computed(() => emptyState.value?.icon ?? 'i-lucide-notebook')
+const noteListEmptyState = computed(() => ({
+  icon: emptyListIcon.value,
+  title: emptyListTitle.value,
+  description: emptyListDescription.value,
+  actionLabel: emptyListActionLabel.value,
+  actionIcon: emptyListActionIcon.value
+}))
 
 const noteItems = computed(() =>
   filteredNotes.value.map(note => {
@@ -100,6 +127,21 @@ const noteItems = computed(() =>
   })
 )
 
+const handleImportanceChange = (value: string | null) => {
+  const nextValue = (value ?? 'all') as 'all' | ImportanceLevel
+  setImportanceFilter(nextValue)
+}
+
+const handleTimeFilterChange = (value: string | null) => {
+  const normalized = (value ?? 'all') as string
+  const nextValue: TimeFilterValue = timeFilterValues.includes(normalized as TimeFilterValue) ? (normalized as TimeFilterValue) : 'all'
+  setTimeFilter(nextValue)
+}
+
+const handleSearchTrigger = () => {
+  updateSearchQuery(searchText.value.trim())
+}
+
 const handleEditorSave = (payload: NoteSavePayload) => {
   saveNote(payload)
 }
@@ -110,6 +152,12 @@ const handleEditorCancel = () => {
 
 const handleContentChange = (_value: string) => {
   // 占位钩子，未来可在此响应内容变化
+}
+
+const resetFilters = () => {
+  updateSearchQuery('')
+  setImportanceFilter('all')
+  setTimeFilter('all')
 }
 </script>
 
@@ -146,36 +194,37 @@ const handleContentChange = (_value: string) => {
     </div>
 
     <UCard class="border border-gray-200/80 dark:border-white/10">
-      <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div class="flex flex-wrap items-center gap-3">
-          <UInput
-            :model-value="searchQuery"
-            :placeholder="searchPlaceholder"
-            icon="i-lucide-search"
-            class="w-full min-w-[240px] sm:w-72"
-            @update:model-value="updateSearchQuery"
-          />
+      <div class="space-y-4">
+        <CommonSearchToolbar
+          v-model="searchText"
+          :placeholder="searchPlaceholder"
+          :importance-options="importanceOptions"
+          :importance-value="importanceFilter"
+          :importance-label="importanceLabel"
+          :time-options="timeFilterOptions"
+          :time-value="timeFilter"
+          :time-label="timeLabel"
+          layout="horizontal"
+          clear-label="重置筛选"
+          search-label="查找笔记"
+          @update:importance="handleImportanceChange"
+          @update:time="handleTimeFilterChange"
+          @search="handleSearchTrigger"
+          @reset="resetFilters"
+        />
 
-          <USelectMenu
-            :model-value="importanceFilter"
-            :items="importanceOptions"
-            label-key="label"
-            value-key="value"
-            size="md"
-            class="min-w-[180px]"
-            @update:model-value="setImportanceFilter"
+        <div class="flex flex-wrap items-center justify-between gap-3 text-sm text-gray-600 dark:text-gray-400">
+          <span>{{ summaryLabel }}</span>
+          <UBadge
+            :label="totalNotesBadge"
+            color="neutral"
+            variant="soft"
           />
         </div>
-
-        <UBadge
-          :label="`${totalNotesLabel}: ${notes.length}`"
-          color="neutral"
-          variant="soft"
-        />
       </div>
     </UCard>
 
-    <div class="grid gap-6 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]">
+    <div class="grid gap-8 items-start lg:grid-cols-[minmax(0,1.5fr)_minmax(0,0.6fr)] xl:grid-cols-[minmax(0,1.7fr)_minmax(0,0.5fr)]">
       <aside>
         <UCard class="border border-primary/20 dark:border-primary/40 shadow-lg/40 lg:sticky lg:top-24">
           <template #header>
@@ -220,7 +269,7 @@ const handleContentChange = (_value: string) => {
 
           <NoteEditor
             :key="editingNote?.id ?? editorMode"
-            class="w-full"
+            class="w-full lg:min-h-[560px]"
             :initial-title="editingNote?.title"
             :initial-content="editingNote?.content"
             :initial-description="editingNote?.description"
@@ -235,74 +284,17 @@ const handleContentChange = (_value: string) => {
         </UCard>
       </aside>
 
-      <section>
-        <UCard class="border border-gray-200/80 dark:border-white/10">
-          <template #header>
-            <div class="flex items-center justify-between gap-2">
-              <div class="flex items-center gap-2">
-                <UIcon :name="listHeaderIcon" class="text-lg text-primary" />
-                <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
-                  {{ noteListHeader }}
-                </h2>
-              </div>
-              <UBadge :label="`${filteredNotes.length} 条`" variant="soft" />
-            </div>
-          </template>
-
-          <div v-if="filteredNotes.length" class="flex flex-col divide-y divide-gray-200/70 dark:divide-white/5">
-            <button
-              v-for="note in noteItems"
-              :key="note.id"
-              type="button"
-              class="flex items-start gap-3 px-3 py-3 text-left transition hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
-              :class="note.id === activeNoteId ? 'bg-primary/10 ring-1 ring-primary/30 rounded-lg' : ''"
-              @click="openEditorForNote(note.record)"
-            >
-              <div class="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary">
-                <UIcon v-if="note.iconName" :name="note.iconName" class="text-base" />
-                <span v-else class="text-base">{{ note.iconFallback }}</span>
-              </div>
-              <div class="flex-1 space-y-1">
-                <div class="flex items-center justify-between gap-2">
-                  <p class="font-medium text-gray-900 dark:text-white line-clamp-1">
-                    {{ note.title }}
-                  </p>
-                  <div class="flex items-center gap-2">
-                    <UBadge
-                      :label="note.badge.label"
-                      :color="note.badge.color"
-                      :variant="note.badge.variant"
-                      :icon="note.badge.icon"
-                    />
-                    <span class="text-[11px] text-gray-400 dark:text-gray-500">价值 {{ note.score }}%</span>
-                  </div>
-                </div>
-                <p class="text-xs text-gray-500 dark:text-gray-400">
-                  {{ note.description }}
-                </p>
-              </div>
-            </button>
-          </div>
-
-          <div v-else class="flex flex-col items-center justify-center gap-4 py-16 text-center">
-            <UIcon :name="emptyListIcon" class="text-4xl text-gray-300 dark:text-gray-600" />
-            <div class="space-y-2">
-              <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-                {{ emptyListTitle }}
-              </h3>
-              <p class="text-sm text-gray-600 dark:text-gray-400">
-                {{ emptyListDescription }}
-              </p>
-            </div>
-            <UButton
-              color="primary"
-              :icon="emptyListActionIcon"
-              @click="openEditorForNew"
-            >
-              {{ emptyListActionLabel }}
-            </UButton>
-          </div>
-        </UCard>
+      <section class="w-full">
+        <NoteListPanel
+          :items="noteItems"
+          :active-id="activeNoteId ?? undefined"
+          :header-title="noteListHeader"
+          :total-label="totalNotesLabel"
+          :icon="listHeaderIcon"
+          :empty-state="noteListEmptyState"
+          @select="openEditorForNote"
+          @create="openEditorForNew"
+        />
       </section>
     </div>
   </div>

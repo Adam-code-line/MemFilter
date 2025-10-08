@@ -1,5 +1,5 @@
 import { computed, type Ref } from 'vue'
-import type { MemoryCardVisualsResult, MemoryFadeLevel, MemoryItemVisualsResult } from './types'
+import type { MemoryCardVisualsResult, MemoryFadeLevel } from './types'
 
 export const useMemoryCardVisuals = (
   fadeLevel: Ref<MemoryFadeLevel>,
@@ -22,27 +22,5 @@ export const useMemoryCardVisuals = (
 
   return {
     cardStyle
-  }
-}
-
-export const useMemoryItemVisuals = (
-  fadeLevel: Ref<MemoryFadeLevel>,
-  forgettingProgress: Ref<number>
-): MemoryItemVisualsResult => {
-  const itemStyle = computed(() => {
-    const level = fadeLevel.value
-    const blurMap = [0, 0.5, 1.2, 2, 2.8]
-    const opacity = Math.max(0.6, 1 - level * 0.1)
-    const blur = blurMap[level] ?? 2.8
-
-    return {
-      '--fade-opacity': opacity,
-      '--blur-amount': `${blur}px`,
-      '--forgetting-progress': `${forgettingProgress.value}%`
-    }
-  })
-
-  return {
-    itemStyle
   }
 }

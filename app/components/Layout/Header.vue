@@ -24,10 +24,10 @@ const items = computed<NavigationMenuItem[]>(() => [
     active: route.path === '/memory'
   },
   {
-    label: '设置',
-    to: '/settings',
-    icon: 'i-lucide-settings',
-    active: route.path === '/settings'
+    label: '历史',
+    to: '/history',
+    icon: 'i-lucide-history',
+    active: route.path === '/history'
   }
 ])
 
@@ -47,6 +47,36 @@ const user = ref({
   name: '用户',
   avatar: null
 })
+
+const isSearchDialogOpen = ref(false)
+const globalSearchQuery = ref('')
+
+const searchSuggestions = computed(() =>
+  items.value.map(item => ({
+    label: item.label,
+    description: typeof item.to === 'string' ? `前往 ${item.label}` : undefined,
+    icon: item.icon,
+    to: typeof item.to === 'string' ? item.to : undefined
+  }))
+)
+
+const openSearchDialog = () => {
+  globalSearchQuery.value = ''
+  isSearchDialogOpen.value = true
+}
+
+const handleGlobalSearch = (value: string) => {
+  const query = value.trim()
+  const match = searchSuggestions.value.find(entry => entry.label.includes(query))
+
+  if (match?.to) {
+    navigateTo(match.to)
+  } else if (query) {
+    navigateTo({ path: '/note', query: { search: query } })
+  }
+
+  isSearchDialogOpen.value = false
+}
 </script>
 
 <template>
@@ -73,6 +103,7 @@ const user = ref({
         variant="ghost"
         aria-label="搜索"
         class="hidden md:inline-flex"
+        @click="openSearchDialog"
       />
       
       <!-- 通知按钮 -->
@@ -81,6 +112,14 @@ const user = ref({
         color="neutral"
         variant="ghost"
         aria-label="通知"
+        class="hidden md:inline-flex"
+      />
+
+      <UButton
+        to="/settings"
+        icon="i-lucide-settings"
+        color="neutral"
+        variant="ghost"
         class="hidden md:inline-flex"
       />
       
@@ -112,6 +151,7 @@ const user = ref({
           icon="i-lucide-search"
           variant="ghost"
           block
+          @click="openSearchDialog"
         />
         <UButton
           label="通知"
@@ -119,7 +159,22 @@ const user = ref({
           variant="ghost"
           block
         />
+        <UButton
+          label="设置"
+          icon="i-lucide-settings"
+          variant="ghost"
+          block
+          to="/settings"
+        />
       </div>
     </template>
   </UHeader>
+
+  <CommonSearchDialog
+    v-model:open="isSearchDialogOpen"
+    v-model:query="globalSearchQuery"
+    :suggestions="searchSuggestions"
+    placeholder="快速搜索页面或笔记..."
+    @search="handleGlobalSearch"
+  />
 </template>

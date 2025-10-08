@@ -22,6 +22,18 @@ const defaultFilters = {
 	importance: defaultImportanceOptions
 }
 
+const defaultSearchConfig = {
+	placeholder: '搜索笔记或内容……',
+	importanceLabel: '重要度',
+	timeLabel: '时间范围',
+	timeOptions: [
+		{ label: '全部时间', value: 'all', icon: 'i-lucide-infinity' },
+		{ label: '最近 7 天', value: 'last7', icon: 'i-lucide-calendar' },
+		{ label: '最近 30 天', value: 'last30', icon: 'i-lucide-calendar-clock' },
+		{ label: '最近 90 天', value: 'last90', icon: 'i-lucide-calendar-range' }
+	]
+} as const
+
 const defaultList = {
 	title: '笔记列表',
 	createLabel: '新建笔记',
@@ -86,6 +98,14 @@ export const useNoteContent = async () => {
 	const badge = computed(() => noteConfig.value?.badge ?? null)
 	const pageTitle = computed(() => noteConfig.value?.title ?? defaultPageTitle)
 	const pageSubtitle = computed(() => noteConfig.value?.subtitle ?? defaultPageSubtitle)
+	const search = computed(() => {
+		const config = noteConfig.value?.search
+		return {
+			...defaultSearchConfig,
+			...(config ?? {}),
+			timeOptions: config?.timeOptions ?? defaultSearchConfig.timeOptions
+		}
+	})
 
 	const actions = computed(() => noteConfig.value?.actions ?? defaultActions)
 
@@ -162,6 +182,7 @@ export const useNoteContent = async () => {
 		badge,
 		pageTitle,
 		pageSubtitle,
+		search,
 		actions,
 		filters,
 		list,
@@ -172,6 +193,7 @@ export const useNoteContent = async () => {
 			pageSubtitle: defaultPageSubtitle,
 			importanceOptions: defaultImportanceOptions,
 			filters: defaultFilters,
+			search: defaultSearchConfig,
 			list: defaultList,
 			emptyState: defaultEmptyState,
 			editor: defaultEditor,

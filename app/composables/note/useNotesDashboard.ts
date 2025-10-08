@@ -9,12 +9,34 @@ import type {
 } from './types'
 
 type ImportanceFilter = 'all' | ImportanceLevel
+type TimeFilter = 'all' | 'last7' | 'last30' | 'last90'
 
 const importancePriority: Record<ImportanceLevel, number> = {
   high: 0,
   medium: 1,
   low: 2,
   noise: 3
+}
+
+const extractNoteTimestamp = (note: NoteRecord) => {
+  if (typeof note.id === 'number' && Number.isFinite(note.id)) {
+    return note.id
+  }
+
+  const numericId = Number(note.id)
+  if (Number.isFinite(numericId)) {
+    return numericId
+  }
+
+  if (note.date) {
+    const normalized = note.date.replaceAll('/', '-').replaceAll('.', '-').replaceAll('年', '-').replaceAll('月', '-').replace('日', '')
+    const parsed = Date.parse(normalized)
+    if (!Number.isNaN(parsed)) {
+      return parsed
+    }
+  }
+
+  return null
 }
 
 export const useNotesDashboard = (options: NoteDashboardOptions = {}) => {
@@ -26,6 +48,7 @@ export const useNotesDashboard = (options: NoteDashboardOptions = {}) => {
   const viewMode = ref<'card' | 'list'>('card')
   const importanceFilter = ref<ImportanceFilter>('all')
   const searchQuery = ref('')
+  const timeFilter = ref<TimeFilter>('all')
   const selectedNotes = ref<number[]>([])
   const selectedCount = computed(() => selectedNotes.value.length)
   const editorMode = ref<'create' | 'edit'>('create')
@@ -46,6 +69,26 @@ export const useNotesDashboard = (options: NoteDashboardOptions = {}) => {
         note.content.toLowerCase().includes(query) ||
         (note.description ?? '').toLowerCase().includes(query)
       )
+    }
+
+    if (timeFilter.value !== 'all') {
+      const now = Date.now()
+      const dayInMs = 24 * 60 * 60 * 1000
+      const filterMap: Record<Exclude<TimeFilter, 'all'>, number> = {
+        last7: 7,
+        last30: 30,
+        last90: 90
+      }
+      const thresholdDays = filterMap[timeFilter.value as Exclude<TimeFilter, 'all'>]
+      const threshold = now - thresholdDays * dayInMs
+
+      data = data.filter(note => {
+        const timestamp = extractNoteTimestamp(note)
+        if (!timestamp) {
+          return false
+        }
+        return timestamp >= threshold
+      })
     }
 
     data.sort((a, b) => {
@@ -69,6 +112,10 @@ export const useNotesDashboard = (options: NoteDashboardOptions = {}) => {
 
   const setImportanceFilter = (value: ImportanceFilter) => {
     importanceFilter.value = value
+  }
+
+  const setTimeFilter = (value: TimeFilter) => {
+    timeFilter.value = value
   }
 
   const updateSearchQuery = (value: string) => {
@@ -146,6 +193,7 @@ export const useNotesDashboard = (options: NoteDashboardOptions = {}) => {
     viewMode,
     importanceFilter,
     searchQuery,
+    timeFilter,
     selectedNotes,
     selectedCount,
     editorMode,
@@ -155,6 +203,7 @@ export const useNotesDashboard = (options: NoteDashboardOptions = {}) => {
     // actions
     setViewMode,
     setImportanceFilter,
+    setTimeFilter,
     updateSearchQuery,
     toggleSelection,
     openEditorForNew,

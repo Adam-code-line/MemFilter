@@ -41,10 +41,6 @@ export interface MemoryCardVisualsResult {
   cardStyle: Record<string, string | number>
 }
 
-export interface MemoryItemVisualsResult {
-  itemStyle: Record<string, string | number>
-}
-
 export interface MemoryActionFactory {
   contextMenuItems: DropdownMenuItem[][]
 }

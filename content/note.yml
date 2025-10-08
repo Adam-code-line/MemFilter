@@ -50,6 +50,23 @@ filters:
     - label: 噪声信息
       value: noise
       icon: i-lucide-waves
+search:
+  placeholder: 搜索笔记或内容……
+  importanceLabel: 重要度
+  timeLabel: 时间范围
+  timeOptions:
+    - label: 全部时间
+      value: all
+      icon: i-lucide-infinity
+    - label: 最近 7 天
+      value: last7
+      icon: i-lucide-calendar
+    - label: 最近 30 天
+      value: last30
+      icon: i-lucide-calendar-clock
+    - label: 最近 90 天
+      value: last90
+      icon: i-lucide-calendar-range
 stats:
   items:
     - key: total
