@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useNoteContent, useNotesDashboard } from '~/composables/note'
 import type { ImportanceLevel, NoteRecord, NoteSavePayload } from '~/composables/note'
 import { useMemoryContent } from '~/composables/memory/useMemoryContent'
@@ -10,6 +10,7 @@ import { useSummaryLabel } from '~/composables/ui/useSummaryLabel'
 import { useEmptyState } from '~/composables/ui/useEmptyState'
 import { useImportanceBadges } from '~/composables/note/useImportanceBadges'
 import { useNoteRouteSync } from '~/composables/note/useNoteRouteSync'
+import { useKeyboardShortcut } from '~/composables/ui/useKeyboardShortcut'
 
 definePageMeta({
   layout: 'app'
@@ -128,6 +129,31 @@ const noteListEmptyState = computed(() => {
 const noteItems = useNoteItems(filteredNotes)
 
 const totalNotesBadge = computed(() => `${totalNotesLabel.value}: ${notes.value.length}`)
+
+const noteEditorRef = ref<{ triggerSave?: () => void } | null>(null)
+const isEditorActive = computed(() => editorMode.value === 'edit' || editorMode.value === 'create')
+
+useKeyboardShortcut({
+  key: 'Enter',
+  allowInInput: true,
+  stopPropagation: true,
+  when: () => isEditorActive.value,
+  handler: (event) => {
+    if (event.repeat || event.isComposing) {
+      return
+    }
+
+    const target = event.target as HTMLElement | null
+    const isEditable = target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || target?.isContentEditable
+
+    if (isEditable && !(event.metaKey || event.ctrlKey)) {
+      return
+    }
+
+    event.preventDefault()
+    noteEditorRef.value?.triggerSave?.()
+  }
+})
 
 useHead(() => ({
   title: headerTitle.value
@@ -323,6 +349,7 @@ const resetFilters = () => {
           </template>
 
           <NoteEditor
+            ref="noteEditorRef"
             :key="editingNote?.id ?? editorMode"
             class="w-full lg:min-h-[560px]"
             :initial-title="editingNote?.title"

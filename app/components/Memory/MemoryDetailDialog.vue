@@ -59,6 +59,8 @@ const handleAction = (key: string) => {
     v-model:open="isOpen"
     :ui="{ width: props.width }"
     @close="handleClose"
+    :title="title"
+    :description="eyebrow"
   >
     <template #content>
       <UCard :ui="{ body: { padding: 'p-6' } }" class="space-y-4">

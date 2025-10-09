@@ -40,6 +40,7 @@
         <!-- 登录表单 -->
         <UForm 
           v-if="activeTab === 'login'"
+          ref="loginFormRef"
           :state="loginModel"
           :schema="loginSchema"
           @submit="handleLoginSubmit"
@@ -84,6 +85,7 @@
         <!-- 注册表单 -->
         <UForm 
           v-else
+          ref="signupFormRef"
           :state="signupModel"
           :schema="signupSchema"
           @submit="handleSignupSubmit"
@@ -204,6 +206,9 @@ const currentForm = computed(() => {
     : props.config.forms?.signup || {}
 })
 
+const loginFormRef = ref<{ submit: () => void } | null>(null)
+const signupFormRef = ref<{ submit: () => void } | null>(null)
+
 // 方法
 const switchTab = () => {
   const newTab = props.activeTab === 'login' ? 'signup' : 'login'
@@ -217,4 +222,14 @@ const handleLoginSubmit = (event: any) => {
 const handleSignupSubmit = (event: any) => {
   emit('signup-submit', event.data)
 }
+
+const submitActive = () => {
+  if (props.activeTab === 'login') {
+    loginFormRef.value?.submit()
+  } else {
+    signupFormRef.value?.submit()
+  }
+}
+
+defineExpose({ submitActive })
 </script>

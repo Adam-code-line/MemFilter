@@ -265,4 +265,8 @@ watch(() => props.initialImportance, value => {
     setImportanceLevel(value)
   }
 })
+
+defineExpose({
+  triggerSave: handleSave
+})
 </script>

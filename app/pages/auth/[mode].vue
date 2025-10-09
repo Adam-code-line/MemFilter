@@ -24,6 +24,7 @@
         
         <!-- 登录组件 -->
         <LoginCard
+          ref="loginCardRef"
           v-else
           :active-tab="activeTab"
           :config="loginConfig"
@@ -47,6 +48,7 @@ import {
   useAuthForm, 
   type AuthMode 
 } from '~/composables/auth'
+import { useKeyboardShortcut } from '~/composables/ui/useKeyboardShortcut'
 
 // 路由管理
 const { 
@@ -88,6 +90,20 @@ const {
 
 // 状态管理
 const isDataReady = computed(() => isConfigReady.value)
+
+const loginCardRef = ref<{ submitActive?: () => void } | null>(null)
+
+useKeyboardShortcut({
+  key: 'Enter',
+  allowInInput: true,
+  preventDefault: true,
+  stopPropagation: true,
+  when: () => isDataReady.value && !isSubmitting.value,
+  match: event => event.key === 'Enter' && !event.repeat && !event.isComposing,
+  handler: () => {
+    loginCardRef.value?.submitActive?.()
+  }
+})
 
 // 监听路由变化
 watchRouteChanges((newMode: AuthMode) => {
