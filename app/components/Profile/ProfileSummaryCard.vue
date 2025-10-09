@@ -40,20 +40,23 @@ const resolvedStats = computed(() => {
   })
 })
 
-const hasSummaryContent = computed(() => {
-  const summary = props.summary
-  if (!summary) {
-    return false
-  }
+const safeSummary = computed<ProfileContentSummary>(() => ({
+  name: props.summary?.name,
+  role: props.summary?.role,
+  bio: props.summary?.bio,
+  location: props.summary?.location,
+  avatar: props.summary?.avatar,
+  status: props.summary?.status,
+  tags: props.summary?.tags ?? [],
+  actions: props.summary?.actions ?? [],
+  stats: props.summary?.stats ?? []
+}))
 
-  return Boolean(
-    summary.name?.trim() ||
-    summary.role?.trim() ||
-    summary.bio?.trim() ||
-    summary.location?.trim() ||
-    summary.tags?.length
-  )
-})
+const displayName = computed(() => safeSummary.value.name?.trim() || '未命名用户')
+const displayRole = computed(() => safeSummary.value.role?.trim() || '角色信息待完善')
+const displayBio = computed(() => safeSummary.value.bio?.trim() || '添加一段简介，让团队更了解你的记忆偏好。')
+const displayLocation = computed(() => safeSummary.value.location?.trim() || '')
+const hasTags = computed(() => Boolean(safeSummary.value.tags.length))
 
 const colorClassMap: Record<string, string> = {
   primary: 'text-primary-500',
@@ -109,57 +112,79 @@ const handleAction = (action: ProfileContentAction) => {
   >
     <div class="flex flex-col gap-6 lg:flex-row lg:items-start">
       <div class="flex flex-col gap-4 lg:w-2/3">
-        <div v-if="hasSummaryContent" class="flex items-start gap-4">
-          <UAvatar
-            v-if="summary?.avatar?.src"
-            size="lg"
-            :src="summary.avatar.src"
-            :alt="summary.avatar.alt ?? summary?.name ?? '用户头像'"
-            class="ring-4 ring-primary-500/15"
-          />
+        <div class="flex items-start gap-4">
+          <div class="relative">
+            <UAvatar
+              v-if="safeSummary?.avatar?.src"
+              size="lg"
+              :src="safeSummary.avatar.src"
+              :alt="safeSummary.avatar.alt ?? displayName"
+              class="ring-4 ring-primary-500/15"
+            />
+            <div
+              v-else
+              class="flex h-16 w-16 items-center justify-center rounded-2xl border border-dashed border-gray-300 bg-white/60 text-gray-400 shadow-sm dark:border-gray-600 dark:bg-slate-900/70 dark:text-gray-500"
+            >
+              <UIcon name="i-lucide-user-round" class="text-2xl" />
+            </div>
+          </div>
           <div class="flex-1 space-y-2">
             <div class="flex flex-wrap items-center gap-2">
               <h2 class="text-2xl font-semibold text-gray-900 dark:text-white">
-                {{ summary?.name || '—' }}
+                {{ displayName }}
               </h2>
               <UBadge
-                v-if="summary?.status"
-                :label="summary.status.label"
-                :icon="summary.status.icon"
-                :color="summary.status.color ?? 'primary'"
-                :variant="summary.status.variant ?? 'soft'"
+                v-if="safeSummary?.status"
+                :label="safeSummary.status.label"
+                :icon="safeSummary.status.icon"
+                :color="safeSummary.status.color ?? 'primary'"
+                :variant="safeSummary.status.variant ?? 'soft'"
               />
-            </div>
-            <p v-if="summary?.role" class="text-sm text-primary-500 dark:text-primary-300">
-              {{ summary.role }}
-            </p>
-            <p v-if="summary?.bio" class="text-sm leading-relaxed text-gray-600 dark:text-gray-400">
-              {{ summary.bio }}
-            </p>
-            <div v-if="summary?.location" class="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-              <UIcon name="i-lucide-map-pin" class="text-base" />
-              <span>{{ summary.location }}</span>
-            </div>
-            <div v-if="summary?.tags?.length" class="flex flex-wrap gap-2 pt-1">
               <UBadge
-                v-for="tag in summary.tags"
-                :key="tag.key ?? tag.label"
-                :label="tag.label"
-                :icon="tag.icon"
-                :color="tag.color ?? 'neutral'"
+                v-else
+                label="状态待设置"
+                color="neutral"
                 variant="soft"
-                class="rounded-full"
               />
+            </div>
+            <p class="text-sm text-primary-500 dark:text-primary-300">
+              {{ displayRole }}
+            </p>
+            <p class="text-sm leading-relaxed text-gray-600 dark:text-gray-400">
+              {{ displayBio }}
+            </p>
+            <div class="flex flex-wrap items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+              <template v-if="displayLocation">
+                <UIcon name="i-lucide-map-pin" class="text-base" />
+                <span>{{ displayLocation }}</span>
+              </template>
+              <template v-else>
+                <UIcon name="i-lucide-map-pin" class="text-base" />
+                <span>位置待完善</span>
+              </template>
+            </div>
+            <div class="flex flex-wrap gap-2 pt-1">
+              <template v-if="hasTags">
+                <UBadge
+                  v-for="tag in safeSummary?.tags"
+                  :key="tag.key ?? tag.label"
+                  :label="tag.label"
+                  :icon="tag.icon"
+                  :color="tag.color ?? 'neutral'"
+                  variant="soft"
+                  class="rounded-full"
+                />
+              </template>
+              <template v-else>
+                <UBadge label="暂无标签" color="neutral" variant="soft" class="rounded-full" />
+              </template>
             </div>
           </div>
         </div>
-        <div v-else class="flex items-center justify-center rounded-lg border border-dashed border-gray-200 px-6 py-12 text-sm text-gray-500 dark:border-gray-700 dark:text-gray-400">
-          个人资料内容即将接入
-        </div>
 
-        <div v-if="summary?.actions?.length" class="flex flex-wrap gap-3">
+        <div class="flex flex-wrap gap-3">
           <UButton
-            v-for="action in summary.actions"
+            v-for="action in safeSummary.actions"
             :key="action.key ?? action.label"
             :label="action.label"
             :icon="action.icon"
@@ -168,6 +193,15 @@ const handleAction = (action: ProfileContentAction) => {
             :color="action.color ?? 'primary'"
             @click="() => handleAction(action)"
           />
+          <UButton
+            v-if="!safeSummary.actions.length"
+            color="neutral"
+            variant="outline"
+            icon="i-lucide-pencil"
+            disabled
+          >
+            配置操作按钮
+          </UButton>
         </div>
       </div>
 

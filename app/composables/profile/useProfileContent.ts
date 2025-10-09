@@ -118,13 +118,17 @@ export type ProfileContent = {
 
 const createEmptyProfileContent = (): ProfileContent => ({
   title: '个人档案',
-  subtitle: '',
-  badge: undefined,
+  subtitle: '完善你的记忆档案，帮助 AI 更懂你。',
+  badge: {
+    label: '个人资料',
+    color: 'primary',
+    icon: 'i-lucide-user-round'
+  },
   summary: {
-    name: '',
-    role: '',
-    bio: '',
-    location: '',
+    name: '未命名用户',
+    role: '角色信息待完善',
+    bio: '添加一段简介，让团队了解你关注的记忆类型与整理偏好。',
+    location: '位置待完善',
     avatar: undefined,
     status: undefined,
     tags: [],
@@ -132,22 +136,22 @@ const createEmptyProfileContent = (): ProfileContent => ({
     stats: []
   },
   insights: {
-    title: '',
-    subtitle: '',
+    title: '记忆画像亮点',
+    subtitle: '即将展示你的 AI 分析洞察。',
     items: []
   },
   timeline: {
-    title: '',
-    description: '',
+    title: '最近活动',
+    description: 'AI 记录的关键操作会展示在这里。',
     empty: {
-      title: '',
-      description: ''
+      title: '暂无活动记录',
+      description: '完成一次遗忘操作或恢复笔记即可看到时间线。'
     },
     items: []
   },
   resources: {
-    title: '',
-    description: '',
+    title: '协作与支持',
+    description: '接入后端后将在这里呈现常用入口。',
     links: []
   }
 })
