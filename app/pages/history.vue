@@ -3,14 +3,11 @@ import { computed, ref, watch } from 'vue'
 import { useToast } from '#imports'
 import { useNotesDashboard } from '~/composables/note'
 import { useHistoryContent, useHistoryRecords } from '~/composables/history'
+import { usePageMeta } from '~/composables/ui/usePageMeta'
 import type { HistoryRecord } from '~/composables/history/useHistoryRecords'
 
 definePageMeta({
 	layout: 'app'
-})
-
-useHead({
-	title: '遗忘日志'
 })
 
 const toast = useToast()
@@ -28,9 +25,22 @@ const historyStats = historyRecords.stats
 const timelineEvents = historyRecords.timelineEvents
 const restoreLogRef = historyRecords.restoreLog
 
-const headerBadge = computed(() => content.value.badge ?? null)
-const pageTitle = computed(() => content.value.title ?? '遗忘日志')
-const pageSubtitle = computed(() => content.value.subtitle ?? '')
+const { headerTitle, headerSubtitle, headerBadge } = usePageMeta(
+	{
+		title: computed(() => content.value.title ?? null),
+		subtitle: computed(() => content.value.subtitle ?? null),
+		badge: computed(() => content.value.badge ?? null)
+	},
+	{
+		title: '遗忘日志',
+		subtitle: '',
+		badge: null
+	}
+)
+
+useHead(() => ({
+	title: headerTitle.value
+}))
 const heroSection = computed(() => content.value.hero ?? null)
 
 const overviewStats = computed(() => {
@@ -288,9 +298,9 @@ watch(allRecords, records => {
 						variant="soft"
 						:icon="headerBadge.icon"
 					/>
-					<h1 class="text-3xl font-bold text-gray-900 dark:text-white">{{ pageTitle }}</h1>
+					<h1 class="text-3xl font-bold text-gray-900 dark:text-white">{{ headerTitle }}</h1>
 				</div>
-				<p v-if="pageSubtitle" class="text-sm text-gray-500 dark:text-gray-400 max-w-3xl">{{ pageSubtitle }}</p>
+				<p v-if="headerSubtitle" class="text-sm text-gray-500 dark:text-gray-400 max-w-3xl">{{ headerSubtitle }}</p>
 			</div>
 
 			<UCard class="border border-gray-200/70 dark:border-white/10">

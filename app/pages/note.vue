@@ -1,9 +1,15 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, watch } from 'vue'
 import { useNoteContent, useNotesDashboard } from '~/composables/note'
 import type { ImportanceLevel, NoteRecord, NoteSavePayload } from '~/composables/note'
 import { useMemoryContent } from '~/composables/memory/useMemoryContent'
 import { useForgetConfirm } from '~/composables/memory/useForgetConfirm'
+import { useMemoryDetailController } from '~/composables/memory/useMemoryDetailController'
+import { usePageMeta } from '~/composables/ui/usePageMeta'
+import { useSummaryLabel } from '~/composables/ui/useSummaryLabel'
+import { useEmptyState } from '~/composables/ui/useEmptyState'
+import { useImportanceBadges } from '~/composables/note/useImportanceBadges'
+import { useNoteRouteSync } from '~/composables/note/useNoteRouteSync'
 
 definePageMeta({
   layout: 'app'
@@ -30,11 +36,8 @@ const {
   forgetNote
 } = useNotesDashboard()
 
-const route = useRoute()
-const router = useRouter()
-
 const {
-  badge: headerBadge,
+  badge,
   pageTitle,
   pageSubtitle,
   filters: filtersConfig,
@@ -51,43 +54,37 @@ const {
   defaults: memoryDefaults
 } = await useMemoryContent()
 
+const { headerTitle, headerSubtitle, headerBadge } = usePageMeta(
+  {
+    title: pageTitle,
+    subtitle: pageSubtitle,
+    badge
+  },
+  {
+    title: noteDefaults.pageTitle,
+    subtitle: noteDefaults.pageSubtitle,
+    badge: null
+  }
+)
+
 const importanceOptions = computed(() => filtersConfig.value.importance ?? noteDefaults.importanceOptions)
-const searchConfigResolved = computed(() => searchConfig.value ?? noteDefaults.search)
-const searchPlaceholder = computed(() => searchConfigResolved.value.placeholder ?? noteDefaults.search.placeholder)
-const timeFilterOptions = computed(() => searchConfigResolved.value.timeOptions ?? noteDefaults.search.timeOptions)
-const importanceLabel = computed(() => searchConfigResolved.value.importanceLabel ?? noteDefaults.search.importanceLabel)
-const timeLabel = computed(() => searchConfigResolved.value.timeLabel ?? noteDefaults.search.timeLabel)
+const searchPlaceholder = computed(() => searchConfig.value.placeholder ?? noteDefaults.search.placeholder)
+const timeFilterOptions = computed(() => searchConfig.value.timeOptions ?? noteDefaults.search.timeOptions)
+const importanceLabel = computed(() => searchConfig.value.importanceLabel ?? noteDefaults.search.importanceLabel)
+const timeLabel = computed(() => searchConfig.value.timeLabel ?? noteDefaults.search.timeLabel)
 
-const headerTitle = computed(() => pageTitle.value ?? noteDefaults.pageTitle)
-const headerSubtitle = computed(() => pageSubtitle.value ?? noteDefaults.pageSubtitle)
-const emptyState = computed(() => emptyStateConfig.value ?? noteDefaults.emptyState)
-const summaryLabel = computed(() => {
-  const template = filtersConfig.value.summaryLabel ?? noteDefaults.filters.summaryLabel
-  return template.replace('{count}', String(filteredNotes.value.length))
-})
-const totalNotesBadge = computed(() => `${totalNotesLabel.value}: ${notes.value.length}`)
-
-useHead(() => ({
-  title: headerTitle.value
-}))
+const summaryLabel = useSummaryLabel(
+  computed(() => filtersConfig.value.summaryLabel),
+  noteDefaults.filters.summaryLabel,
+  computed(() => filteredNotes.value.length)
+)
 
 const searchText = computed({
   get: () => searchQuery.value,
   set: value => updateSearchQuery(value)
 })
 
-const importanceBadgeMap: Record<ImportanceLevel, { label: string; color: string; variant: 'solid' | 'soft' | 'subtle' | 'outline'; icon: string }> = {
-  high: { label: '核心记忆', color: 'primary', variant: 'solid', icon: 'i-lucide-flame' },
-  medium: { label: '重点追踪', color: 'amber', variant: 'soft', icon: 'i-lucide-target' },
-  low: { label: '随手记录', color: 'gray', variant: 'subtle', icon: 'i-lucide-pen-line' },
-  noise: { label: '噪声过滤', color: 'neutral', variant: 'outline', icon: 'i-lucide-waves' }
-}
-
-const timeFilterValues = ['all', 'last7', 'last30', 'last90'] as const
-type TimeFilterValue = typeof timeFilterValues[number]
-
-const resolveImportanceBadge = (importance: ImportanceLevel) =>
-  importanceBadgeMap[importance] ?? { label: '未分类', color: 'neutral', variant: 'subtle', icon: 'i-lucide-circle' }
+const { resolveImportanceBadge, useNoteItems } = useImportanceBadges()
 
 const editorHeadline = computed(() => {
   if (editorMode.value === 'edit') {
@@ -107,149 +104,37 @@ const isEditingExisting = computed(() => editorMode.value === 'edit' && !!editin
 
 const editingBadge = computed(() => (editingNote.value ? resolveImportanceBadge(editingNote.value.importance) : null))
 
-const listEmpty = computed(() => listConfig.value?.empty ?? noteDefaults.list.empty)
-const noteListHeader = computed(() => listConfig.value?.title ?? noteDefaults.list.title)
-const noteCreateLabel = computed(() => listConfig.value?.createLabel ?? noteDefaults.list.createLabel)
-const totalNotesLabel = computed(() => listConfig.value?.totalLabel ?? noteDefaults.list.totalLabel)
-const listHeaderIcon = computed(() => listConfig.value?.icon ?? noteDefaults.list.icon ?? 'i-lucide-notebook-pen')
-const emptyListTitle = computed(() => listEmpty.value?.title ?? emptyState.value?.title ?? noteDefaults.list.empty.title)
-const emptyListDescription = computed(() => listEmpty.value?.description ?? emptyState.value?.description ?? noteDefaults.list.empty.description)
-const emptyListActionLabel = computed(() => listEmpty.value?.action?.label ?? emptyState.value?.action?.label ?? noteDefaults.list.empty.action.label)
-const emptyListActionIcon = computed(() => listEmpty.value?.action?.icon ?? emptyState.value?.action?.icon ?? noteDefaults.list.empty.action.icon ?? 'i-lucide-plus')
-const emptyListIcon = computed(() => emptyState.value?.icon ?? 'i-lucide-notebook')
-const noteListEmptyState = computed(() => ({
-  icon: emptyListIcon.value,
-  title: emptyListTitle.value,
-  description: emptyListDescription.value,
-  actionLabel: emptyListActionLabel.value,
-  actionIcon: emptyListActionIcon.value
-}))
+const listConfigResolved = computed(() => listConfig.value ?? noteDefaults.list)
+const noteListHeader = computed(() => listConfigResolved.value.title ?? noteDefaults.list.title)
+const noteCreateLabel = computed(() => listConfigResolved.value.createLabel ?? noteDefaults.list.createLabel)
+const totalNotesLabel = computed(() => listConfigResolved.value.totalLabel ?? noteDefaults.list.totalLabel)
+const listHeaderIcon = computed(() => listConfigResolved.value.icon ?? noteDefaults.list.icon ?? 'i-lucide-notebook-pen')
 
-const noteItems = computed(() =>
-  filteredNotes.value.map(note => {
-    const badge = resolveImportanceBadge(note.importance)
-    return {
-      id: note.id,
-      record: note,
-      title: note.title || '未命名笔记',
-      description: note.date ?? '',
-      iconName: typeof note.icon === 'string' && note.icon.startsWith('i-') ? note.icon : undefined,
-      iconFallback: typeof note.icon === 'string' && !note.icon.startsWith('i-') ? note.icon : '📝',
-      badge,
-      score: Math.round(note.importanceScore ?? 0)
-    }
-  })
-)
+const mergedEmptyState = useEmptyState(emptyStateConfig, noteDefaults.emptyState)
+const listEmptyState = useEmptyState(computed(() => listConfigResolved.value.empty ?? null), noteDefaults.list.empty)
 
-const detailDialogOpen = ref(false)
-const selectedDetailNote = ref<NoteRecord | null>(null)
-
-const resolveMemoryBucket = (note: NoteRecord | null): 'fresh' | 'fading' | 'archived' | null => {
-  if (!note) {
-    return null
-  }
-
-  const fadeLevel = note.fadeLevel ?? 0
-
-  if (fadeLevel >= 4 || note.isCollapsed) {
-    return 'archived'
-  }
-
-  if (fadeLevel >= 1) {
-    return 'fading'
-  }
-
-  if (note.importance !== 'high' && (note.forgettingProgress ?? 0) > 50) {
-    return 'fading'
-  }
-
-  return 'fresh'
-}
-
-const detailStatus = computed(() => {
-  const note = selectedDetailNote.value
-  if (!note) {
-    return null
-  }
-
-  if ((note.fadeLevel ?? 0) >= 4) {
-    return {
-      label: '已彻底遗忘',
-      color: 'error'
-    }
-  }
-
-  const bucket = resolveMemoryBucket(note)
-  if (!bucket) {
-    return null
-  }
-
-  const defaults = memoryDefaults.sections.find(item => item.key === bucket)
-  const config = memorySectionSource.value.find(item => item.key === bucket)
-
+const noteListEmptyState = computed(() => {
+  const listEmpty = listEmptyState.value
+  const general = mergedEmptyState.value
   return {
-    label: config?.title ?? defaults?.title ?? '',
-    color: config?.accent ?? defaults?.accent ?? 'primary'
+    icon: listEmpty.icon ?? general.icon ?? noteDefaults.list.empty.icon ?? 'i-lucide-notebook',
+    title: listEmpty.title ?? general.title ?? noteDefaults.list.empty.title,
+    description: listEmpty.description ?? general.description ?? noteDefaults.list.empty.description,
+    actionLabel: listEmpty.action?.label ?? general.action?.label ?? noteDefaults.list.empty.action?.label ?? '新建笔记',
+    actionIcon: listEmpty.action?.icon ?? general.action?.icon ?? noteDefaults.list.empty.action?.icon ?? 'i-lucide-plus'
   }
 })
 
-const buildDetailActions = (note: NoteRecord | null) => {
-  if (!note) {
-    return []
-  }
+const noteItems = useNoteItems(filteredNotes)
 
-  const actionsConfig = memoryDetail.value.actions
-  const actions: Array<{
-    key: string
-    label: string
-    icon?: string
-    color?: string
-    variant?: 'solid' | 'soft' | 'subtle' | 'outline' | 'ghost'
-    tooltip?: string
-  }> = []
+const totalNotesBadge = computed(() => `${totalNotesLabel.value}: ${notes.value.length}`)
 
-  if ((note.fadeLevel ?? 0) > 0 || note.isCollapsed) {
-    actions.push({
-      key: 'restore',
-      ...actionsConfig.restore
-    })
-  }
+useHead(() => ({
+  title: headerTitle.value
+}))
 
-  if ((note.forgettingProgress ?? 0) < 100 && (note.fadeLevel ?? 0) < 4) {
-    actions.push({
-      key: 'accelerate',
-      ...actionsConfig.accelerate
-    })
-  }
-
-  if ((note.fadeLevel ?? 0) < 4) {
-    actions.push({
-      key: 'forget',
-      ...actionsConfig.forget
-    })
-  }
-
-  actions.push({
-    key: 'open-note',
-    label: '在笔记中编辑',
-    icon: 'i-lucide-square-pen',
-    color: 'primary',
-    variant: 'solid'
-  })
-
-  return actions
-}
-
-const detailActions = computed(() => buildDetailActions(selectedDetailNote.value))
-
-const openNoteDetail = (note: NoteRecord) => {
-  selectedDetailNote.value = note
-  detailDialogOpen.value = true
-}
-
-const closeNoteDetail = () => {
-  detailDialogOpen.value = false
-}
+const timeFilterValues = ['all', 'last7', 'last30', 'last90'] as const
+type TimeFilterValue = typeof timeFilterValues[number]
 
 const { state: forgetConfirm, dialogBindings: forgetDialogBindings, openForNote: requestForget, confirm: confirmForget } = useForgetConfirm({
   onExecuteForget: (note) => {
@@ -257,44 +142,38 @@ const { state: forgetConfirm, dialogBindings: forgetDialogBindings, openForNote:
   }
 })
 
-const handleDetailAction = (key: string) => {
-  const note = selectedDetailNote.value
-  if (!note) {
-    return
+const {
+  selectedNote: selectedDetailNote,
+  detailDialogOpen,
+  detailStatus,
+  detailActions,
+  openDetail,
+  closeDetail,
+  handleDetailAction
+} = useMemoryDetailController({
+  notes,
+  sectionSource: memorySectionSource,
+  sectionDefaults: memoryDefaults.sections,
+  detailPanel: memoryDetail,
+  onRestore: restoreNote,
+  onAccelerate: accelerateForgetting,
+  onForget: requestForget,
+  onOpenNote: note => {
+    openEditorForNote(note)
   }
+})
 
-  switch (key) {
-    case 'restore':
-      restoreNote(note)
-      break
-    case 'accelerate':
-      accelerateForgetting(note)
-      break
-    case 'forget':
-      requestForget(note)
-      break
-    case 'open-note':
-      openEditorForNote(note)
-      detailDialogOpen.value = false
-      break
-    default:
-      break
-  }
+const openNoteDetail = (note: NoteRecord) => {
+  openDetail(note)
 }
 
-watch(notes, newNotes => {
-  if (!newNotes.length) {
-    selectedDetailNote.value = null
-    detailDialogOpen.value = false
-    return
-  }
+const closeNoteDetail = () => {
+  closeDetail()
+}
 
-  if (selectedDetailNote.value) {
-    const refreshed = newNotes.find(item => item.id === selectedDetailNote.value?.id)
-    if (refreshed) {
-      selectedDetailNote.value = refreshed
-    }
-  }
+useNoteRouteSync({
+  notes,
+  onOpenNote: openEditorForNote
 })
 
 watch(() => forgetConfirm.value.open, value => {
@@ -302,47 +181,6 @@ watch(() => forgetConfirm.value.open, value => {
     forgetConfirm.value.note = null
   }
 })
-
-const pendingNoteId = ref<string | null>(null)
-
-const clearRouteNoteId = () => {
-  if (route.query.noteId === undefined) {
-    return
-  }
-
-  const nextQuery = { ...route.query } as Record<string, any>
-  delete nextQuery.noteId
-  router.replace({ query: nextQuery })
-}
-
-watch(
-  () => route.query.noteId,
-  value => {
-    if (Array.isArray(value)) {
-      pendingNoteId.value = value[0] ?? null
-    } else if (typeof value === 'string') {
-      pendingNoteId.value = value
-    } else {
-      pendingNoteId.value = null
-    }
-  },
-  { immediate: true }
-)
-
-watch([notes, pendingNoteId], ([noteList, noteId]) => {
-  if (!noteId) {
-    return
-  }
-
-  const target = noteList.find(note => String(note.id) === noteId)
-  if (!target) {
-    return
-  }
-
-  openEditorForNote(target)
-  pendingNoteId.value = null
-  clearRouteNoteId()
-}, { immediate: true })
 
 const handleImportanceChange = (value: string | null) => {
   const nextValue = (value ?? 'all') as 'all' | ImportanceLevel

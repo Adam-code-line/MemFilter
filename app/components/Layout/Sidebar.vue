@@ -29,19 +29,19 @@ const mainItems = computed<NavigationMenuItem[]>(() => [
 const aiItems = computed<NavigationMenuItem[]>(() => [
   {
     label: 'AI 分析',
-    to: '/analysis',
+    to: '/',
     icon: 'i-lucide-brain-circuit',
     active: route.path === '/analysis'
   },
   {
     label: '重要度评估',
-    to: '/importance',
+    to: '/',
     icon: 'i-lucide-star',
     active: route.path === '/importance'
   },
   {
     label: '遗忘策略',
-    to: '/strategy',
+    to: '/',
     icon: 'i-lucide-settings-2',
     active: route.path === '/strategy'
   }
@@ -57,7 +57,7 @@ const settingsItems = computed<NavigationMenuItem[]>(() => [
   },
   {
     label: '帮助中心',
-    to: '/help',
+    to: '/',
     icon: 'i-lucide-help-circle',
     active: route.path === '/help'
   }

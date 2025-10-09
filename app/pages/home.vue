@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import type { ImportanceLevel } from '~/composables/note/types'
+import { useImportanceBadges } from '~/composables/note/useImportanceBadges'
 import { useNotesStore } from '~~/stores/notes'
 
 // 使用 app 布局
@@ -27,6 +28,8 @@ notesStore.ensureInitialized()
 
 const { notes, noteStats, importanceCounts } = storeToRefs(notesStore)
 
+const { resolveImportanceBadge } = useImportanceBadges()
+
 const formatDateLabel = (date: Date) =>
   new Intl.DateTimeFormat('zh-CN', {
     year: 'numeric',
@@ -35,13 +38,6 @@ const formatDateLabel = (date: Date) =>
   }).format(date)
 
 const RECENT_LIMIT = 6
-
-const importanceMeta: Record<ImportanceLevel, { label: string; color: string }> = {
-  high: { label: '核心', color: 'primary' },
-  medium: { label: '重点', color: 'amber' },
-  low: { label: '随手', color: 'sky' },
-  noise: { label: '噪声', color: 'gray' }
-}
 
 const createSnippet = (content: string) => {
   const normalized = (content ?? '').replace(/\s+/g, ' ').trim()
@@ -110,7 +106,7 @@ const recentMemories = computed(() =>
     title: note.title,
     snippet: createSnippet(note.content),
     importance: note.importance,
-    badge: importanceMeta[note.importance] ?? importanceMeta.medium,
+    badge: resolveImportanceBadge(note.importance),
     lastAccessed: note.lastAccessed,
     date: note.date
   }))

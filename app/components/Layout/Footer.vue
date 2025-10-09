@@ -9,15 +9,15 @@ const footerLinks: NavigationMenuItem[] = [
   },
   {
     label: '隐私政策',
-    to: '/privacy'
+    to: '/'
   },
   {
     label: '使用条款',
-    to: '/terms'
+    to: '/'
   },
   {
     label: '联系我们',
-    to: '/contact'
+    to: '/'
   }
 ]
 

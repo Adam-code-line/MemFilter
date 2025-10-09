@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed } from 'vue'
 import type { NoteRecord } from '~/composables/note'
 import { storeToRefs } from 'pinia'
 import { useNotesStore } from '~~/stores/notes'
 import { useMemoryContent } from '~/composables/memory/useMemoryContent'
 import { useForgetConfirm } from '~/composables/memory/useForgetConfirm'
+import { useMemoryDetailController } from '~/composables/memory/useMemoryDetailController'
+import { usePageMeta } from '~/composables/ui/usePageMeta'
 
 definePageMeta({
   layout: 'app'
@@ -91,8 +93,21 @@ const {
   defaults: memoryDefaults
 } = await useMemoryContent()
 
+const { headerTitle, headerSubtitle, headerBadge } = usePageMeta(
+  {
+    title: pageTitle,
+    subtitle: pageSubtitle,
+    badge
+  },
+  {
+    title: '记忆回溯',
+    subtitle: '遗忘日志与记忆轨迹',
+    badge: null
+  }
+)
+
 useHead(() => ({
-  title: pageTitle.value ?? '记忆回溯'
+  title: headerTitle.value
 }))
 
 const { state: forgetConfirm, dialogBindings: forgetDialogBindings, openForNote: openForgetDialog, confirm: confirmForget } = useForgetConfirm({
@@ -150,127 +165,27 @@ const requestForget = (note: NoteRecord) => {
   openForgetDialog(note)
 }
 
-const selectedNote = ref<NoteRecord | null>(null)
-const detailDialogOpen = ref(false)
-
-const detailStatus = computed(() => {
-  if (!selectedNote.value) {
-    return null
-  }
-  if ((selectedNote.value.fadeLevel ?? 0) >= 4) {
-    return {
-      label: '已彻底遗忘',
-      color: 'error'
-    }
-  }
-  const bucket = resolveMemoryBucket(selectedNote.value)
-  const sectionDefaults = memoryDefaults.sections.find(item => item.key === bucket)
-  const sectionConfig = sectionSource.value.find(item => item.key === bucket)
-  return {
-    label: sectionConfig?.title ?? sectionDefaults?.title ?? '',
-    color: sectionConfig?.accent ?? sectionDefaults?.accent ?? 'primary'
+const {
+  selectedNote,
+  detailDialogOpen,
+  detailStatus,
+  detailActions,
+  openDetail,
+  closeDetail,
+  handleDetailAction
+} = useMemoryDetailController({
+  notes,
+  sectionSource,
+  sectionDefaults: memoryDefaults.sections,
+  detailPanel: detail,
+  autoSelectFirst: true,
+  onRestore: handleRestore,
+  onAccelerate: handleAccelerate,
+  onForget: openForgetDialog,
+  onOpenNote: note => {
+    router.push({ path: '/note', query: { noteId: String(note.id ?? '') } })
   }
 })
-
-const detailActions = computed(() => {
-  const note = selectedNote.value
-  if (!note) {
-    return []
-  }
-
-  const actionsConfig = detail.value.actions
-  const actions: Array<{
-    key: string
-    label: string
-    icon?: string
-    color?: string
-    variant?: 'solid' | 'soft' | 'subtle' | 'outline' | 'ghost'
-    tooltip?: string
-  }> = []
-
-  if ((note.fadeLevel ?? 0) > 0 || note.isCollapsed) {
-    actions.push({
-      key: 'restore',
-      ...actionsConfig.restore
-    })
-  }
-
-  if ((note.forgettingProgress ?? 0) < 100 && (note.fadeLevel ?? 0) < 4) {
-    actions.push({
-      key: 'accelerate',
-      ...actionsConfig.accelerate
-    })
-  }
-
-  if ((note.fadeLevel ?? 0) < 4) {
-    actions.push({
-      key: 'forget',
-      ...actionsConfig.forget
-    })
-  }
-
-  actions.push({
-    key: 'open-note',
-    label: '在笔记中编辑',
-    icon: 'i-lucide-square-pen',
-    color: 'primary',
-    variant: 'solid'
-  })
-
-  return actions
-})
-
-const openDetail = (note: NoteRecord) => {
-  selectedNote.value = note
-  detailDialogOpen.value = true
-}
-
-const closeDetail = () => {
-  detailDialogOpen.value = false
-}
-
-const handleDetailAction = (key: string) => {
-  const note = selectedNote.value
-  if (!note) {
-    return
-  }
-
-  switch (key) {
-    case 'restore':
-      handleRestore(note)
-      break
-    case 'accelerate':
-      handleAccelerate(note)
-      break
-    case 'forget':
-      requestForget(note)
-      break
-    case 'open-note':
-      router.push({ path: '/note', query: { noteId: String(note.id ?? '') } })
-      detailDialogOpen.value = false
-      break
-    default:
-      break
-  }
-}
-
-watch(notes, newNotes => {
-  if (!newNotes.length) {
-    selectedNote.value = null
-    detailDialogOpen.value = false
-    return
-  }
-
-  if (selectedNote.value) {
-    const refreshed = newNotes.find(item => item.id === selectedNote.value?.id)
-    if (refreshed) {
-      selectedNote.value = refreshed
-      return
-    }
-  }
-
-  selectedNote.value = newNotes[0]
-}, { immediate: true })
 </script>
 
 <template>
@@ -279,16 +194,16 @@ watch(notes, newNotes => {
       <div class="flex flex-col gap-3">
         <div class="flex items-center gap-3">
           <UBadge
-            v-if="badge"
-            :label="badge.label"
-            :color="badge.color ?? 'primary'"
+            v-if="headerBadge"
+            :label="headerBadge.label"
+            :color="headerBadge.color ?? 'primary'"
             variant="soft"
-            :icon="badge.icon"
+            :icon="headerBadge.icon"
           />
-          <h1 class="text-3xl font-bold text-gray-900 dark:text-white">{{ pageTitle }}</h1>
+          <h1 class="text-3xl font-bold text-gray-900 dark:text-white">{{ headerTitle }}</h1>
         </div>
-        <p v-if="pageSubtitle" class="text-sm text-gray-500 dark:text-gray-400 max-w-3xl">
-          {{ pageSubtitle }}
+        <p v-if="headerSubtitle" class="text-sm text-gray-500 dark:text-gray-400 max-w-3xl">
+          {{ headerSubtitle }}
         </p>
         <p v-if="introDescription" class="text-gray-600 dark:text-gray-400 max-w-3xl">
           {{ introDescription }}
