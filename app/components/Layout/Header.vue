@@ -1,12 +1,10 @@
 <script setup lang="ts">
 import { storeToRefs } from 'pinia'
 import type { DropdownMenuItem, NavigationMenuItem } from '@nuxt/ui'
-import type { NoteRecord } from '~/composables/note'
 import { useNotesStore } from '~~/stores/notes'
 import { useMemoryContent } from '~/composables/memory/useMemoryContent'
-import MemoryDetailDialog from '~/components/Memory/MemoryDetailDialog.vue'
-import CommonConfirmDialog from '~/components/Common/CommonConfirmDialog.vue'
-import type { SearchSuggestion } from '~/components/Common/CommonSearchDialog.vue'
+import { useMemoryDetailController } from '~/composables/memory/useMemoryDetailController'
+import { useForgetConfirm } from '~/composables/memory/useForgetConfirm'
 
 const route = useRoute()
 const router = useRouter()
@@ -123,188 +121,39 @@ const searchSuggestions = computed<SearchSuggestion[]>(() => {
   ]
 })
 
-const selectedMemory = ref<NoteRecord | null>(null)
-const isMemoryDetailOpen = ref(false)
-
-const resolveMemoryBucket = (note: NoteRecord | null): 'fresh' | 'fading' | 'archived' | null => {
-  if (!note) {
-    return null
-  }
-
-  const fadeLevel = note.fadeLevel ?? 0
-
-  if (fadeLevel >= 4 || note.isCollapsed) {
-    return 'archived'
-  }
-
-  if (fadeLevel >= 1) {
-    return 'fading'
-  }
-
-  if (note.importance !== 'high' && (note.forgettingProgress ?? 0) > 50) {
-    return 'fading'
-  }
-
-  return 'fresh'
-}
-
-const detailStatus = computed(() => {
-  const note = selectedMemory.value
-  if (!note) {
-    return null
-  }
-
-  if ((note.fadeLevel ?? 0) >= 4) {
-    return {
-      label: '已彻底遗忘',
-      color: 'error'
-    }
-  }
-
-  const bucket = resolveMemoryBucket(note)
-  if (!bucket) {
-    return null
-  }
-
-  const defaults = memoryDefaults.sections.find(item => item.key === bucket)
-  const config = sectionSource.value.find(item => item.key === bucket)
-
-  return {
-    label: config?.title ?? defaults?.title ?? '',
-    color: config?.accent ?? defaults?.accent ?? 'primary'
+const { state: forgetConfirm, dialogBindings: forgetDialogBindings, openForNote: openForgetDialog, confirm: confirmForget, reset: resetForgetConfirm } = useForgetConfirm({
+  onExecuteForget: (note) => {
+    notesStore.directForget(note)
   }
 })
 
-const createDetailActions = (note: NoteRecord | null) => {
-  if (!note) {
-    return []
+const {
+  selectedNote: selectedMemory,
+  detailDialogOpen: isMemoryDetailOpen,
+  detailStatus,
+  detailActions,
+  openDetail,
+  closeDetail,
+  handleDetailAction
+} = useMemoryDetailController({
+  notes,
+  sectionSource,
+  sectionDefaults: memoryDefaults.sections,
+  detailPanel: memoryDetail,
+  onRestore: note => notesStore.restoreNote(note),
+  onAccelerate: note => notesStore.accelerateForgetting(note),
+  onForget: note => openForgetDialog(note),
+  onOpenNote: note => {
+    router.push({ path: '/note', query: { noteId: String(note.id ?? '') } })
+    closeDetail()
   }
-
-  const actionsConfig = memoryDetail.value.actions
-  const actions: Array<{
-    key: string
-    label: string
-    icon?: string
-    color?: string
-    variant?: 'solid' | 'soft' | 'subtle' | 'outline' | 'ghost'
-    tooltip?: string
-  }> = []
-
-  if ((note.fadeLevel ?? 0) > 0 || note.isCollapsed) {
-    actions.push({
-      key: 'restore',
-      ...actionsConfig.restore
-    })
-  }
-
-  if ((note.forgettingProgress ?? 0) < 100 && (note.fadeLevel ?? 0) < 4) {
-    actions.push({
-      key: 'accelerate',
-      ...actionsConfig.accelerate
-    })
-  }
-
-  if ((note.fadeLevel ?? 0) < 4) {
-    actions.push({
-      key: 'forget',
-      ...actionsConfig.forget
-    })
-  }
-
-  actions.push({
-    key: 'open-note',
-    label: '在笔记中编辑',
-    icon: 'i-lucide-square-pen',
-    color: 'primary',
-    variant: 'solid'
-  })
-
-  return actions
-}
-
-const detailActions = computed(() => createDetailActions(selectedMemory.value))
-
-const forgetConfirm = ref({
-  open: false,
-  note: null as NoteRecord | null,
-  title: '',
-  description: '',
-  confirmLabel: '确认',
-  confirmColor: 'error' as const,
-  confirmVariant: 'solid' as const,
-  icon: 'i-lucide-alert-triangle'
 })
-
-const resetForgetConfirm = () => {
-  forgetConfirm.value = {
-    open: false,
-    note: null,
-    title: '',
-    description: '',
-    confirmLabel: '确认',
-    confirmColor: 'error',
-    confirmVariant: 'solid',
-    icon: 'i-lucide-alert-triangle'
-  }
-}
-
-const requestForget = (note: NoteRecord) => {
-  forgetConfirm.value = {
-    open: true,
-    note,
-    title: note.importance === 'high' ? '确认折叠核心记忆？' : '确认遗忘这条记忆？',
-    description: note.importance === 'high'
-      ? `《${note.title || '未命名笔记'}》被标记为核心记忆，确认后将进入折叠区，可在遗忘日志中彻底清理。`
-      : `遗忘后《${note.title || '未命名笔记'}》将立即归档并从活跃列表移除。`,
-    confirmLabel: '确认遗忘',
-    confirmColor: 'error',
-    confirmVariant: 'solid',
-    icon: note.importance === 'high' ? 'i-lucide-shield-alert' : 'i-lucide-alert-triangle'
-  }
-}
-
-const handleMemoryDetailAction = (key: string) => {
-  const note = selectedMemory.value
-  if (!note) {
-    return
-  }
-
-  switch (key) {
-    case 'restore':
-      notesStore.restoreNote(note)
-      break
-    case 'accelerate':
-      notesStore.accelerateForgetting(note)
-      break
-    case 'forget':
-      requestForget(note)
-      break
-    case 'open-note':
-      router.push({ path: '/note', query: { noteId: String(note.id ?? '') } })
-      isMemoryDetailOpen.value = false
-      break
-    default:
-      break
-  }
-}
-
-const confirmForget = () => {
-  const note = forgetConfirm.value.note
-  if (!note) {
-    resetForgetConfirm()
-    return
-  }
-
-  notesStore.directForget(note)
-  resetForgetConfirm()
-}
 
 const handleSuggestionSelect = (suggestion: SearchSuggestion) => {
   if (suggestion.type === 'memory' && suggestion.noteId !== undefined) {
     const target = notes.value.find(note => String(note.id) === String(suggestion.noteId))
     if (target) {
-      selectedMemory.value = target
-      isMemoryDetailOpen.value = true
+      openDetail(target)
     }
     globalSearchQuery.value = ''
     isSearchDialogOpen.value = false
@@ -346,21 +195,6 @@ const handleGlobalSearch = (value: string) => {
 
   isSearchDialogOpen.value = false
 }
-
-watch(notes, newNotes => {
-  if (selectedMemory.value) {
-    const refreshed = newNotes.find(item => item.id === selectedMemory.value?.id)
-    if (refreshed) {
-      selectedMemory.value = refreshed
-    }
-  }
-})
-
-watch(() => forgetConfirm.value.open, value => {
-  if (!value) {
-    forgetConfirm.value.note = null
-  }
-})
 </script>
 
 <template>
@@ -473,17 +307,13 @@ watch(() => forgetConfirm.value.open, value => {
     :status-label="detailStatus?.label"
     :status-color="detailStatus?.color"
     width="sm:max-w-4xl"
-    @action="handleMemoryDetailAction"
+    @action="handleDetailAction"
+    @close="closeDetail"
   />
 
   <CommonConfirmDialog
     v-model="forgetConfirm.open"
-    :title="forgetConfirm.title"
-    :description="forgetConfirm.description"
-    :icon="forgetConfirm.icon"
-    :confirm-label="forgetConfirm.confirmLabel"
-    :confirm-color="forgetConfirm.confirmColor"
-    :confirm-variant="forgetConfirm.confirmVariant"
+    v-bind="forgetDialogBindings"
     @confirm="confirmForget"
     @cancel="resetForgetConfirm"
   />

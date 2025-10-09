@@ -76,7 +76,6 @@ export const useForgetConfirm = (options: UseForgetConfirmOptions = {}) => {
 	)
 
 	const dialogBindings = computed(() => ({
-		modelValue: state.value.open,
 		title: state.value.title,
 		description: state.value.description,
 		confirmLabel: state.value.confirmLabel,
