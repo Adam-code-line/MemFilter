@@ -103,6 +103,7 @@ const summaryStatOverrides = computed<Record<string, string>>(() => {
 })
 
 const insightSection = computed(() => content.value.insights ?? null)
+const hasInsightItems = computed(() => (insightSection.value?.items?.length ?? 0) > 0)
 const timelineSection = computed(() => content.value.timeline ?? null)
 const resourceSection = computed(() => content.value.resources ?? null)
 
@@ -161,12 +162,15 @@ const handleResourceOpen = async (link: { action?: string; value?: string }) => 
 			/>
 		</section>
 
-		<section class="grid gap-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
+		<section
+			class="grid gap-6"
+			:class="{ 'lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]': hasInsightItems }"
+		>
 			<ProfileInsightGrid
-				v-if="insightSection?.items?.length"
-				:title="insightSection.title"
-				:subtitle="insightSection.subtitle"
-				:items="insightSection.items"
+				v-if="hasInsightItems"
+				:title="insightSection?.title"
+				:subtitle="insightSection?.subtitle"
+				:items="insightSection?.items"
 			/>
 
 			<div class="space-y-6">

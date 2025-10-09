@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import type { ProfileContentResourceLink } from '~/composables/profile/useProfileContent'
 
 interface ProfileResourceListProps {
@@ -12,6 +13,8 @@ const props = withDefaults(defineProps<ProfileResourceListProps>(), {
   description: '',
   links: () => []
 })
+
+const hasLinks = computed(() => (props.links?.length ?? 0) > 0)
 
 const emit = defineEmits<{
   (event: 'open', payload: ProfileContentResourceLink): void
@@ -51,7 +54,10 @@ const handleAction = (link: ProfileContentResourceLink) => {
       </p>
     </div>
 
-    <div class="grid gap-4 md:grid-cols-2">
+    <div
+      v-if="hasLinks"
+      class="grid gap-4 md:grid-cols-2"
+    >
       <UCard
         v-for="link in links"
         :key="link.key"
@@ -94,5 +100,15 @@ const handleAction = (link: ProfileContentResourceLink) => {
         </div>
       </UCard>
     </div>
+
+    <UCard
+      v-else
+      :ui="{ body: { padding: 'p-10' } }"
+      class="flex flex-col items-center justify-center gap-3 border border-dashed border-gray-200 text-center text-sm text-gray-500 dark:border-gray-700 dark:text-gray-400 bg-white/70 dark:bg-slate-900/60"
+    >
+      <UIcon name="i-lucide-life-buoy" class="text-2xl text-primary-500" />
+      <span>协作入口准备中，接入后端后将展示常用支持渠道。</span>
+      <UBadge label="敬请期待" color="primary" variant="soft" />
+    </UCard>
   </section>
 </template>
