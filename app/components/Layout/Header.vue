@@ -5,6 +5,7 @@ import { useNotesStore } from '~~/stores/notes'
 import { useMemoryContent } from '~/composables/memory/useMemoryContent'
 import { useMemoryDetailController } from '~/composables/memory/useMemoryDetailController'
 import { useForgetConfirm } from '~/composables/memory/useForgetConfirm'
+import { useAuthStore } from '~~/stores/auth'
 
 const route = useRoute()
 const router = useRouter()
@@ -12,6 +13,17 @@ const router = useRouter()
 const notesStore = useNotesStore()
 notesStore.ensureInitialized()
 const { notes } = storeToRefs(notesStore)
+
+const authStore = useAuthStore()
+authStore.initialize()
+const { user: authUser } = storeToRefs(authStore)
+
+const user = computed(() => authUser.value ?? { name: '访客', avatar: null })
+
+const handleLogout = async () => {
+  await authStore.logout()
+  await navigateTo('/auth/login')
+}
 
 const {
   detail: memoryDetail,
@@ -54,15 +66,9 @@ const userMenuItems = computed<DropdownMenuItem[][]>(() => [
     { label: '设置', icon: 'i-lucide-settings', to: '/settings' }
   ],
   [
-    { label: '退出登录', icon: 'i-lucide-log-out', to: '/logout', color: 'red' }
+    { label: '退出登录', icon: 'i-lucide-log-out', click: handleLogout, color: 'red' }
   ]
 ])
-
-// 用户信息（模拟数据）
-const user = ref({
-  name: '用户',
-  avatar: null
-})
 
 const isSearchDialogOpen = ref(false)
 const globalSearchQuery = ref('')

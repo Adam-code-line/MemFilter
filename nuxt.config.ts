@@ -38,6 +38,20 @@ export default defineNuxtConfig({
     }
   },
 
+  runtimeConfig: {
+    mysql: {
+      host: process.env.MYSQL_HOST || '127.0.0.1',
+      port: Number(process.env.MYSQL_PORT || 3306),
+      database: process.env.MYSQL_DATABASE || 'memfilter',
+      user: process.env.MYSQL_USER || 'root',
+      password: process.env.MYSQL_PASSWORD || '123456'
+    },
+    session: {
+      cookieName: process.env.AUTH_SESSION_COOKIE || 'memfilter-auth-session',
+      tokenExpiresInSeconds: Number(process.env.AUTH_SESSION_TTL || 60 * 60 * 24 * 7)
+    }
+  },
+
   imports: {
     dirs: [
       '~/composables',

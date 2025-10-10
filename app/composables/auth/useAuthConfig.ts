@@ -74,6 +74,7 @@ export const useAuthConfig = () => {
       invalidCredentials: '用户名或密码错误',
       required: '这是必填项',
       emailInvalid: '请输入有效的邮箱地址',
+      emailAlreadyExists: '该邮箱已被注册',
       passwordMismatch: '两次密码不一致',
       passwordTooShort: '密码长度至少 8 位',
       networkError: '网络连接失败，请重试',
