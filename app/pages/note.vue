@@ -1,16 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { useNoteContent, useNotesDashboard } from '~/composables/note'
 import type { ImportanceLevel, NoteRecord, NoteSavePayload } from '~/composables/note'
-import { useMemoryContent } from '~/composables/memory/useMemoryContent'
-import { useForgetConfirm } from '~/composables/memory/useForgetConfirm'
-import { useMemoryDetailController } from '~/composables/memory/useMemoryDetailController'
-import { usePageMeta } from '~/composables/ui/usePageMeta'
-import { useSummaryLabel } from '~/composables/ui/useSummaryLabel'
-import { useEmptyState } from '~/composables/ui/useEmptyState'
-import { useImportanceBadges } from '~/composables/note/useImportanceBadges'
-import { useNoteRouteSync } from '~/composables/note/useNoteRouteSync'
-import { useKeyboardShortcut } from '~/composables/ui/useKeyboardShortcut'
 
 definePageMeta({
   layout: 'app'

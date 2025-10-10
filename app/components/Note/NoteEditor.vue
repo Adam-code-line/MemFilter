@@ -83,7 +83,6 @@
 
 <script setup lang="ts">
 import { computed, watch } from 'vue'
-import { useNoteEditor } from '~/composables/note'
 import type { ImportanceLevel, NoteSavePayload } from '~/composables/note'
 
 interface EditorConfig {

@@ -1,15 +1,24 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { storeToRefs } from 'pinia'
 import type { ProfileContentStat } from '~/composables/profile/useProfileContent'
 import { usePageMeta } from '~/composables/ui/usePageMeta'
 import { useProfileContent } from '~/composables/profile/useProfileContent'
 import { useProfileMetrics } from '~/composables/profile/useProfileMetrics'
+import { useAuthStore } from '~~/stores/auth'
 
 definePageMeta({
 	layout: 'app'
 })
 
 const router = useRouter()
+const authStore = useAuthStore()
+
+if (!authStore.isInitialized.value) {
+	await authStore.initialize()
+}
+
+const { user: authUser } = storeToRefs(authStore)
 
 const { content } = await useProfileContent()
 const {
@@ -36,7 +45,67 @@ useHead(() => ({
 	title: headerTitle.value
 }))
 
-const profileSummary = computed(() => content.value.summary ?? null)
+const formatJoinDate = (value?: string) => {
+	if (!value) {
+		return null
+	}
+
+	const parsed = new Date(value)
+	if (Number.isNaN(parsed.getTime())) {
+		return null
+	}
+
+	return new Intl.DateTimeFormat('zh-CN', {
+		year: 'numeric',
+		month: '2-digit',
+		day: '2-digit'
+	}).format(parsed)
+}
+
+const profileSummary = computed(() => {
+	const base = content.value.summary ?? null
+	const user = authUser.value
+
+	if (!user) {
+		return base
+	}
+
+	const tags = [...(base?.tags ?? [])]
+
+	if (user.email && !tags.some(tag => (tag.key ?? tag.label) === 'auth-email' || tag.label === user.email)) {
+		tags.push({
+			key: 'auth-email',
+			label: user.email,
+			icon: 'i-lucide-mail',
+			color: 'primary'
+		})
+	}
+
+	const joinedLabel = formatJoinDate(user.createdAt)
+	if (joinedLabel && !tags.some(tag => (tag.key ?? tag.label) === 'auth-joined')) {
+		tags.push({
+			key: 'auth-joined',
+			label: `加入于 ${joinedLabel}`,
+			icon: 'i-lucide-calendar-clock',
+			color: 'neutral'
+		})
+	}
+
+	return {
+		...(base ?? {}),
+		name: user.name || base?.name,
+		bio: base?.bio ?? '完善更多资料，让 AI 更懂你的记忆偏好。',
+		role: base?.role ?? '记忆探索者',
+		status: base?.status ?? {
+			label: '账号已激活',
+			icon: 'i-lucide-badge-check',
+			color: 'success',
+			variant: 'soft'
+		},
+		tags,
+		actions: [...(base?.actions ?? [])]
+	}
+})
 
 const dynamicSummaryStats = computed<ProfileContentStat[]>(() => {
 	const metrics = summaryMetrics.value

@@ -1,9 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { useToast } from '#imports'
-import { useNotesDashboard } from '~/composables/note'
-import { useHistoryContent, useHistoryRecords } from '~/composables/history'
-import { usePageMeta } from '~/composables/ui/usePageMeta'
 import type { HistoryRecord } from '~/composables/history/useHistoryRecords'
 
 definePageMeta({
