@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { storeToRefs } from 'pinia'
-import type { ImportanceLevel } from '~/composables/note'
 import { useNotesStore } from '~~/stores/notes'
 
 // 使用 app 布局

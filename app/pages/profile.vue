@@ -1,10 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { storeToRefs } from 'pinia'
-import type { ProfileContentStat } from '~/composables/profile/useProfileContent'
-import { usePageMeta } from '~/composables/ui/usePageMeta'
-import { useProfileContent } from '~/composables/profile/useProfileContent'
-import { useProfileMetrics } from '~/composables/profile/useProfileMetrics'
 import { useAuthStore } from '~~/stores/auth'
 
 definePageMeta({

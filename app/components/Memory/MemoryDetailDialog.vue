@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import MemoryDetailPanel from '~/components/Memory/MemoryDetailPanel.vue'
 
 interface MemoryDetailDialogProps {
   modelValue: boolean

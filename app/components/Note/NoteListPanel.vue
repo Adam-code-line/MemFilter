@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import type { NoteRecord } from '~/composables/note'
 
 export interface NoteListItem {
   id: number | string

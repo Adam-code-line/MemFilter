@@ -1,4 +1,4 @@
-import { computed, ref } from 'vue'
+
 import { storeToRefs } from 'pinia'
 import { useNotesStore } from '~~/stores/notes'
 import type {

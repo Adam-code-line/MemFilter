@@ -1,7 +1,5 @@
-import { computed } from 'vue'
+
 import { useState } from '#imports'
-import type { Ref } from 'vue'
-import type { NoteRecord } from '~/composables/note'
 
 export type HistoryStatus = 'recoverable' | 'archived' | 'purged'
 

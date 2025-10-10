@@ -1,7 +1,6 @@
-import { computed, ref } from 'vue'
+
 import { defineStore } from 'pinia'
 import type { FetchError } from 'ofetch'
-import { useAuthApi } from '~~/composables/useAuthApi'
 
 export interface AuthUser {
   id: string

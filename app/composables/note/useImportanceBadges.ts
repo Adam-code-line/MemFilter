@@ -1,5 +1,4 @@
 import type { ImportanceLevel, NoteRecord } from './types'
-import { computed, type ComputedRef } from 'vue'
 
 const badgeMap: Record<ImportanceLevel, { label: string; color: string; variant: 'solid' | 'soft' | 'subtle' | 'outline'; icon: string }> = {
   high: { label: '核心记忆', color: 'primary', variant: 'solid', icon: 'i-lucide-flame' },

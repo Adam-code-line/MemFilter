@@ -2,9 +2,6 @@
 import { storeToRefs } from 'pinia'
 import type { DropdownMenuItem, NavigationMenuItem } from '@nuxt/ui'
 import { useNotesStore } from '~~/stores/notes'
-import { useMemoryContent } from '~/composables/memory/useMemoryContent'
-import { useMemoryDetailController } from '~/composables/memory/useMemoryDetailController'
-import { useForgetConfirm } from '~/composables/memory/useForgetConfirm'
 import { useAuthStore } from '~~/stores/auth'
 
 const route = useRoute()

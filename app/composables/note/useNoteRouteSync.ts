@@ -1,4 +1,4 @@
-import { ref, watch, type ComputedRef } from 'vue'
+
 import type { NoteRecord } from './types'
 import { useRoute, useRouter } from '#imports'
 

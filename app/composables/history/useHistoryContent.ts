@@ -1,4 +1,3 @@
-import { computed } from 'vue'
 
 export type HistoryContentStatKey = 'recoverable' | 'archived' | 'purged' | 'restored'
 export type HistorySectionKey = 'recoverable' | 'archived' | 'purged'

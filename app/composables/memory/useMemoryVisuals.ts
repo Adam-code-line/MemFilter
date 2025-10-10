@@ -1,4 +1,4 @@
-import { computed, type Ref } from 'vue'
+
 import type { MemoryCardVisualsResult, MemoryFadeLevel } from './types'
 
 export const useMemoryCardVisuals = (

@@ -170,9 +170,6 @@
 </template>
 
 <script lang="ts" setup>
-import { useAuthForm } from '~/composables/auth/useAuthForm'
-import { useAuthValidation } from '~/composables/auth/useAuthValidation'
-import type { FormData, LoginConfig } from '~/composables/auth/types'
 
 // 接收属性和事件
 const props = defineProps<{

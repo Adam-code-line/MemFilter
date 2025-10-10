@@ -134,9 +134,6 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
-import { useMemoryMeta } from '~/composables/memory/useMemoryMeta'
-import type { MemoryFadeLevel, MemoryImportance } from '~/composables/memory/types'
 
 interface MemoryDetailRecord {
   id?: number | string

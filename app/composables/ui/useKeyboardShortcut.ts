@@ -1,4 +1,3 @@
-import { onBeforeUnmount, onMounted, unref, type MaybeRef } from 'vue'
 
 export type KeyboardShortcutTarget = Window | Document | HTMLElement
 

@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { useToast } from '#imports'
-import type { HistoryRecord } from '~/composables/history/useHistoryRecords'
 
 definePageMeta({
 	layout: 'app'

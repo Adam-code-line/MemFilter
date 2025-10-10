@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import type { ProfileContentTimelineItem } from '~/composables/profile/useProfileContent'
 
 interface ProfileTimelineProps {
   title?: string

@@ -1,12 +1,5 @@
-import { computed, onMounted, ref, watch } from 'vue'
+
 import { acceptHMRUpdate, defineStore } from 'pinia'
-import type {
-  FadeLevel,
-  ImportanceLevel,
-  NoteDashboardOptions,
-  NoteRecord,
-  NoteSavePayload
-} from '~/composables/note'
 
 const STORAGE_KEY = 'memfilter-notes'
 const MAX_FORGET_WINDOW = 999

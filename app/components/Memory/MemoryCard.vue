@@ -150,9 +150,6 @@
 
 <script lang="ts" setup>
 import { toRefs } from 'vue'
-import { useMemoryMeta } from '~/composables/memory/useMemoryMeta'
-import { useMemoryCardVisuals } from '~/composables/memory/useMemoryVisuals'
-import type { MemoryFadeLevel, MemoryImportance } from '~/composables/memory/types'
 
 interface Props {
   title: string

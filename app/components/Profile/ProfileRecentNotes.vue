@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import type { NoteRecord } from '~/composables/note'
 
 interface ProfileRecentNotesProps {
   title?: string

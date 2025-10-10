@@ -1,7 +1,4 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { useSettingsContent } from '~/composables/settings/useSettingsContent'
-import { useSettingsForm } from '~/composables/settings/useSettingsForm'
 
 definePageMeta({
   layout: 'app'

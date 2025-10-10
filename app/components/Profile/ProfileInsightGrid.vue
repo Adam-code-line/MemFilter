@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import type { ProfileContentAction, ProfileContentInsight } from '~/composables/profile/useProfileContent'
 
 interface ProfileInsightGridProps {
   title?: string

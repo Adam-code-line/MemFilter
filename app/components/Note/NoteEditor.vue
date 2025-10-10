@@ -82,8 +82,6 @@
 </template>
 
 <script setup lang="ts">
-import { computed, watch } from 'vue'
-import type { ImportanceLevel, NoteSavePayload } from '~/composables/note'
 
 interface EditorConfig {
   titlePlaceholder?: string

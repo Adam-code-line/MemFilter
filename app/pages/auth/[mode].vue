@@ -41,12 +41,6 @@
 </template>
 
 <script lang="ts" setup>
-import { useAuth } from '~/composables/auth/useAuth'
-import { useAuthConfig } from '~/composables/auth/useAuthConfig'
-import { useAuthRoute } from '~/composables/auth/useAuthRoute'
-import { useAuthForm } from '~/composables/auth/useAuthForm'
-import type { AuthMode } from '~/composables/auth/types'
-import { useKeyboardShortcut } from '~/composables/ui/useKeyboardShortcut'
 
 definePageMeta({
   public: true,

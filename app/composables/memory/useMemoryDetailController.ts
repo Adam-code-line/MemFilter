@@ -1,5 +1,3 @@
-import { computed, ref, watch, type ComputedRef, type Ref } from 'vue'
-import type { NoteRecord } from '~/composables/note'
 
 type MemoryBucket = 'fresh' | 'fading' | 'archived'
 

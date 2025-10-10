@@ -1,4 +1,4 @@
-import { computed, ref } from 'vue'
+
 import type { FadeLevel, ImportanceLevel, NoteEditorOptions, NoteSavePayload } from './types'
 
 const defaultStatusLabels = {

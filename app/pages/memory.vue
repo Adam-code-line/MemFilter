@@ -1,12 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { NoteRecord } from '~/composables/note'
 import { storeToRefs } from 'pinia'
 import { useNotesStore } from '~~/stores/notes'
-import { useMemoryContent } from '~/composables/memory/useMemoryContent'
-import { useForgetConfirm } from '~/composables/memory/useForgetConfirm'
-import { useMemoryDetailController } from '~/composables/memory/useMemoryDetailController'
-import { usePageMeta } from '~/composables/ui/usePageMeta'
 
 definePageMeta({
   layout: 'app'

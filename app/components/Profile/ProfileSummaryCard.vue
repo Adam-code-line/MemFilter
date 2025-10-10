@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import type { ProfileContentAction, ProfileContentStat, ProfileContentSummary } from '~/composables/profile/useProfileContent'
 
 interface ProfileSummaryCardProps {
   summary?: ProfileContentSummary | null

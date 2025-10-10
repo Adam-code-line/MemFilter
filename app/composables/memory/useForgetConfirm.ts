@@ -1,5 +1,3 @@
-import { computed, ref, watch } from 'vue'
-import type { NoteRecord } from '~/composables/note'
 
 export interface ForgetConfirmState {
 	note: NoteRecord | null
