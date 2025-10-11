@@ -1,4 +1,6 @@
-import { useState } from '#imports'
+import { storeToRefs } from 'pinia'
+import { useState, watch } from '#imports'
+import { useAuthStore } from '~~/stores/auth'
 
 export type SettingsProfile = {
   displayName: string
@@ -28,9 +30,12 @@ export type SettingsNotifications = {
 }
 
 export const useSettingsStore = () => {
+  const authStore = useAuthStore()
+  const { user: authUser } = storeToRefs(authStore)
+
   const profile = useState<SettingsProfile>('settings-profile', () => ({
-    displayName: '忆滤用户',
-    email: 'user@example.com'
+    displayName: authUser.value?.name ?? '忆滤用户',
+    email: authUser.value?.email ?? 'user@example.com'
   }))
 
   const security = useState<SettingsSecurity>('settings-security', () => ({
@@ -77,6 +82,21 @@ export const useSettingsStore = () => {
 
   function toggleAlert(key: keyof SettingsNotifications['alerts'], value: boolean) {
     notifications.value.alerts[key] = value
+  }
+
+  const syncProfileWithAuth = (auth: { name: string | null | undefined; email: string | null | undefined } | null) => {
+    profile.value.displayName = auth?.name || '忆滤用户'
+    profile.value.email = auth?.email || 'user@example.com'
+  }
+
+  const hasRegisteredProfileSync = useState('settings-profile-sync-initialized', () => false)
+
+  if (!hasRegisteredProfileSync.value) {
+    watch(authUser, value => {
+      syncProfileWithAuth(value)
+    }, { immediate: true })
+
+    hasRegisteredProfileSync.value = true
   }
 
   return {
