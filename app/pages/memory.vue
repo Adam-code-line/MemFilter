@@ -106,8 +106,12 @@ useHead(() => ({
 }))
 
 const { state: forgetConfirm, dialogBindings: forgetDialogBindings, openForNote: openForgetDialog, confirm: confirmForget } = useForgetConfirm({
-  onExecuteForget: (note) => {
-    notesStore.directForget(note)
+  onExecuteForget: async (note) => {
+    try {
+      await notesStore.directForget(note)
+    } catch (error) {
+      console.error('[memory] 直接遗忘失败', error)
+    }
   }
 })
 
@@ -154,8 +158,21 @@ const sections = computed(() =>
   })
 )
 
-const handleRestore = (note: NoteRecord) => notesStore.restoreNote(note)
-const handleAccelerate = (note: NoteRecord) => notesStore.accelerateForgetting(note)
+const handleRestore = async (note: NoteRecord) => {
+  try {
+    await notesStore.restoreNote(note)
+  } catch (error) {
+    console.error('[memory] 恢复记忆失败', error)
+  }
+}
+
+const handleAccelerate = async (note: NoteRecord) => {
+  try {
+    await notesStore.accelerateForgetting(note)
+  } catch (error) {
+    console.error('[memory] 加速遗忘失败', error)
+  }
+}
 const requestForget = (note: NoteRecord) => {
   openForgetDialog(note)
 }

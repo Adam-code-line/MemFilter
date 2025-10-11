@@ -125,8 +125,12 @@ const searchSuggestions = computed<SearchSuggestion[]>(() => {
 })
 
 const { state: forgetConfirm, dialogBindings: forgetDialogBindings, openForNote: openForgetDialog, confirm: confirmForget, reset: resetForgetConfirm } = useForgetConfirm({
-  onExecuteForget: (note) => {
-    notesStore.directForget(note)
+  onExecuteForget: async (note) => {
+    try {
+      await notesStore.directForget(note)
+    } catch (error) {
+      console.error('[header] 直接遗忘失败', error)
+    }
   }
 })
 
@@ -143,8 +147,20 @@ const {
   sectionSource,
   sectionDefaults: memoryDefaults.sections,
   detailPanel: memoryDetail,
-  onRestore: note => notesStore.restoreNote(note),
-  onAccelerate: note => notesStore.accelerateForgetting(note),
+  onRestore: async note => {
+    try {
+      await notesStore.restoreNote(note)
+    } catch (error) {
+      console.error('[header] 恢复记忆失败', error)
+    }
+  },
+  onAccelerate: async note => {
+    try {
+      await notesStore.accelerateForgetting(note)
+    } catch (error) {
+      console.error('[header] 加速遗忘失败', error)
+    }
+  },
   onForget: note => openForgetDialog(note),
   onOpenNote: note => {
     router.push({ path: '/note', query: { noteId: String(note.id ?? '') } })

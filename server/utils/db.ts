@@ -56,6 +56,31 @@ export const ensureAuthSchema = async () => {
           CONSTRAINT fk_auth_sessions_user FOREIGN KEY (user_id) REFERENCES auth_users(id) ON DELETE CASCADE
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;`
       )
+
+      await client.query(
+        `CREATE TABLE IF NOT EXISTS notes (
+          id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+          user_id CHAR(36) NOT NULL,
+          title VARCHAR(200) NOT NULL,
+          content MEDIUMTEXT NOT NULL,
+          description TEXT NULL,
+          icon VARCHAR(64) NULL,
+          importance ENUM('high','medium','low','noise') NOT NULL DEFAULT 'medium',
+          fade_level TINYINT UNSIGNED NOT NULL DEFAULT 0,
+          forgetting_progress TINYINT UNSIGNED NOT NULL DEFAULT 0,
+          days_until_forgotten INT UNSIGNED NULL,
+          importance_score INT UNSIGNED NULL,
+          decay_rate INT NULL,
+          is_collapsed TINYINT(1) NOT NULL DEFAULT 0,
+          last_accessed_at DATETIME NULL,
+          date_label VARCHAR(20) NULL,
+          created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+          PRIMARY KEY (id),
+          KEY idx_notes_user_id (user_id),
+          CONSTRAINT fk_notes_user FOREIGN KEY (user_id) REFERENCES auth_users(id) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;`
+      )
     })()
   }
 

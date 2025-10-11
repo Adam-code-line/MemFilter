@@ -19,6 +19,31 @@ const importancePriority: Record<ImportanceLevel, number> = {
 }
 
 const extractNoteTimestamp = (note: NoteRecord) => {
+  const parseDate = (value?: string) => {
+    if (!value) {
+      return null
+    }
+
+    const normalized = value
+      .replaceAll('/', '-')
+      .replaceAll('.', '-')
+      .replaceAll('年', '-')
+      .replaceAll('月', '-')
+      .replace('日', '')
+    const parsed = Date.parse(normalized)
+    return Number.isNaN(parsed) ? null : parsed
+  }
+
+  const fromUpdated = parseDate(note.updatedAt)
+  if (fromUpdated !== null) {
+    return fromUpdated
+  }
+
+  const fromCreated = parseDate(note.createdAt)
+  if (fromCreated !== null) {
+    return fromCreated
+  }
+
   if (typeof note.id === 'number' && Number.isFinite(note.id)) {
     return note.id
   }
@@ -26,14 +51,6 @@ const extractNoteTimestamp = (note: NoteRecord) => {
   const numericId = Number(note.id)
   if (Number.isFinite(numericId)) {
     return numericId
-  }
-
-  if (note.date) {
-    const normalized = note.date.replaceAll('/', '-').replaceAll('.', '-').replaceAll('年', '-').replaceAll('月', '-').replace('日', '')
-    const parsed = Date.parse(normalized)
-    if (!Number.isNaN(parsed)) {
-      return parsed
-    }
   }
 
   return null
@@ -100,7 +117,11 @@ export const useNotesDashboard = (options: NoteDashboardOptions = {}) => {
       if (scoreDelta !== 0) {
         return scoreDelta
       }
-      return (b.id ?? 0) - (a.id ?? 0)
+      const timestampDelta = (extractNoteTimestamp(b) ?? 0) - (extractNoteTimestamp(a) ?? 0)
+      if (timestampDelta !== 0) {
+        return timestampDelta
+      }
+      return (Number(b.id) || 0) - (Number(a.id) || 0)
     })
 
     return data
@@ -148,35 +169,60 @@ export const useNotesDashboard = (options: NoteDashboardOptions = {}) => {
     activeNoteId.value = null
   }
 
-  const restoreNote = (note: NoteRecord) => {
-    notesStore.restoreNote(note)
+  const restoreNote = async (note: NoteRecord) => {
+    try {
+      await notesStore.restoreNote(note)
+    } catch (error) {
+      console.error('[notes] 恢复笔记失败', error)
+    }
   }
 
-  const accelerateForgetting = (note: NoteRecord) => {
-    notesStore.accelerateForgetting(note)
+  const accelerateForgetting = async (note: NoteRecord) => {
+    try {
+      await notesStore.accelerateForgetting(note)
+    } catch (error) {
+      console.error('[notes] 加速遗忘失败', error)
+    }
   }
 
-  const forgetNote = (note: NoteRecord) => {
-    notesStore.directForget(note)
+  const forgetNote = async (note: NoteRecord) => {
+    try {
+      await notesStore.directForget(note)
+    } catch (error) {
+      console.error('[notes] 直接遗忘失败', error)
+    }
   }
 
-  const purgeNote = (note: NoteRecord) => {
-    return notesStore.purgeNote(note)
+  const purgeNote = async (note: NoteRecord) => {
+    try {
+      return await notesStore.purgeNote(note)
+    } catch (error) {
+      console.error('[notes] 删除笔记失败', error)
+      return null
+    }
   }
 
-  const saveNote = (payload: NoteSavePayload) => {
+  const refreshNotes = async () => {
+    try {
+      await notesStore.refreshFromServer()
+    } catch (error) {
+      console.error('[notes] 同步笔记失败', error)
+    }
+  }
+
+  const saveNote = async (payload: NoteSavePayload) => {
     if (!payload.title || !payload.content) {
       return
     }
 
     if (editorMode.value === 'edit' && editingNote.value) {
-      const updated = notesStore.upsertNote(payload, editingNote.value)
+      const updated = await notesStore.upsertNote(payload, editingNote.value)
       if (updated) {
         editingNote.value = { ...updated }
         activeNoteId.value = updated.id
       }
     } else {
-      const created = notesStore.upsertNote(payload, null)
+      const created = await notesStore.upsertNote(payload, null)
       if (created) {
         editorMode.value = 'edit'
         editingNote.value = { ...created }
@@ -209,10 +255,11 @@ export const useNotesDashboard = (options: NoteDashboardOptions = {}) => {
     openEditorForNew,
     openEditorForNote,
     closeEditor,
-    saveNote,
+  saveNote,
     restoreNote,
     accelerateForgetting,
     forgetNote,
+    refreshNotes,
     purgeNote
   }
 }

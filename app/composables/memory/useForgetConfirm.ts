@@ -11,7 +11,7 @@ export interface ForgetConfirmState {
 }
 
 interface UseForgetConfirmOptions {
-	onExecuteForget?: (note: NoteRecord) => void
+	onExecuteForget?: (note: NoteRecord) => Promise<void> | void
 }
 
 const createBaseState = (): ForgetConfirmState => ({
@@ -47,15 +47,18 @@ export const useForgetConfirm = (options: UseForgetConfirmOptions = {}) => {
 		}
 	}
 
-	const confirm = () => {
+	const confirm = async () => {
 		const note = state.value.note
 		if (!note) {
 			reset()
 			return
 		}
 
-		options.onExecuteForget?.(note)
-		reset()
+		try {
+			await Promise.resolve(options.onExecuteForget?.(note))
+		} finally {
+			reset()
+		}
 	}
 
 	watch(

@@ -1,7 +1,5 @@
-
 import { acceptHMRUpdate, defineStore } from 'pinia'
 
-const STORAGE_KEY = 'memfilter-notes'
 const MAX_FORGET_WINDOW = 999
 const BASE_FORGET_WINDOW = 14
 const DAY_IN_MS = 24 * 60 * 60 * 1000
@@ -55,15 +53,95 @@ const formatDateLabel = (date: Date) =>
     day: '2-digit'
   }).format(date)
 
+const formatLastAccessedLabel = (value?: string | Date | null) => {
+  if (!value) {
+    return ''
+  }
+
+  if (typeof value === 'string') {
+    const normalized = value.trim()
+    if (!normalized) {
+      return ''
+    }
+
+    if (normalized === '刚刚' || normalized.includes('分钟') || normalized.startsWith('今天 ')) {
+      return normalized
+    }
+  }
+
+  const date = value instanceof Date ? value : new Date(value)
+  if (Number.isNaN(date.getTime())) {
+    return ''
+  }
+
+  const diff = Date.now() - date.getTime()
+
+  if (diff < 60_000) {
+    return '刚刚'
+  }
+
+  if (diff < 3_600_000) {
+    return `${Math.max(1, Math.round(diff / 60_000))} 分钟前`
+  }
+
+  if (diff < 86_400_000) {
+    return `今天 ${date.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}`
+  }
+
+  return formatDateLabel(date)
+}
+
 const clamp = (value: number, min: number, max: number) =>
   Math.min(max, Math.max(min, value))
 
 const computeNoteAgeInDays = (note: NoteRecord) => {
-  const candidate = typeof note.id === 'number' ? note.id : Number.parseInt(String(note.id ?? 0), 10)
-  if (!Number.isFinite(candidate) || Number.isNaN(candidate) || candidate <= 0) {
-    return 0
+  if (note.createdAt) {
+    const timestamp = Date.parse(note.createdAt)
+    if (!Number.isNaN(timestamp)) {
+      return Math.max(0, (Date.now() - timestamp) / DAY_IN_MS)
+    }
   }
-  return Math.max(0, (Date.now() - candidate) / DAY_IN_MS)
+
+  if (note.date) {
+    const parsed = Date.parse(note.date)
+    if (!Number.isNaN(parsed)) {
+      return Math.max(0, (Date.now() - parsed) / DAY_IN_MS)
+    }
+  }
+
+  return 0
+}
+
+const resolveNoteTimestamp = (note: NoteRecord) => {
+  const parseDate = (value?: string) => {
+    if (!value) {
+      return null
+    }
+
+    const parsed = Date.parse(value)
+    return Number.isNaN(parsed) ? null : parsed
+  }
+
+  const fromUpdated = parseDate(note.updatedAt)
+  if (fromUpdated !== null) {
+    return fromUpdated
+  }
+
+  const fromCreated = parseDate(note.createdAt)
+  if (fromCreated !== null) {
+    return fromCreated
+  }
+
+  if (typeof note.id === 'number' && Number.isFinite(note.id)) {
+    return note.id
+  }
+
+  const numeric = Number(note.id)
+  if (Number.isFinite(numeric)) {
+    return numeric
+  }
+
+  return Date.now()
 }
 
 const resolveProgressThresholds = (importance: ImportanceLevel) =>
@@ -128,13 +206,22 @@ const normalizeRecord = (record: Partial<NoteRecord> & { id?: number }): NoteRec
     ? MAX_FORGET_WINDOW
     : defaultForgetWindows[importance] ?? BASE_FORGET_WINDOW
 
+  const resolvedIdCandidate = typeof record.id === 'number' && Number.isFinite(record.id)
+    ? record.id
+    : Number.parseInt(String(record.id ?? ''), 10)
+  const resolvedId = Number.isFinite(resolvedIdCandidate) ? resolvedIdCandidate : now.getTime()
+  const createdAt = record.createdAt ?? now.toISOString()
+  const lastAccessLabel = record.lastAccessed
+    ? formatLastAccessedLabel(record.lastAccessed)
+    : '刚刚'
+
   return {
-    id: record.id ?? now.getTime(),
+    id: resolvedId,
     title: record.title ?? '未命名笔记',
     content: record.content ?? '',
     description: record.description ?? '',
     date: record.date ?? formatDateLabel(now),
-    lastAccessed: record.lastAccessed ?? '刚刚',
+    lastAccessed: lastAccessLabel,
     icon: record.icon ?? '📝',
     importance,
     fadeLevel: (record.fadeLevel ?? 0) as FadeLevel,
@@ -142,7 +229,9 @@ const normalizeRecord = (record: Partial<NoteRecord> & { id?: number }): NoteRec
     daysUntilForgotten: record.daysUntilForgotten ?? defaultWindow,
     isCollapsed: record.isCollapsed ?? false,
     importanceScore: record.importanceScore ?? 0,
-    decayRate: record.decayRate ?? undefined
+    decayRate: record.decayRate ?? undefined,
+    createdAt,
+    updatedAt: record.updatedAt ?? createdAt
   }
 }
 
@@ -267,90 +356,85 @@ const rehydrateNotes = (
   preserveProgress = false
 ) => collection.map(item => applyEvaluation(item, options, { preserveProgress }))
 
+const toPersistPayload = (note: NoteRecord) => {
+  const normalizeTimestamp = (value?: string) => {
+    if (!value) {
+      return null
+    }
+
+    const parsed = Date.parse(value)
+    if (!Number.isNaN(parsed)) {
+      return new Date(parsed).toISOString()
+    }
+
+    return new Date().toISOString()
+  }
+
+  return {
+    title: note.title,
+    content: note.content,
+    description: note.description ?? '',
+    icon: note.icon,
+    importance: note.importance,
+    fadeLevel: note.fadeLevel,
+    forgettingProgress: note.forgettingProgress,
+    daysUntilForgotten: note.daysUntilForgotten ?? null,
+    importanceScore: note.importanceScore ?? null,
+    decayRate: note.decayRate ?? null,
+    isCollapsed: note.isCollapsed,
+    lastAccessed: normalizeTimestamp(note.lastAccessed),
+    date: note.date
+  }
+}
+
 export const useNotesStore = defineStore('notes', () => {
+  const notesApi = useNotesApi()
   const notes = ref<NoteRecord[]>([])
   const isHydrated = ref(false)
   const initialized = ref(false)
   const dashboardOptions = ref<NoteDashboardOptions | undefined>(undefined)
-  let initialNotesSnapshot: NoteRecord[] | undefined
-  let pendingLocalHydration = false
+  let isFetching = false
 
-  const adoptInitialNotes = (initialNotes?: NoteRecord[]) => {
-    if (initialNotes?.length) {
-      notes.value = rehydrateNotes(createInitialState(initialNotes), dashboardOptions.value)
-    } else {
-      notes.value = rehydrateNotes(notes.value, dashboardOptions.value, true)
-    }
-  }
-
-  const hydrateFromStorage = (fallback?: NoteRecord[]) => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY)
-      if (stored) {
-        const parsed = JSON.parse(stored) as Array<Partial<NoteRecord>>
-        const normalized = parsed.map(normalizeRecord)
-        notes.value = rehydrateNotes(normalized, dashboardOptions.value, true)
-        return
-      }
-    } catch (error) {
-      console.warn('加载本地笔记数据失败:', error)
-    }
-
-    if (fallback?.length) {
-      adoptInitialNotes(fallback)
-    }
-  }
-
-  const ensureInitialized = (initialNotes?: NoteRecord[], options?: NoteDashboardOptions) => {
-    if (initialized.value) {
+  const loadFromServer = async (force = false) => {
+    if ((isHydrated.value && !force) || isFetching) {
       return
     }
 
+    isFetching = true
+
+    try {
+      const remoteNotes = await notesApi.list()
+      const normalized = remoteNotes.map(record => normalizeRecord({
+        ...record,
+        id: typeof record.id === 'number' ? record.id : Number.parseInt(String(record.id), 10),
+        lastAccessed: record.lastAccessed,
+        createdAt: record.createdAt,
+        updatedAt: record.updatedAt
+      }))
+
+      notes.value = rehydrateNotes(normalized, dashboardOptions.value, true)
+    } catch (error) {
+      console.error('[notes] 远程加载笔记失败', error)
+    } finally {
+      isHydrated.value = true
+      isFetching = false
+    }
+  }
+
+  const ensureInitialized = async (initialNotes?: NoteRecord[], options?: NoteDashboardOptions) => {
     if (options) {
       dashboardOptions.value = options
     }
 
-    initialNotesSnapshot = initialNotes
-    adoptInitialNotes(initialNotes)
-
-    if (import.meta.client) {
-      pendingLocalHydration = true
-    } else {
-      isHydrated.value = true
+    if (!initialized.value && initialNotes?.length) {
+      notes.value = rehydrateNotes(createInitialState(initialNotes), dashboardOptions.value)
     }
 
     initialized.value = true
+    await loadFromServer()
   }
-
-  onMounted(() => {
-    if (!initialized.value) {
-      return
-    }
-
-    if (pendingLocalHydration) {
-      hydrateFromStorage(initialNotesSnapshot)
-      pendingLocalHydration = false
-    }
-
-    isHydrated.value = true
-  })
-
-  if (process.client) {
-    watch(
-      notes,
-      value => {
-        if (!initialized.value || !isHydrated.value) {
-          return
-        }
-
-        try {
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(value))
-        } catch (error) {
-          console.warn('保存本地笔记数据失败:', error)
-        }
-      },
-      { deep: true }
-    )
+  const refreshFromServer = async () => {
+    await loadFromServer(true)
   }
 
   const noteStats = computed(() => ({
@@ -370,7 +454,7 @@ export const useNotesStore = defineStore('notes', () => {
   const sortedByRecency = computed(() =>
     notes.value
       .slice()
-      .sort((a, b) => (b.id ?? 0) - (a.id ?? 0))
+      .sort((a, b) => resolveNoteTimestamp(b) - resolveNoteTimestamp(a))
   )
 
   const sortedByImportance = computed(() =>
@@ -391,7 +475,7 @@ export const useNotesStore = defineStore('notes', () => {
 
   const getRecentNotes = (limit = 6) => sortedByRecency.value.slice(0, limit)
 
-  const upsertNote = (payload: NoteSavePayload, existing?: NoteRecord | null) => {
+  const upsertNote = async (payload: NoteSavePayload, existing?: NoteRecord | null) => {
     if (!payload.title || !payload.content) {
       return null
     }
@@ -402,69 +486,106 @@ export const useNotesStore = defineStore('notes', () => {
         return null
       }
 
-      const evaluated = applyEvaluation({
+      const draft = {
         ...notes.value[index],
         title: payload.title,
         content: payload.content,
         description: payload.description ?? '',
         importance: payload.importance,
         lastAccessed: '刚刚'
-      }, dashboardOptions.value, { forceProgressReset: true })
-      notes.value.splice(index, 1, evaluated)
-      return evaluated
+      }
+
+      const evaluated = applyEvaluation(draft, dashboardOptions.value, { forceProgressReset: true })
+      const persisted = await notesApi.update(Number(existing.id), toPersistPayload(evaluated))
+      const normalized = normalizeRecord({
+        ...persisted,
+        lastAccessed: persisted.lastAccessed,
+        createdAt: persisted.createdAt,
+        updatedAt: persisted.updatedAt
+      })
+      const finalNote = applyEvaluation(normalized, dashboardOptions.value, { preserveProgress: true })
+      notes.value.splice(index, 1, finalNote)
+      return finalNote
     }
 
-    const id = Date.now()
     const now = new Date()
-    const evaluated = applyEvaluation({
-      id,
+    const base = normalizeRecord({
       title: payload.title,
       content: payload.content,
       description: payload.description ?? '',
       date: formatDateLabel(now),
-      lastAccessed: '刚刚',
+      lastAccessed: now.toISOString(),
       icon: '📝',
       importance: payload.importance,
       fadeLevel: 0 as FadeLevel,
       forgettingProgress: 0,
       daysUntilForgotten: BASE_FORGET_WINDOW,
       isCollapsed: false
-    }, dashboardOptions.value, { forceProgressReset: true })
+    })
 
-    notes.value = [evaluated, ...notes.value]
-    return evaluated
+    const evaluated = applyEvaluation(base, dashboardOptions.value, { forceProgressReset: true })
+    const persisted = await notesApi.create(toPersistPayload(evaluated))
+    const normalized = normalizeRecord({
+      ...persisted,
+      lastAccessed: persisted.lastAccessed,
+      createdAt: persisted.createdAt,
+      updatedAt: persisted.updatedAt
+    })
+    const finalNote = applyEvaluation(normalized, dashboardOptions.value, { preserveProgress: true })
+    notes.value = [finalNote, ...notes.value]
+    return finalNote
   }
 
-  const restoreNote = (target: NoteRecord) => {
+  const restoreNote = async (target: NoteRecord) => {
     const index = notes.value.findIndex(item => item.id === target.id)
     if (index === -1) {
       return
     }
 
-    const evaluated = applyEvaluation({
+    const draft = {
       ...notes.value[index],
       fadeLevel: 0 as FadeLevel,
       forgettingProgress: 0,
       isCollapsed: false,
       lastAccessed: '刚刚'
-    }, dashboardOptions.value, { forceProgressReset: true })
-    notes.value.splice(index, 1, evaluated)
+    }
+
+    const evaluated = applyEvaluation(draft, dashboardOptions.value, { forceProgressReset: true })
+    const persisted = await notesApi.update(Number(target.id), toPersistPayload(evaluated))
+    const normalized = normalizeRecord({
+      ...persisted,
+      lastAccessed: persisted.lastAccessed,
+      createdAt: persisted.createdAt,
+      updatedAt: persisted.updatedAt
+    })
+    const finalNote = applyEvaluation(normalized, dashboardOptions.value, { preserveProgress: true })
+    notes.value.splice(index, 1, finalNote)
   }
 
-  const accelerateForgetting = (target: NoteRecord) => {
+  const accelerateForgetting = async (target: NoteRecord) => {
     const index = notes.value.findIndex(item => item.id === target.id)
     if (index === -1) {
       return
     }
 
-    const accelerated = applyEvaluation({
+    const draft = {
       ...notes.value[index],
       lastAccessed: '刚刚'
-    }, dashboardOptions.value, { accelerated: true, preserveProgress: true })
-    notes.value.splice(index, 1, accelerated)
+    }
+
+    const accelerated = applyEvaluation(draft, dashboardOptions.value, { accelerated: true, preserveProgress: true })
+    const persisted = await notesApi.update(Number(target.id), toPersistPayload(accelerated))
+    const normalized = normalizeRecord({
+      ...persisted,
+      lastAccessed: persisted.lastAccessed,
+      createdAt: persisted.createdAt,
+      updatedAt: persisted.updatedAt
+    })
+    const finalNote = applyEvaluation(normalized, dashboardOptions.value, { preserveProgress: true })
+    notes.value.splice(index, 1, finalNote)
   }
 
-  const directForget = (target: NoteRecord) => {
+  const directForget = async (target: NoteRecord) => {
     const index = notes.value.findIndex(item => item.id === target.id)
     if (index === -1) {
       return
@@ -473,7 +594,7 @@ export const useNotesStore = defineStore('notes', () => {
     const current = notes.value[index]
     const evaluation = computeEvaluation(current, dashboardOptions.value)
 
-    notes.value.splice(index, 1, {
+    const draft: NoteRecord = {
       ...current,
       fadeLevel: 4 as FadeLevel,
       forgettingProgress: 100,
@@ -483,15 +604,26 @@ export const useNotesStore = defineStore('notes', () => {
       importanceScore: evaluation.importanceScore,
       decayRate: evaluation.decayRate,
       description: current.description
+    }
+
+    const persisted = await notesApi.update(Number(target.id), toPersistPayload(draft))
+    const normalized = normalizeRecord({
+      ...persisted,
+      lastAccessed: persisted.lastAccessed,
+      createdAt: persisted.createdAt,
+      updatedAt: persisted.updatedAt
     })
+    const finalNote = applyEvaluation(normalized, dashboardOptions.value, { preserveProgress: true })
+    notes.value.splice(index, 1, finalNote)
   }
 
-  const purgeNote = (target: NoteRecord) => {
+  const purgeNote = async (target: NoteRecord) => {
     const index = notes.value.findIndex(item => item.id === target.id)
     if (index === -1) {
       return null
     }
 
+    await notesApi.remove(Number(target.id))
     const [removed] = notes.value.splice(index, 1)
     return removed
   }
@@ -504,6 +636,7 @@ export const useNotesStore = defineStore('notes', () => {
     sortedByRecency,
     sortedByImportance,
     ensureInitialized,
+  refreshFromServer,
     getRecentNotes,
     upsertNote,
     restoreNote,

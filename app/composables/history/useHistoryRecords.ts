@@ -26,8 +26,8 @@ export interface HistoryRestoreLogItem {
 
 interface UseHistoryRecordsOptions {
   notes: Ref<NoteRecord[]>
-  restoreNote: (note: NoteRecord) => void
-  purgeNote: (note: NoteRecord) => NoteRecord | null
+  restoreNote: (note: NoteRecord) => Promise<void> | void
+  purgeNote: (note: NoteRecord) => Promise<NoteRecord | null> | NoteRecord | null
 }
 
 export const useHistoryRecords = (options: UseHistoryRecordsOptions) => {
@@ -93,18 +93,21 @@ export const useHistoryRecords = (options: UseHistoryRecordsOptions) => {
 
   const restoreLog = computed(() => restoreLogState.value)
 
-  const restoreRecord = (record: HistoryRecord) => {
-    options.restoreNote(record)
-
-    restoreLogState.value = [
-      {
-        id: record.id,
-        title: record.title,
-        restoredAt: new Date(),
-        meta: `原重要度 ${record.importance}，恢复前淡化进度 ${record.forgettingProgress}%`
-      },
-      ...restoreLogState.value
-    ].slice(0, 12)
+  const restoreRecord = async (record: HistoryRecord) => {
+    try {
+      await Promise.resolve(options.restoreNote(record))
+      restoreLogState.value = [
+        {
+          id: record.id,
+          title: record.title,
+          restoredAt: new Date(),
+          meta: `原重要度 ${record.importance}，恢复前淡化进度 ${record.forgettingProgress}%`
+        },
+        ...restoreLogState.value
+      ].slice(0, 12)
+    } catch (error) {
+      console.error('[history] 恢复记录失败', error)
+    }
   }
 
   const pushPurgedRecord = (record: NoteRecord) => {
@@ -119,13 +122,17 @@ export const useHistoryRecords = (options: UseHistoryRecordsOptions) => {
     return purgedRecord
   }
 
-  const purgeRecord = (record: HistoryRecord) => {
-    const removed = options.purgeNote(record)
-    if (!removed) {
+  const purgeRecord = async (record: HistoryRecord) => {
+    try {
+      const removed = await Promise.resolve(options.purgeNote(record))
+      if (!removed) {
+        return null
+      }
+      return pushPurgedRecord(removed)
+    } catch (error) {
+      console.error('[history] 清理记录失败', error)
       return null
     }
-
-    return pushPurgedRecord(removed)
   }
 
   return {

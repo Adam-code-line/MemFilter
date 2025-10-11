@@ -18,6 +18,8 @@ export interface NoteIdentity {
   icon?: string
   lastAccessed?: string
   isCollapsed?: boolean
+  createdAt?: string
+  updatedAt?: string
 }
 
 export type NoteBase = NoteIdentity & NoteLifecycleMeta

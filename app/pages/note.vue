@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import type { ImportanceLevel, NoteRecord, NoteSavePayload } from '~/composables/note'
 
 definePageMeta({
   layout: 'app'
@@ -152,9 +151,7 @@ const timeFilterValues = ['all', 'last7', 'last30', 'last90'] as const
 type TimeFilterValue = typeof timeFilterValues[number]
 
 const { state: forgetConfirm, dialogBindings: forgetDialogBindings, openForNote: requestForget, confirm: confirmForget } = useForgetConfirm({
-  onExecuteForget: (note) => {
-    forgetNote(note)
-  }
+  onExecuteForget: note => forgetNote(note)
 })
 
 const {
@@ -212,8 +209,12 @@ const handleSearchTrigger = () => {
   updateSearchQuery(searchText.value.trim())
 }
 
-const handleEditorSave = (payload: NoteSavePayload) => {
-  saveNote(payload)
+const handleEditorSave = async (payload: NoteSavePayload) => {
+  try {
+    await saveNote(payload)
+  } catch (error) {
+    console.error('[note] 保存笔记失败', error)
+  }
 }
 
 const handleEditorCancel = () => {

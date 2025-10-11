@@ -33,9 +33,9 @@ interface UseMemoryDetailControllerOptions {
   sectionSource: ComputedRef<MemorySectionConfig[]>
   sectionDefaults: MemorySectionConfig[]
   detailPanel: ComputedRef<{ actions: DetailActionMap }>
-  onRestore: (note: NoteRecord) => void
-  onAccelerate: (note: NoteRecord) => void
-  onForget: (note: NoteRecord) => void
+  onRestore: (note: NoteRecord) => Promise<void> | void
+  onAccelerate: (note: NoteRecord) => Promise<void> | void
+  onForget: (note: NoteRecord) => Promise<void> | void
   onOpenNote: (note: NoteRecord) => void
   autoSelectFirst?: boolean
 }
@@ -144,7 +144,7 @@ export const useMemoryDetailController = (options: UseMemoryDetailControllerOpti
     detailDialogOpen.value = false
   }
 
-  const handleDetailAction = (key: string) => {
+  const handleDetailAction = async (key: string) => {
     const note = selectedNote.value
     if (!note) {
       return
@@ -152,13 +152,13 @@ export const useMemoryDetailController = (options: UseMemoryDetailControllerOpti
 
     switch (key) {
       case 'restore':
-        options.onRestore(note)
+        await Promise.resolve(options.onRestore(note))
         break
       case 'accelerate':
-        options.onAccelerate(note)
+        await Promise.resolve(options.onAccelerate(note))
         break
       case 'forget':
-        options.onForget(note)
+        await Promise.resolve(options.onForget(note))
         break
       case 'open-note':
         options.onOpenNote(note)

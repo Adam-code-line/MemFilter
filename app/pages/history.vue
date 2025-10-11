@@ -179,28 +179,32 @@ const closeRecordDetail = () => {
 	inspectedRecord.value = null
 }
 
-const handleRestore = (record: HistoryRecord) => {
-	historyRecords.restoreRecord(record)
-	toast.add({
-		title: '记忆已恢复',
-		description: `《${record.title}》已恢复至活跃状态。`,
-		color: 'primary',
-		icon: 'i-lucide-rotate-ccw'
-	})
+const handleRestore = async (record: HistoryRecord) => {
+	try {
+		await historyRecords.restoreRecord(record)
+		toast.add({
+			title: '记忆已恢复',
+			description: `《${record.title}》已恢复至活跃状态。`,
+			color: 'primary',
+			icon: 'i-lucide-rotate-ccw'
+		})
 
-	if (inspectedRecord.value?.id === record.id) {
-		closeRecordDetail()
+		if (inspectedRecord.value?.id === record.id) {
+			closeRecordDetail()
+		}
+	} catch (error) {
+		console.error('[history] 恢复操作失败', error)
 	}
 }
 
-const handleDetailAction = (key: string) => {
+const handleDetailAction = async (key: string) => {
 	const record = inspectedRecord.value
 	if (!record) {
 		return
 	}
 
 	if (key === 'restore' && record.status !== 'purged') {
-		handleRestore(record)
+		await handleRestore(record)
 	}
 
 	if (key === 'purge' && record.status === 'archived') {
@@ -223,13 +227,13 @@ const resetPurgeConfirm = () => {
 	purgeConfirm.value.description = ''
 }
 
-const executePurge = () => {
+const executePurge = async () => {
 	const record = purgeConfirm.value.record
 	if (!record) {
 		return
 	}
 
-	const purged = historyRecords.purgeRecord(record)
+	const purged = await historyRecords.purgeRecord(record)
 	if (purged) {
 		const displayTitle = record.title || '未命名记忆'
 		toast.add({
