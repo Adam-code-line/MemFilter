@@ -5,7 +5,7 @@ import { createError } from 'h3'
 import { useRuntimeConfig } from '#imports'
 import type { AuthSession, LoginCredentials, SignupPayload } from '~/stores/auth'
 import { ensureAuthSchema, useMysql } from '~~/server/utils/db'
-import { usePasswordHash } from './usePasswordHash'
+import { usePasswordHash } from '../auth/usePasswordHash'
 
 type AuthUser = AuthSession['user']
 

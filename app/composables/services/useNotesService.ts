@@ -3,7 +3,7 @@ import { createError, type H3Event } from 'h3'
 import { useRuntimeConfig } from '#imports'
 import { getCookie } from 'h3'
 import { ensureAuthSchema, useMysql } from '~~/server/utils/db'
-import { useAuthService } from '~/composables/auth/useAuthService'
+import { useAuthService } from './useAuthService'
 
 export interface NoteRow extends RowDataPacket {
   id: number
