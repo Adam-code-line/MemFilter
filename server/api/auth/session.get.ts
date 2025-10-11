@@ -1,5 +1,6 @@
 import { defineEventHandler, getCookie } from 'h3'
 import { useRuntimeConfig } from '#imports'
+import { useAuthService } from '~/composables/auth/useAuthService'
 
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig()

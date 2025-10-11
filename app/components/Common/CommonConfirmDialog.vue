@@ -65,8 +65,6 @@ const handleConfirm = () => {
   <UModal
     v-model:open="isOpen"
     :ui="{ width: 'sm:max-w-md' }"
-    :title="title"
-    :description="description"
   >
     <template #content>
       <UCard class="space-y-4" :ui="{ body: { padding: 'p-6' }, footer: { padding: 'px-6 pb-6 pt-0' } }">
