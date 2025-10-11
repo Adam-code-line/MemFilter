@@ -1,21 +1,13 @@
 import type { DropdownMenuItem } from '@nuxt/ui'
+import type { NoteBase, NoteFadeLevel, NoteImportanceLevel } from '../shared/noteTypes'
 
-export type MemoryImportance = 'high' | 'medium' | 'low' | 'noise'
-export type MemoryFadeLevel = 0 | 1 | 2 | 3 | 4
+export type MemoryImportance = NoteImportanceLevel
+export type MemoryFadeLevel = NoteFadeLevel
 
-export interface MemoryNoteLike {
-  id?: string
+export interface MemoryNoteLike extends Partial<NoteBase> {
+  id?: string | number
   title: string
   snippet: string
-  date: string
-  icon?: string
-  importance?: MemoryImportance
-  fadeLevel?: MemoryFadeLevel
-  importanceScore?: number
-  forgettingProgress?: number
-  daysUntilForgotten?: number
-  lastAccessed?: string
-  isCollapsed?: boolean
   isSelected?: boolean
 }
 

@@ -1,22 +1,16 @@
-export type ImportanceLevel = 'high' | 'medium' | 'low' | 'noise'
+import type { NoteBase, NoteFadeLevel, NoteImportanceLevel } from '../shared/noteTypes'
 
-export type FadeLevel = 0 | 1 | 2 | 3 | 4
+export type ImportanceLevel = NoteImportanceLevel
 
-export interface NoteRecord {
+export type FadeLevel = NoteFadeLevel
+
+export interface NoteRecord extends NoteBase {
   id: number
-  title: string
   content: string
   description?: string
-  date: string
   lastAccessed: string
   icon: string
-  importance: ImportanceLevel
-  fadeLevel: FadeLevel
-  forgettingProgress: number
-  daysUntilForgotten?: number
   isCollapsed: boolean
-  importanceScore?: number
-  decayRate?: number
 }
 
 export interface NoteEditorOptions {

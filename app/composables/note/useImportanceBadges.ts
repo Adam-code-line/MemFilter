@@ -1,16 +1,22 @@
 import type { ImportanceLevel, NoteRecord } from './types'
-
-const badgeMap: Record<ImportanceLevel, { label: string; color: string; variant: 'solid' | 'soft' | 'subtle' | 'outline'; icon: string }> = {
-  high: { label: '核心记忆', color: 'primary', variant: 'solid', icon: 'i-lucide-flame' },
-  medium: { label: '重点追踪', color: 'amber', variant: 'soft', icon: 'i-lucide-target' },
-  low: { label: '随手记录', color: 'gray', variant: 'subtle', icon: 'i-lucide-pen-line' },
-  noise: { label: '噪声过滤', color: 'neutral', variant: 'outline', icon: 'i-lucide-waves' }
-}
+import { IMPORTANCE_METADATA } from '../note-memory/importanceMetadata'
 
 const fallbackBadge = { label: '未分类', color: 'neutral', variant: 'subtle' as const, icon: 'i-lucide-circle' }
 
+const importanceBadgeMap = Object.fromEntries(
+  Object.entries(IMPORTANCE_METADATA).map(([key, value]) => [
+    key,
+    {
+      label: value.label,
+      color: value.color,
+      variant: value.badgeVariant,
+      icon: value.icon
+    }
+  ])
+) as Record<ImportanceLevel, { label: string; color: string; variant: 'solid' | 'soft' | 'subtle' | 'outline'; icon: string }>
+
 export const useImportanceBadges = () => {
-  const resolveImportanceBadge = (importance: ImportanceLevel) => badgeMap[importance] ?? fallbackBadge
+  const resolveImportanceBadge = (importance: ImportanceLevel) => importanceBadgeMap[importance] ?? fallbackBadge
 
   const resolveNoteItem = (note: NoteRecord) => {
     const badge = resolveImportanceBadge(note.importance)
@@ -29,7 +35,7 @@ export const useImportanceBadges = () => {
   const useNoteItems = (notes: ComputedRef<NoteRecord[]>) => computed(() => notes.value.map(resolveNoteItem))
 
   return {
-    importanceBadgeMap: badgeMap,
+  importanceBadgeMap,
     resolveImportanceBadge,
     resolveNoteItem,
     useNoteItems

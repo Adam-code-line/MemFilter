@@ -1,12 +1,6 @@
 
 import type { MemoryFadeLevel, MemoryImportance, MemoryMetaResult } from './types'
-
-const importanceConfig: Record<MemoryImportance, { label: string; color: string; score?: number }> = {
-  high: { label: '核心记忆', color: 'primary', score: 85 },
-  medium: { label: '重点追踪', color: 'amber', score: 65 },
-  low: { label: '随手记录', color: 'gray', score: 35 },
-  noise: { label: '噪声过滤', color: 'neutral', score: 15 }
-}
+import { IMPORTANCE_METADATA } from '../note-memory/importanceMetadata'
 
 const forgettingStages = ['', '开始淡化', '轻度模糊', '深度模糊', '即将消失']
 const forgettingStatuses = ['', '淡化中', '模糊中', '消退中', '即将遗忘']
@@ -54,8 +48,8 @@ export const useMemoryMeta = (
     return `${raw.slice(0, snippetLimit).trimEnd()}${ellipsis}`
   })
 
-  const importanceLabel = computed(() => importanceConfig[source.importance.value].label)
-  const importanceColor = computed(() => importanceConfig[source.importance.value].color)
+  const importanceLabel = computed(() => IMPORTANCE_METADATA[source.importance.value].label)
+  const importanceColor = computed(() => IMPORTANCE_METADATA[source.importance.value].color)
 
   const isForgetting = computed(() => source.forgettingProgress.value > 0)
 
