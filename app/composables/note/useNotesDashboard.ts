@@ -1,4 +1,5 @@
 
+import { onServerPrefetch } from '#imports'
 import { storeToRefs } from 'pinia'
 import { useNotesStore } from '~~/stores/notes'
 import type {
@@ -58,7 +59,15 @@ const extractNoteTimestamp = (note: NoteRecord) => {
 
 export const useNotesDashboard = (options: NoteDashboardOptions = {}) => {
   const notesStore = useNotesStore()
-  notesStore.ensureInitialized(options.initialNotes, options)
+  const initializePromise = notesStore.ensureInitialized(options.initialNotes, options)
+
+  if (import.meta.server) {
+    onServerPrefetch(() => initializePromise)
+  } else {
+    initializePromise.catch(error => {
+      console.warn('[notes] Failed to initialize dashboard on client', error)
+    })
+  }
 
   const { notes, noteStats } = storeToRefs(notesStore)
 

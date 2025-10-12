@@ -213,7 +213,16 @@ const buildFallbackNews = () => [
   }
 ]
 
-const fetchTianApiNews = async (keywords: string[] | undefined) => {
+const sanitizeApiName = (value: unknown): string => {
+  if (typeof value !== 'string') {
+    return 'generalnews'
+  }
+
+  const normalized = value.trim().toLowerCase()
+  return normalized.length ? normalized : 'generalnews'
+}
+
+const fetchTianApiNews = async (keywords: string[] | undefined, options: { apiName?: unknown } = {}) => {
   const runtimeConfig = useRuntimeConfig()
   const apiKey = runtimeConfig.ingestion.tianApiKey
 
@@ -222,36 +231,55 @@ const fetchTianApiNews = async (keywords: string[] | undefined) => {
     return buildFallbackNews()
   }
 
-  const query: Record<string, string> = { key: apiKey, num: '20' }
-  if (keywords?.length) {
-    query.word = keywords.join(',')
+  const apiName = sanitizeApiName(options.apiName)
+  const body: Record<string, string> = { key: apiKey, num: '20' }
+
+  if (apiName === 'generalnews' && keywords?.length) {
+    body.word = keywords.join(',')
   }
 
-  const response = await $fetch<{
-    code: number
-    msg: string
-    newslist?: Array<{ id?: string; title?: string; url?: string; intro?: string; ctime?: string; source?: string }>
-  }>('https://api.tianapi.com/generalnews/index', {
-    method: 'GET',
-    query
-  })
+  const formBody = new URLSearchParams(body)
 
-  if (response.code !== 200 || !response.newslist) {
-    console.warn('[ingestion] TianAPI responded with error, using fallback news items', {
-      code: response.code,
-      message: response.msg
+  try {
+    const response = await $fetch<{
+      code: number
+      msg: string
+      newslist?: Array<{ id?: string; title?: string; url?: string; intro?: string; ctime?: string; source?: string }>
+    }>(`https://apis.tianapi.com/${apiName}/index`, {
+      method: 'POST',
+      body: formBody,
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+      }
     })
-    return buildFallbackNews()
-  }
 
-  return response.newslist.map(item => ({
-    externalId: item.id ?? item.url ?? randomUUID(),
-    title: item.title ?? '未命名资讯',
-    content: item.intro ?? '',
-    url: item.url,
-    publishedAt: item.ctime,
-    source: item.source
-  }))
+    if (response.code !== 200 || !Array.isArray(response.newslist) || response.newslist.length === 0) {
+      throw createError({
+        statusCode: 502,
+        statusMessage: `天行数据接口返回错误（${response.code}）：${response.msg || '未返回资讯数据'}`
+      })
+    }
+
+    return response.newslist.map(item => ({
+      externalId: item.id ?? item.url ?? randomUUID(),
+      title: item.title ?? '未命名资讯',
+      content: item.intro ?? '',
+      url: item.url,
+      publishedAt: item.ctime,
+      source: item.source
+    }))
+  } catch (error) {
+    console.error('[ingestion] Failed to fetch TianAPI news', error)
+    if (error && typeof error === 'object' && 'statusCode' in error) {
+      throw error as Error
+    }
+
+    const message = error instanceof Error ? error.message : '拉取资讯失败'
+    throw createError({
+      statusCode: 502,
+      statusMessage: `天行数据接口请求失败：${message}`
+    })
+  }
 }
 
 export const useIngestionService = async (event: H3Event) => {
@@ -378,7 +406,7 @@ export const useIngestionService = async (event: H3Event) => {
             ? [config.keyword]
             : undefined
 
-        items = await fetchTianApiNews(keywords)
+        items = await fetchTianApiNews(keywords, { apiName: config.api })
         break
       }
       default:
