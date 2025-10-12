@@ -1,8 +1,13 @@
 <script setup lang="ts">
+import { useNotesStore } from "~~/stores/notes";
 
 definePageMeta({
   layout: 'app'
 })
+
+const notesStore = useNotesStore()
+await notesStore.ensureInitialized()
+console.info('[note page] notes after init', notesStore.notes.length)
 
 const {
   notes,

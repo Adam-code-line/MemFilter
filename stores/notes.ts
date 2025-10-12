@@ -404,6 +404,7 @@ export const useNotesStore = defineStore('notes', () => {
 
     try {
       const remoteNotes = await notesApi.list()
+      console.info('[notes] loadFromServer fetched', remoteNotes.length, 'notes')
       const normalized = remoteNotes.map(record => normalizeRecord({
         ...record,
         id: typeof record.id === 'number' ? record.id : Number.parseInt(String(record.id), 10),
