@@ -215,14 +215,14 @@ const buildFallbackNews = () => [
 
 const sanitizeApiName = (value: unknown): string => {
   if (typeof value !== 'string') {
-    return 'generalnews'
+    return 'internet'
   }
 
   const normalized = value.trim().toLowerCase()
-  return normalized.length ? normalized : 'generalnews'
+  return normalized.length ? normalized : 'internet'
 }
 
-const fetchTianApiNews = async (keywords: string[] | undefined, options: { apiName?: unknown } = {}) => {
+const fetchTianApiNews = async (keywords: string[] | undefined, options: { apiName?: unknown; allowFallback?: boolean } = {}) => {
   const runtimeConfig = useRuntimeConfig()
   const apiKey = runtimeConfig.ingestion.tianApiKey
 
@@ -232,9 +232,10 @@ const fetchTianApiNews = async (keywords: string[] | undefined, options: { apiNa
   }
 
   const apiName = sanitizeApiName(options.apiName)
+  const allowFallback = options.allowFallback !== false
   const body: Record<string, string> = { key: apiKey, num: '20' }
 
-  if (apiName === 'generalnews' && keywords?.length) {
+  if (apiName === 'internet' && keywords?.length) {
     body.word = keywords.join(',')
   }
 
@@ -254,6 +255,16 @@ const fetchTianApiNews = async (keywords: string[] | undefined, options: { apiNa
     })
 
     if (response.code !== 200 || !Array.isArray(response.newslist) || response.newslist.length === 0) {
+      if (response.code === 250 && allowFallback && apiName !== 'generalnews') {
+        console.info('[ingestion] TianAPI returned empty data, falling back to generalnews feed')
+        return fetchTianApiNews(undefined, { apiName: 'generalnews', allowFallback: false })
+      }
+
+      if (response.code === 250) {
+        console.warn('[ingestion] TianAPI returned empty data, using fallback items')
+        return buildFallbackNews()
+      }
+
       throw createError({
         statusCode: 502,
         statusMessage: `天行数据接口返回错误（${response.code}）：${response.msg || '未返回资讯数据'}`
@@ -400,11 +411,15 @@ export const useIngestionService = async (event: H3Event) => {
 
     switch (source.type as IngestionSourceType) {
       case 'tianapi-general': {
-        const keywords = Array.isArray(config.keywords)
+        const configuredKeywords = Array.isArray(config.keywords)
           ? (config.keywords.filter(item => typeof item === 'string') as string[])
           : typeof config.keyword === 'string'
             ? [config.keyword]
             : undefined
+
+        const keywords = configuredKeywords && configuredKeywords.length
+          ? configuredKeywords
+          : ['互联网', '网易']
 
         items = await fetchTianApiNews(keywords, { apiName: config.api })
         break

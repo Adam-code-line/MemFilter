@@ -11,7 +11,7 @@ interface PromoteOptions {
 
 const DEFAULT_SOURCE_TYPE = 'tianapi-general'
 const DEFAULT_SOURCE_NAME = '中文资讯源'
-const DEFAULT_KEYWORDS = ['人工智能', '记忆管理', '效率工具']
+const DEFAULT_KEYWORDS = ['互联网', '前端', '后端', 'AI']
 
 export const useIngestionManager = () => {
   const ingestionApi = useIngestionApi()
@@ -52,6 +52,23 @@ export const useIngestionManager = () => {
             config: { keywords: DEFAULT_KEYWORDS }
           })
           sourcesState.value = [...sourcesState.value, target]
+        } else {
+          const existingKeywords = Array.isArray(target.config?.keywords)
+            ? target.config?.keywords.filter(item => typeof item === 'string')
+            : []
+
+          const needsUpdate = existingKeywords.length === 0
+
+          if (needsUpdate) {
+            const updatedTarget = await ingestionApi.updateSource(target.id, {
+              config: { keywords: DEFAULT_KEYWORDS }
+            })
+
+            target = updatedTarget
+            sourcesState.value = sourcesState.value.map(source =>
+              source.id === updatedTarget.id ? updatedTarget : source
+            )
+          }
         }
 
         defaultSourceId.value = target.id
