@@ -19,7 +19,7 @@ const user = computed(() => authUser.value ?? { name: '访客', avatar: null })
 
 const handleLogout = async () => {
   await authStore.logout()
-  await navigateTo('/auth/login')
+  await router.push('/auth/login')
 }
 
 const {
@@ -63,7 +63,15 @@ const userMenuItems = computed<DropdownMenuItem[][]>(() => [
     { label: '设置', icon: 'i-lucide-settings', to: '/settings' }
   ],
   [
-    { label: '退出登录', icon: 'i-lucide-log-out', click: handleLogout, color: 'red' }
+    {
+      label: '退出登录',
+      icon: 'i-lucide-log-out',
+      color: 'red',
+      onSelect: async (event?: Event) => {
+        event?.preventDefault?.()
+        await handleLogout()
+      }
+    }
   ]
 ])
 

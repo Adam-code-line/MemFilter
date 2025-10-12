@@ -48,7 +48,10 @@ export default defineNuxtConfig({
     },
     session: {
       cookieName: process.env.AUTH_SESSION_COOKIE || 'memfilter-auth-session',
-      tokenExpiresInSeconds: Number(process.env.AUTH_SESSION_TTL || 60 * 60 * 24 * 7)
+      tokenExpiresInSeconds: Number(process.env.AUTH_SESSION_TTL || 60 * 60 * 24)
+    },
+    ingestion: {
+      tianApiKey: process.env.TIAN_API_KEY || 'b5c631948cfbce627c0df44e7def7b97'
     }
   },
 

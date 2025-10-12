@@ -1,5 +1,7 @@
 import { defineStore } from 'pinia'
 import type { FetchError } from 'ofetch'
+import { useNotesStore } from './notes'
+import { resetIngestionState } from '~/composables/ingestion/useIngestionManager'
 
 export interface AuthUser {
   id: string
@@ -224,6 +226,17 @@ export const useAuthStore = defineStore('auth', () => {
       console.warn('[auth] Logout request failed', error)
     } finally {
       setSession(null)
+      try {
+        const notesStore = useNotesStore()
+        notesStore.resetState()
+      } catch (error) {
+        console.warn('[auth] Failed to reset notes store on logout', error)
+      }
+      try {
+        resetIngestionState()
+      } catch (error) {
+        console.warn('[auth] Failed to reset ingestion state on logout', error)
+      }
     }
   }
 

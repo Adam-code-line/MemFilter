@@ -22,7 +22,8 @@ const {
   saveNote,
   restoreNote,
   accelerateForgetting,
-  forgetNote
+  forgetNote,
+  refreshNotes
 } = useNotesDashboard()
 
 const {
@@ -120,6 +121,10 @@ const totalNotesBadge = computed(() => `${totalNotesLabel.value}: ${notes.value.
 
 const noteEditorRef = ref<{ triggerSave?: () => void } | null>(null)
 const isEditorActive = computed(() => editorMode.value === 'edit' || editorMode.value === 'create')
+
+const handleIngestionPromoted = async () => {
+  await refreshNotes()
+}
 
 useKeyboardShortcut({
   key: 'Enter',
@@ -253,15 +258,17 @@ const resetFilters = () => {
         </p>
       </div>
 
-      <UButton
-        size="lg"
-        color="primary"
-        icon="i-lucide-plus"
-        class="self-start"
-        @click="openEditorForNew"
-      >
-        {{ noteCreateLabel }}
-      </UButton>
+        <div class="flex flex-wrap items-center gap-3 self-start">
+          <UButton
+            size="lg"
+            color="primary"
+            icon="i-lucide-plus"
+            @click="openEditorForNew"
+          >
+            {{ noteCreateLabel }}
+          </UButton>
+          <NoteIngestionPanel @promoted="handleIngestionPromoted" />
+        </div>
     </div>
 
     <UCard class="border border-gray-200/80 dark:border-white/10">

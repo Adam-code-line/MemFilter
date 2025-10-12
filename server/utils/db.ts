@@ -81,6 +81,43 @@ export const ensureAuthSchema = async () => {
           CONSTRAINT fk_notes_user FOREIGN KEY (user_id) REFERENCES auth_users(id) ON DELETE CASCADE
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;`
       )
+
+      await client.query(
+        `CREATE TABLE IF NOT EXISTS memory_sources (
+          id CHAR(36) NOT NULL,
+          user_id CHAR(36) NOT NULL,
+          type VARCHAR(64) NOT NULL,
+          name VARCHAR(120) NOT NULL,
+          config JSON NULL,
+          is_active TINYINT(1) NOT NULL DEFAULT 1,
+          created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+          PRIMARY KEY (id),
+          KEY idx_memory_sources_user_id (user_id),
+          CONSTRAINT fk_memory_sources_user FOREIGN KEY (user_id) REFERENCES auth_users(id) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;`
+      )
+
+      await client.query(
+        `CREATE TABLE IF NOT EXISTS memory_raw_items (
+          id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+          source_id CHAR(36) NOT NULL,
+          user_id CHAR(36) NOT NULL,
+          external_id VARCHAR(190) NULL,
+          title VARCHAR(200) NULL,
+          content MEDIUMTEXT NOT NULL,
+          payload JSON NULL,
+          status ENUM('pending','processed','failed') NOT NULL DEFAULT 'pending',
+          error_message TEXT NULL,
+          ingested_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          processed_at TIMESTAMP NULL,
+          PRIMARY KEY (id),
+          UNIQUE KEY uniq_memory_raw_items_external (source_id, external_id),
+          KEY idx_memory_raw_items_user_id (user_id),
+          CONSTRAINT fk_memory_raw_items_source FOREIGN KEY (source_id) REFERENCES memory_sources(id) ON DELETE CASCADE,
+          CONSTRAINT fk_memory_raw_items_user FOREIGN KEY (user_id) REFERENCES auth_users(id) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;`
+      )
     })()
   }
 

@@ -628,6 +628,14 @@ export const useNotesStore = defineStore('notes', () => {
     return removed
   }
 
+  const resetState = () => {
+    notes.value = []
+    isHydrated.value = false
+    initialized.value = false
+    dashboardOptions.value = undefined
+    isFetching = false
+  }
+
   return {
     notes,
     isHydrated,
@@ -642,7 +650,8 @@ export const useNotesStore = defineStore('notes', () => {
     restoreNote,
     accelerateForgetting,
     directForget,
-    purgeNote
+    purgeNote,
+    resetState
   }
 })
 

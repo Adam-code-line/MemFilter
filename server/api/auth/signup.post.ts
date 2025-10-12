@@ -1,6 +1,7 @@
 import { defineEventHandler, readBody, setCookie } from 'h3'
 import { useRuntimeConfig } from '#imports'
 import type { SignupPayload } from '~/stores/auth'
+import { useAuthService } from '~/composables/services/useAuthService'
 
 export default defineEventHandler(async (event) => {
   const payload = await readBody<SignupPayload>(event)
