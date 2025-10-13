@@ -1,14 +1,21 @@
 <script setup lang="ts">
-import { computed, ref } from '#imports'
+import { computed, ref, onMounted } from '#imports'
 import NoteIngestionDialog from '~/components/Note/NoteIngestionDialog.vue'
 import type { MemoryRawItem } from '~/composables/services/useIngestionService'
 
-const props = withDefaults(defineProps<{ buttonSize?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' }>(), {
-  buttonSize: 'lg'
+const props = withDefaults(defineProps<{
+  buttonSize?: 'xs' | 'sm' | 'md' | 'lg' | 'xl'
+  createLabel?: string
+  createIcon?: string
+}>(), {
+  buttonSize: 'lg',
+  createLabel: '新建笔记',
+  createIcon: 'i-lucide-plus'
 })
 
 const emit = defineEmits<{
   (event: 'promoted', item: MemoryRawItem): void
+  (event: 'create'): void
 }>()
 
 const ingestion = useIngestionManager()
@@ -30,6 +37,8 @@ const ingestionLastSyncSummary = computed(() => {
 })
 
 const isDialogOpen = ref(false)
+const createButtonLabel = computed(() => props.createLabel ?? '新建笔记')
+const createButtonIcon = computed(() => props.createIcon ?? 'i-lucide-plus')
 
 const formatIngestionTimestamp = (value: string) => {
   const date = new Date(value)
@@ -85,10 +94,34 @@ async function handlePromoteRawItem (item: MemoryRawItem) {
 const handleDialogClose = () => {
   isDialogOpen.value = false
 }
+
+const handleCreate = () => {
+  emit('create')
+}
+
+onMounted(async () => {
+  if (ingestionPendingItems.value.length) {
+    return
+  }
+
+  try {
+    await ingestion.refreshPendingItems()
+  } catch {
+    // toast 已处理错误
+  }
+})
 </script>
 
 <template>
   <div class="flex flex-wrap items-center gap-3">
+    <UButton
+      :size="buttonSize"
+      color="primary"
+      :icon="createButtonIcon"
+      @click="handleCreate"
+    >
+      {{ createButtonLabel }}
+    </UButton>
     <UButton
       :size="buttonSize"
       variant="soft"

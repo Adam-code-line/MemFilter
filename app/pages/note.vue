@@ -271,15 +271,12 @@ const resetFilters = () => {
       </div>
 
         <div class="flex flex-wrap items-center gap-3 self-start">
-          <UButton
-            size="lg"
-            color="primary"
-            icon="i-lucide-plus"
-            @click="openEditorForNew"
-          >
-            {{ noteCreateLabel }}
-          </UButton>
-          <NoteIngestionLauncher @promoted="handleIngestionPromoted" />
+          <NoteIngestionLauncher
+            :create-label="noteCreateLabel"
+            button-size="lg"
+            @create="openEditorForNew"
+            @promoted="handleIngestionPromoted"
+          />
         </div>
     </div>
 

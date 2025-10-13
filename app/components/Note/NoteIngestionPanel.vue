@@ -68,7 +68,7 @@ const handleClose = () => {
       </div>
     </template>
 
-  <div class="space-y-6 max-h-[70vh] overflow-y-auto pr-1">
+    <div class="space-y-6 max-h-[70vh] overflow-y-auto pr-1">
       <div v-if="isLoading" class="space-y-3">
         <USkeleton v-for="n in 3" :key="n" class="h-20 rounded-xl" />
       </div>
