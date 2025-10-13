@@ -42,13 +42,29 @@
         />
       </div>
 
-      <UTextarea
-        v-model="noteContent"
-        :placeholder="contentPlaceholder"
-        :rows="12"
-        class="min-h-[18rem]"
-        :class="{ 'opacity-80 blur-[0.4px] text-gray-600 dark:text-gray-300': fadeLevel > 0 }"
-      />
+      <ClientOnly>
+        <div
+          class="relative rounded-lg border border-gray-200/80 bg-white/90 shadow-sm dark:border-white/10 dark:bg-slate-900/70"
+          :class="{ 'opacity-80 blur-[0.4px] text-gray-600 dark:text-gray-300': fadeLevel > 0 }"
+          style="min-height: 18rem; height: 18rem;"
+        >
+          <div :id="editorContainerId" class="h-full" />
+          <div
+            v-if="!noteContent"
+            class="pointer-events-none absolute inset-4 text-sm text-gray-400 dark:text-gray-500"
+          >
+            {{ contentPlaceholder }}
+          </div>
+        </div>
+        <template #fallback>
+          <UTextarea
+            v-model="noteContent"
+            :placeholder="contentPlaceholder"
+            :rows="12"
+            class="min-h-[18rem]"
+          />
+        </template>
+      </ClientOnly>
     </div>
 
     <template #footer>
@@ -82,6 +98,7 @@
 </template>
 
 <script setup lang="ts">
+import CherryMarkdownEditor from './CherryMarkdownEditor.vue'
 
 interface EditorConfig {
   titlePlaceholder?: string
@@ -146,6 +163,10 @@ const metaLabels = computed(() => ({
   lastEdited: config.value.metaLabels?.lastEdited ?? '修改'
 }))
 
+const editorContainerId = `cherry-editor-${Math.random().toString(36).slice(2)}`
+const cherryInstance = shallowRef<any | null>(null)
+const isSyncingFromCherry = ref(false)
+
 const {
   noteTitle,
   noteContent,
@@ -188,6 +209,50 @@ const importanceOptions: Array<{ label: string; value: ImportanceLevel }> = [
 const statusColor = computed(() =>
   saveStatus === statusLabels.saved ? 'success' : 'warning'
 )
+
+const initializeCherryEditor = async () => {
+  if (cherryInstance.value || import.meta.server) {
+    return
+  }
+
+  const [{ default: Cherry }] = await Promise.all([
+    import('cherry-markdown')
+  ])
+
+  const instance = new Cherry({
+    id: editorContainerId,
+    value: noteContent.value ?? '',
+    editor: {
+      defaultModel: 'editOnly',
+      height: '100%'
+    },
+    callback: {
+      afterChange: (markdown: string) => {
+        isSyncingFromCherry.value = true
+        noteContent.value = markdown
+      }
+    }
+  })
+
+  cherryInstance.value = instance
+  applyReadOnlyState(isSaving.value)
+}
+
+const applyReadOnlyState = (value: boolean) => {
+  const instance: any = cherryInstance.value
+  if (!instance || typeof instance.getCodeMirror !== 'function') {
+    return
+  }
+
+  const codeMirror = instance.getCodeMirror()
+  if (codeMirror && typeof codeMirror.setOption === 'function') {
+    codeMirror.setOption('readOnly', value ? 'nocursor' : false)
+  }
+}
+
+onMounted(() => {
+  initializeCherryEditor()
+})
 
 const handleSave = async () => {
   const payload = buildSavePayload()
@@ -260,6 +325,44 @@ watch(noteTitle, (value, oldValue) => {
 watch(() => props.initialImportance, value => {
   if (props.mode === 'edit' && value) {
     setImportanceLevel(value)
+  }
+})
+
+onBeforeUnmount(() => {
+  const instance: any = cherryInstance.value
+  if (!instance) {
+    return
+  }
+
+  if (typeof instance.destroy === 'function') {
+    instance.destroy()
+  }
+  cherryInstance.value = null
+})
+
+watch(isSaving, value => {
+  applyReadOnlyState(value)
+})
+
+watch(noteContent, (value, oldValue) => {
+  if (!cherryInstance.value || value === oldValue) {
+    return
+  }
+
+  if (isSyncingFromCherry.value) {
+    isSyncingFromCherry.value = false
+    return
+  }
+
+  const markdown = value ?? ''
+  const instance: any = cherryInstance.value
+
+  if (typeof instance.setMarkdown === 'function') {
+    instance.setMarkdown(markdown)
+  } else if (typeof instance.setValue === 'function') {
+    instance.setValue(markdown)
+  } else if (instance.editor?.editor?.setValue) {
+    instance.editor.editor.setValue(markdown)
   }
 })
 

@@ -21,7 +21,10 @@ export default defineNuxtConfig({
     '@pinia/nuxt'
   ],
 
-  css: ['~/assets/css/main.css'],
+  css: [
+    '~/assets/css/main.css',
+    'cherry-markdown/dist/cherry-markdown.css'
+  ],
 
   ui: {
     fonts: false
