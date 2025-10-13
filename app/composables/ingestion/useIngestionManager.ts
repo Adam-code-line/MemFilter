@@ -145,10 +145,23 @@ export const useIngestionManager = () => {
 
   const promoteRawItem = async (item: MemoryRawItem, options: PromoteOptions = {}) => {
     try {
+      const payload = item.payload ?? {}
+      const payloadUrl = typeof payload?.url === 'string' ? String(payload.url) : null
+      const resolvedContent = (() => {
+        const trimmed = (item.content ?? '').trim()
+        if (trimmed.length) {
+          return trimmed
+        }
+        if (payloadUrl) {
+          return `请查看原文：${payloadUrl}`
+        }
+        return '该资讯暂无摘要内容，请查看原始来源。'
+      })()
+
       const response = await ingestionApi.promoteItem(item.id, {
         note: {
           title: options.title ?? item.title ?? '自动生成记忆',
-          content: item.content,
+          content: resolvedContent,
           importance: options.importance ?? 'medium'
         }
       })

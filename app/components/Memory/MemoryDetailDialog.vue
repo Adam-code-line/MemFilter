@@ -83,13 +83,15 @@ const handleAction = (key: string) => {
           </div>
         </template>
 
-        <MemoryDetailPanel
-          :note="note"
-          :actions="actions"
-          :status-label="statusLabel"
-          :status-color="statusColor"
-          @action="handleAction"
-        />
+        <div class="max-h-[70vh] overflow-y-auto pr-1">
+          <MemoryDetailPanel
+            :note="note"
+            :actions="actions"
+            :status-label="statusLabel"
+            :status-color="statusColor"
+            @action="handleAction"
+          />
+        </div>
       </UCard>
     </template>
   </UModal>

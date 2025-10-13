@@ -68,11 +68,18 @@ const timeFilterOptions = computed(() => searchConfig.value.timeOptions ?? noteD
 const importanceLabel = computed(() => searchConfig.value.importanceLabel ?? noteDefaults.search.importanceLabel)
 const timeLabel = computed(() => searchConfig.value.timeLabel ?? noteDefaults.search.timeLabel)
 
-const summaryLabel = useSummaryLabel(
+const summaryLabelTemplate = useSummaryLabel(
   computed(() => filtersConfig.value.summaryLabel),
   noteDefaults.filters.summaryLabel,
   computed(() => filteredNotes.value.length)
 )
+
+const summaryLabel = computed(() => {
+  if (!notesStore.isHydrated) {
+    return '正在同步笔记...'
+  }
+  return summaryLabelTemplate.value
+})
 
 const searchText = computed({
   get: () => searchQuery.value,
@@ -272,7 +279,7 @@ const resetFilters = () => {
           >
             {{ noteCreateLabel }}
           </UButton>
-          <NoteIngestionPanel @promoted="handleIngestionPromoted" />
+          <NoteIngestionLauncher @promoted="handleIngestionPromoted" />
         </div>
     </div>
 

@@ -222,7 +222,10 @@ const sanitizeApiName = (value: unknown): string => {
   return normalized.length ? normalized : 'internet'
 }
 
-const fetchTianApiNews = async (keywords: string[] | undefined, options: { apiName?: unknown; allowFallback?: boolean } = {}) => {
+const fetchTianApiNews = async (
+  keywords: string[] | undefined,
+  options: { apiName?: unknown; allowFallback?: boolean } = {}
+) => {
   const runtimeConfig = useRuntimeConfig()
   const apiKey = runtimeConfig.ingestion.tianApiKey
 
@@ -254,10 +257,25 @@ const fetchTianApiNews = async (keywords: string[] | undefined, options: { apiNa
       }
     })
 
-    if (response.code !== 200 || !Array.isArray(response.newslist) || response.newslist.length === 0) {
-      if (response.code === 250 && allowFallback && apiName !== 'generalnews') {
-        console.info('[ingestion] TianAPI returned empty data, falling back to generalnews feed')
-        return fetchTianApiNews(undefined, { apiName: 'generalnews', allowFallback: false })
+    const rawNewslist = Array.isArray(response.newslist)
+      ? response.newslist
+      : Array.isArray((response as any)?.result?.newslist)
+        ? (response as any).result.newslist
+        : []
+
+    const newslist = rawNewslist as Array<{ id?: string; title?: string; url?: string; intro?: string; ctime?: string; source?: string }>
+
+    if (response.code !== 200 || newslist.length === 0) {
+      if (response.code === 250 && allowFallback) {
+        if (apiName === 'internet' && keywords?.length) {
+          console.info('[ingestion] TianAPI internet feed empty for keywords, retrying without filters')
+          return fetchTianApiNews(undefined, { apiName: 'internet', allowFallback: false })
+        }
+
+        if (apiName !== 'internet') {
+          console.info('[ingestion] TianAPI feed empty, falling back to default internet feed')
+          return fetchTianApiNews(undefined, { apiName: 'internet', allowFallback: false })
+        }
       }
 
       if (response.code === 250) {
@@ -271,7 +289,7 @@ const fetchTianApiNews = async (keywords: string[] | undefined, options: { apiNa
       })
     }
 
-    return response.newslist.map(item => ({
+    return newslist.map(item => ({
       externalId: item.id ?? item.url ?? randomUUID(),
       title: item.title ?? '未命名资讯',
       content: item.intro ?? '',
@@ -485,10 +503,30 @@ export const useIngestionService = async (event: H3Event) => {
     const sourceLabel = payloadRecord && typeof payloadRecord.source === 'string'
       ? (payloadRecord.source as string)
       : undefined
+    const rawUrl = payloadRecord && typeof payloadRecord.url === 'string' ? String(payloadRecord.url) : null
+
+    const resolveContent = () => {
+      const provided = (parsed.data.note.content ?? '').trim()
+      if (provided.length) {
+        return provided
+      }
+
+      const rawContent = (rawItem.content ?? '').trim()
+      if (rawContent.length) {
+        return rawContent
+      }
+
+      if (rawUrl) {
+        return `该资讯暂无摘要内容，请访问原文：${rawUrl}`
+      }
+
+      return '该资讯暂无摘要内容，请查看原始来源。'
+    }
+
     const noteService = await useNotesService(event)
     const notePayload = {
       title: parsed.data.note.title ?? rawItem.title ?? '自动生成记忆',
-      content: parsed.data.note.content,
+      content: resolveContent(),
       description: sourceLabel,
       icon: '📰',
       importance: parsed.data.note.importance,
