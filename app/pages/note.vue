@@ -130,6 +130,9 @@ const noteListEmptyState = computed(() => {
 const noteItems = useNoteItems(filteredNotes)
 
 const totalNotesBadge = computed(() => `${totalNotesLabel.value}: ${notes.value.length}`)
+const highImportanceCount = computed(() => notes.value.filter(note => note.importance === 'high').length)
+const fadingNotesCount = computed(() => notes.value.filter(note => (note.fadeLevel ?? 0) >= 3).length)
+const activeFilteredCount = computed(() => filteredNotes.value.length)
 
 const noteEditorRef = ref<{ triggerSave?: () => void } | null>(null)
 const isEditorActive = computed(() => editorMode.value === 'edit' || editorMode.value === 'create')
@@ -322,12 +325,30 @@ const resetFilters = () => {
             </template>
           </ClientOnly>
         </div>
+
+        <div class="note-stats-grid">
+          <div class="note-stat-card">
+            <p class="note-stat-label">高价值笔记</p>
+            <p class="note-stat-value text-primary">{{ highImportanceCount }}</p>
+            <p class="note-stat-footnote">重点关注的核心记忆</p>
+          </div>
+          <div class="note-stat-card">
+            <p class="note-stat-label">待复习</p>
+            <p class="note-stat-value text-amber-500">{{ fadingNotesCount }}</p>
+            <p class="note-stat-footnote">淡化等级 ≥ 3 的条目</p>
+          </div>
+          <div class="note-stat-card">
+            <p class="note-stat-label">当前筛选</p>
+            <p class="note-stat-value text-emerald-500">{{ activeFilteredCount }}</p>
+            <p class="note-stat-footnote">符合条件的笔记数量</p>
+          </div>
+        </div>
       </div>
     </UCard>
 
-  <div class="grid gap-8 items-start lg:grid-cols-[minmax(0,1.35fr)_minmax(0,0.85fr)] xl:grid-cols-[minmax(0,1.4fr)_minmax(0,0.9fr)]">
+	<div class="note-content-grid">
       <aside>
-  <UCard class="border border-primary/20 dark:border-primary/40 shadow-lg/40 lg:sticky lg:top-24">
+	<UCard class="note-editor-card">
           <template #header>
             <div class="flex flex-col gap-2">
               <div class="flex items-center justify-between gap-2">
@@ -451,5 +472,96 @@ const resetFilters = () => {
   -webkit-line-clamp: 1;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+.note-stats-grid {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.note-stat-card {
+  position: relative;
+  padding: 1.1rem 1.25rem;
+  border-radius: 1rem;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(241, 245, 249, 0.85));
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+}
+
+.dark .note-stat-card {
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.92), rgba(15, 23, 42, 0.88));
+  border-color: rgba(51, 65, 85, 0.45);
+  box-shadow: 0 12px 28px rgba(2, 6, 23, 0.45);
+}
+
+.note-stat-label {
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(71, 85, 105, 0.85);
+  margin-bottom: 0.4rem;
+}
+
+.dark .note-stat-label {
+  color: rgba(148, 163, 184, 0.72);
+}
+
+.note-stat-value {
+  font-size: 1.85rem;
+  font-weight: 700;
+  line-height: 1.1;
+  margin-bottom: 0.25rem;
+}
+
+.note-stat-footnote {
+  font-size: 0.78rem;
+  color: rgba(100, 116, 139, 0.85);
+}
+
+.dark .note-stat-footnote {
+  color: rgba(148, 163, 184, 0.7);
+}
+
+.note-content-grid {
+  display: grid;
+  gap: 2rem;
+  align-items: flex-start;
+  margin-top: 2rem;
+}
+
+@media (min-width: 1024px) {
+  .note-content-grid {
+    gap: 2.5rem;
+    grid-template-columns: minmax(0, 1.65fr) minmax(0, 1fr);
+  }
+}
+
+@media (min-width: 1280px) {
+  .note-content-grid {
+    grid-template-columns: minmax(0, 1.85fr) minmax(0, 1fr);
+  }
+}
+
+.note-editor-card {
+  border: 1px solid rgba(129, 140, 248, 0.25);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(219, 234, 254, 0.35));
+  box-shadow: 0 24px 45px rgba(59, 130, 246, 0.18);
+  position: sticky;
+  top: 6rem;
+}
+
+.dark .note-editor-card {
+  border-color: rgba(129, 140, 248, 0.35);
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.92), rgba(30, 64, 175, 0.35));
+  box-shadow: 0 28px 48px rgba(30, 64, 175, 0.25);
+}
+
+@media (max-width: 1023px) {
+  .note-editor-card {
+    position: static;
+    top: auto;
+  }
 }
 </style>

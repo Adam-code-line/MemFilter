@@ -1,57 +1,28 @@
 <template>
-  <UCard class="w-full bg-white/90 dark:bg-slate-900/80 backdrop-blur-xl border border-white/20 dark:border-white/10 shadow-xl">
-    <template #header>
-      <div class="flex flex-col gap-3">
-        <UInput
-          v-model="noteTitle"
-          :placeholder="config.titlePlaceholder"
-          variant="none"
-          class="text-lg font-semibold h-12 px-0"
-          :class="{ 'opacity-80 blur-[0.5px]': fadeLevel > 0 }"
-        />
-
-        <div class="flex flex-wrap items-center gap-2 text-sm">
-          <USelectMenu
-            v-model="importanceLevel"
-            :items="importanceOptions"
-            label-key="label"
-            value-key="value"
-            size="sm"
-            class="min-w-[160px]"
-            :ui="{ menu: 'min-w-[160px]' }"
-          />
-          <UBadge
-            :label="saveStatus"
-            :color="statusColor"
-            variant="outline"
-          />
-        </div>
-      </div>
-    </template>
-
-    <div class="flex flex-col gap-4">
-      <div class="space-y-2">
-        <div class="flex items-center justify-between">
-          <label class="text-sm font-medium text-gray-700 dark:text-gray-200">记忆描述</label>
-        </div>
-        <UTextarea
-          v-model="noteDescription"
-          :placeholder="descriptionPlaceholder"
-          :rows="3"
-          class="min-h-[6rem]"
-        />
-      </div>
+  <UCard class="note-editor-surface">
+    <div class="note-editor-stack">
+      <NoteEditorMeta
+        v-model:title="noteTitle"
+        v-model:description="noteDescription"
+        v-model:importance="importanceLevel"
+        :importance-options="importanceOptions"
+        :status-label="saveStatus"
+        :status-color="statusColor"
+        :title-placeholder="config.titlePlaceholder"
+        :description-placeholder="descriptionPlaceholder"
+        :fade-level="fadeLevel"
+      />
 
       <ClientOnly>
         <div
-          class="relative rounded-lg border border-gray-200/80 bg-white/90 shadow-sm dark:border-white/10 dark:bg-slate-900/70"
-          :class="{ 'opacity-80 blur-[0.4px] text-gray-600 dark:text-gray-300': fadeLevel > 0 }"
-          style="min-height: 18rem; height: 18rem;"
+          class="editor-shell relative overflow-hidden rounded-3xl border border-primary/10 bg-gradient-to-br from-white/96 via-white/92 to-white/70 shadow-xl transition dark:from-slate-900/82 dark:via-slate-900/72 dark:to-slate-900/60"
+          :class="{ 'opacity-80 blur-[0.6px] text-gray-600 dark:text-gray-300': fadeLevel > 0 }"
         >
-          <div :id="editorContainerId" class="h-full" />
+          <div class="editor-glow pointer-events-none" />
+          <div :id="editorContainerId" class="editor-host" />
           <div
             v-if="!noteContent"
-            class="pointer-events-none absolute inset-4 text-sm text-gray-400 dark:text-gray-500"
+            class="pointer-events-none absolute inset-[1.25rem] text-sm leading-6 text-gray-400 dark:text-gray-500"
           >
             {{ contentPlaceholder }}
           </div>
@@ -98,7 +69,6 @@
 </template>
 
 <script setup lang="ts">
-import CherryMarkdownEditor from './CherryMarkdownEditor.vue'
 
 interface EditorConfig {
   titlePlaceholder?: string
@@ -166,6 +136,8 @@ const metaLabels = computed(() => ({
 const editorContainerId = `cherry-editor-${Math.random().toString(36).slice(2)}`
 const cherryInstance = shallowRef<any | null>(null)
 const isSyncingFromCherry = ref(false)
+let themeObserver: MutationObserver | null = null
+let currentTheme: 'light' | 'dark' | null = null
 
 const {
   noteTitle,
@@ -210,20 +182,94 @@ const statusColor = computed(() =>
   saveStatus === statusLabels.saved ? 'success' : 'warning'
 )
 
+const getCherryTheme = () => {
+  if (import.meta.server || typeof document === 'undefined') {
+    return 'light'
+  }
+  return document.documentElement.classList.contains('dark') ? 'dark' : 'light'
+}
+
+const ensureEchartsReady = async () => {
+  if (import.meta.server || typeof window === 'undefined') {
+    return false
+  }
+
+  if ((window as any).echarts) {
+    return true
+  }
+
+  try {
+    const echartsModule = await import('echarts')
+    const echarts = (echartsModule as unknown as { default?: any }).default ?? echartsModule
+    ;(window as any).echarts = echarts
+    return true
+  } catch (error) {
+    console.warn('[NoteEditor] echarts 加载失败，表格图表功能将被禁用。', error)
+    ;(window as any).echarts = {
+      init: () => ({
+        setOption: () => {},
+        dispose: () => {}
+      })
+    }
+    return false
+  }
+}
+
+const updateCherryTheme = () => {
+  if (import.meta.server) {
+    return
+  }
+
+  const instance: any = cherryInstance.value
+  if (!instance) {
+    return
+  }
+
+  const theme = getCherryTheme()
+  if (currentTheme === theme) {
+    return
+  }
+
+  if (typeof instance.setTheme === 'function') {
+    instance.setTheme(theme)
+  } else if (typeof instance.themeSwitch === 'function') {
+    instance.themeSwitch(theme)
+  } else if (instance.options) {
+    instance.options.theme = theme
+  }
+
+  currentTheme = theme
+}
+
+const observeThemeChanges = () => {
+  if (import.meta.server || typeof document === 'undefined' || themeObserver) {
+    return
+  }
+
+  themeObserver = new MutationObserver(() => {
+    updateCherryTheme()
+  })
+  themeObserver.observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ['class']
+  })
+}
+
 const initializeCherryEditor = async () => {
   if (cherryInstance.value || import.meta.server) {
     return
   }
 
-  const [{ default: Cherry }] = await Promise.all([
-    import('cherry-markdown')
-  ])
-
+  await ensureEchartsReady()
+  const CherryModule = await import('cherry-markdown')
+  const Cherry = (CherryModule as unknown as { default?: any }).default ?? CherryModule
+  const theme = getCherryTheme()
   const instance = new Cherry({
     id: editorContainerId,
     value: noteContent.value ?? '',
+    theme,
     editor: {
-      defaultModel: 'editOnly',
+      defaultModel: 'edit&preview',
       height: '100%'
     },
     callback: {
@@ -235,6 +281,9 @@ const initializeCherryEditor = async () => {
   })
 
   cherryInstance.value = instance
+  currentTheme = theme
+  observeThemeChanges()
+  updateCherryTheme()
   applyReadOnlyState(isSaving.value)
 }
 
@@ -338,6 +387,13 @@ onBeforeUnmount(() => {
     instance.destroy()
   }
   cherryInstance.value = null
+
+  if (themeObserver) {
+    themeObserver.disconnect()
+    themeObserver = null
+  }
+
+  currentTheme = null
 })
 
 watch(isSaving, value => {
@@ -370,3 +426,139 @@ defineExpose({
   triggerSave: handleSave
 })
 </script>
+
+<style scoped>
+.note-editor-surface {
+  width: 100%;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(226, 232, 240, 0.45));
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  backdrop-filter: blur(12px);
+}
+
+.dark .note-editor-surface {
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.88), rgba(30, 41, 59, 0.7));
+  border-color: rgba(51, 65, 85, 0.4);
+}
+
+.note-editor-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+}
+
+.editor-shell {
+  min-height: clamp(28rem, 60vh, 36rem);
+  padding: 1.25rem;
+  position: relative;
+}
+
+.editor-host {
+  position: relative;
+  z-index: 10;
+  height: 100%;
+}
+
+.editor-glow {
+  position: absolute;
+  inset: 12px;
+  border-radius: 1.25rem;
+  background: radial-gradient(circle at 30% 20%, rgba(56, 189, 248, 0.14), transparent 55%),
+    radial-gradient(circle at 75% 75%, rgba(125, 211, 252, 0.12), transparent 60%);
+  opacity: 0;
+  transition: opacity 0.35s ease;
+}
+
+.editor-shell:hover .editor-glow {
+  opacity: 1;
+}
+
+:deep(.cherry) {
+  background: transparent;
+  color: inherit;
+  font-family: inherit;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+:deep(.cherry .cherry-toolbar) {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(255, 255, 255, 0.78));
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  border-radius: 1rem;
+  margin-bottom: 1rem;
+  padding: 0.65rem 0.75rem;
+  backdrop-filter: blur(14px);
+}
+
+:deep(.dark .cherry .cherry-toolbar) {
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.88), rgba(15, 23, 42, 0.68));
+  border-color: rgba(148, 163, 184, 0.18);
+}
+
+:deep(.cherry-toolbar .cherry-toolbar-button) {
+  border-radius: 0.75rem;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+:deep(.cherry-toolbar .cherry-toolbar-button:hover) {
+  background-color: rgba(59, 130, 246, 0.15);
+}
+
+:deep(.cherry .cherry-editor) {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(248, 250, 252, 0.85));
+  border-radius: 1rem;
+  border: 1px solid rgba(203, 213, 225, 0.3);
+  padding: 0.75rem 0.85rem;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+:deep(.dark .cherry .cherry-editor) {
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.92), rgba(30, 41, 59, 0.75));
+  border-color: rgba(148, 163, 184, 0.25);
+  box-shadow: inset 0 1px 0 rgba(148, 163, 184, 0.12);
+}
+
+:deep(.CodeMirror) {
+  background: transparent;
+  font-size: 0.95rem;
+  line-height: 1.65;
+  min-height: clamp(18rem, 48vh, 24rem);
+}
+
+:deep(.cherry-previewer) {
+  background: rgba(15, 23, 42, 0.03);
+  border-radius: 1rem;
+  border: 1px solid rgba(203, 213, 225, 0.35);
+  margin-left: 1rem;
+  padding: 1rem 1.5rem;
+  overflow: auto;
+}
+
+:deep(.dark .cherry-previewer) {
+  background: rgba(15, 23, 42, 0.45);
+  border-color: rgba(71, 85, 105, 0.45);
+}
+
+:deep(.cherry-previewer h1),
+:deep(.cherry-previewer h2),
+:deep(.cherry-previewer h3) {
+  font-weight: 600;
+  margin: 1.25rem 0 0.75rem;
+}
+
+:deep(.cherry-previewer p) {
+  margin: 0.75rem 0;
+}
+
+@media (max-width: 1024px) {
+  .editor-shell {
+    min-height: 22rem;
+    padding: 1rem;
+  }
+
+  :deep(.cherry-previewer) {
+    margin-left: 0.75rem;
+    padding: 0.75rem 1rem;
+  }
+}
+</style>
