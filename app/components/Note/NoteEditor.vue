@@ -12,7 +12,6 @@
         :description-placeholder="descriptionPlaceholder"
         :fade-level="fadeLevel"
       />
-
       <ClientOnly>
         <div
           class="editor-shell relative overflow-hidden rounded-3xl border border-primary/10 bg-gradient-to-br from-white/96 via-white/92 to-white/70 shadow-xl transition dark:from-slate-900/82 dark:via-slate-900/72 dark:to-slate-900/60"
