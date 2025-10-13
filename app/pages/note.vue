@@ -301,12 +301,26 @@ const resetFilters = () => {
         />
 
         <div class="flex flex-wrap items-center justify-between gap-3 text-sm text-gray-600 dark:text-gray-400">
-          <span>{{ summaryLabel }}</span>
-          <UBadge
-            :label="totalNotesBadge"
-            color="neutral"
-            variant="soft"
-          />
+          <ClientOnly>
+            <span>{{ summaryLabel }}</span>
+            <template #fallback>
+              <span>正在同步笔记...</span>
+            </template>
+          </ClientOnly>
+          <ClientOnly>
+            <UBadge
+              :label="totalNotesBadge"
+              color="neutral"
+              variant="soft"
+            />
+            <template #fallback>
+              <UBadge
+                label="全部笔记: 0"
+                color="neutral"
+                variant="soft"
+              />
+            </template>
+          </ClientOnly>
         </div>
       </div>
     </UCard>
@@ -373,17 +387,38 @@ const resetFilters = () => {
       </aside>
 
       <section class="w-full">
-        <NoteListPanel
-          :items="noteItems"
-          :active-id="activeNoteId ?? undefined"
-          :header-title="noteListHeader"
-          :total-label="totalNotesLabel"
-          :icon="listHeaderIcon"
-          :empty-state="noteListEmptyState"
-          @select="openEditorForNote"
-          @create="openEditorForNew"
-          @detail="openNoteDetail"
-        />
+        <ClientOnly>
+          <NoteListPanel
+            :items="noteItems"
+            :active-id="activeNoteId ?? undefined"
+            :header-title="noteListHeader"
+            :total-label="totalNotesLabel"
+            :icon="listHeaderIcon"
+            :empty-state="noteListEmptyState"
+            @select="openEditorForNote"
+            @create="openEditorForNew"
+            @detail="openNoteDetail"
+          />
+          <template #fallback>
+            <UCard class="border border-gray-200/80 dark:border-white/10">
+              <template #header>
+                <div class="flex items-center justify-between gap-2">
+                  <div class="flex items-center gap-2">
+                    <UIcon :name="listHeaderIcon" class="text-lg text-primary" />
+                    <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+                      {{ noteListHeader }}
+                    </h2>
+                  </div>
+                  <UBadge label="全部笔记: 0" variant="soft" />
+                </div>
+              </template>
+              <div class="flex flex-col items-center justify-center gap-4 py-16 text-center text-gray-400">
+                <UIcon name="i-lucide-notebook" class="text-3xl" />
+                <p class="text-sm">正在同步笔记...</p>
+              </div>
+            </UCard>
+          </template>
+        </ClientOnly>
       </section>
     </div>
   </div>
