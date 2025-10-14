@@ -6,8 +6,6 @@ definePageMeta({
 })
 
 const notesStore = useNotesStore()
-await notesStore.ensureInitialized()
-console.info('[note page] notes after init', notesStore.notes.length)
 
 const {
   notes,
@@ -282,163 +280,158 @@ const resetFilters = () => {
           />
         </div>
     </div>
-
-    <UCard class="border border-gray-200/80 dark:border-white/10">
-      <div class="space-y-4">
-        <CommonSearchToolbar
-          v-model="searchText"
-          :placeholder="searchPlaceholder"
-          :importance-options="importanceOptions"
-          :importance-value="importanceFilter"
-          :importance-label="importanceLabel"
-          :time-options="timeFilterOptions"
-          :time-value="timeFilter"
-          :time-label="timeLabel"
-          layout="horizontal"
-          clear-label="重置筛选"
-          search-label="查找笔记"
-          @update:importance="handleImportanceChange"
-          @update:time="handleTimeFilterChange"
-          @search="handleSearchTrigger"
-          @reset="resetFilters"
-        />
-
-        <div class="flex flex-wrap items-center justify-between gap-3 text-sm text-gray-600 dark:text-gray-400">
-          <ClientOnly>
-            <span>{{ summaryLabel }}</span>
-            <template #fallback>
-              <span>正在同步笔记...</span>
-            </template>
-          </ClientOnly>
-          <ClientOnly>
-            <UBadge
-              :label="totalNotesBadge"
-              color="neutral"
-              variant="soft"
-            />
-            <template #fallback>
-              <UBadge
-                label="全部笔记: 0"
-                color="neutral"
-                variant="soft"
-              />
-            </template>
-          </ClientOnly>
-        </div>
-
-        <div class="note-stats-grid">
-          <div class="note-stat-card">
-            <p class="note-stat-label">高价值笔记</p>
-            <p class="note-stat-value text-primary">{{ highImportanceCount }}</p>
-            <p class="note-stat-footnote">重点关注的核心记忆</p>
-          </div>
-          <div class="note-stat-card">
-            <p class="note-stat-label">待复习</p>
-            <p class="note-stat-value text-amber-500">{{ fadingNotesCount }}</p>
-            <p class="note-stat-footnote">淡化等级 ≥ 3 的条目</p>
-          </div>
-          <div class="note-stat-card">
-            <p class="note-stat-label">当前筛选</p>
-            <p class="note-stat-value text-emerald-500">{{ activeFilteredCount }}</p>
-            <p class="note-stat-footnote">符合条件的笔记数量</p>
-          </div>
-        </div>
-      </div>
-    </UCard>
-
-  <section class="note-workspace">
-    <header class="note-workspace__header">
-      <div>
-        <div class="note-editor-heading">
-          <h2 class="note-editor-heading__title">
-            {{ editorHeadline }}
-          </h2>
-          <UButton
-            variant="soft"
-            color="primary"
-            size="sm"
-            icon="i-lucide-plus"
-            class="note-editor-heading__action"
-            @click="openEditorForNew"
-          >
-            {{ noteCreateLabel }}
-          </UButton>
-        </div>
-        <p class="note-editor-heading__subtext">
-          {{ editorSubtext }}
-        </p>
-        <div v-if="isEditingExisting" class="note-editor-heading__meta">
-          <UBadge
-            v-if="editingBadge"
-            :label="editingBadge.label"
-            :color="editingBadge.color"
-            :variant="editingBadge.variant"
-            :icon="editingBadge.icon"
-          />
-          <UBadge
-            v-if="typeof editingNote?.importanceScore === 'number'"
-            :label="`价值 ${Math.round(editingNote.importanceScore ?? 0)}%`"
-            color="primary"
-            variant="outline"
-            icon="i-lucide-activity"
-          />
-          <span v-if="editingNote?.lastAccessed">最近访问：{{ editingNote.lastAccessed }}</span>
-          <span v-if="editingNote?.date">创建时间：{{ editingNote.date }}</span>
-        </div>
-      </div>
-
       <ClientOnly>
-        <NoteListPanel
-          :items="noteItems"
-          :active-id="activeNoteId ?? undefined"
-          :header-title="noteListHeader"
-          :total-label="totalNotesLabel"
-          :icon="listHeaderIcon"
-          :empty-state="noteListEmptyState"
-          layout="horizontal"
-          @select="openEditorForNote"
-          @create="openEditorForNew"
-          @detail="openNoteDetail"
-        />
-        <template #fallback>
-          <UCard class="note-list-fallback">
-            <template #header>
-              <div class="flex items-center justify-between gap-2">
-                <div class="flex items-center gap-2">
-                  <UIcon :name="listHeaderIcon" class="text-lg text-primary" />
-                  <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
-                    {{ noteListHeader }}
-                  </h2>
-                </div>
-                <UBadge label="全部笔记: 0" variant="soft" />
+        <template #default>
+          <UCard class="border border-gray-200/80 dark:border-white/10">
+            <div class="space-y-4">
+              <CommonSearchToolbar
+                v-model="searchText"
+                :placeholder="searchPlaceholder"
+                :importance-options="importanceOptions"
+                :importance-value="importanceFilter"
+                :importance-label="importanceLabel"
+                :time-options="timeFilterOptions"
+                :time-value="timeFilter"
+                :time-label="timeLabel"
+                layout="horizontal"
+                clear-label="重置筛选"
+                search-label="查找笔记"
+                @update:importance="handleImportanceChange"
+                @update:time="handleTimeFilterChange"
+                @search="handleSearchTrigger"
+                @reset="resetFilters"
+              />
+
+              <div class="flex flex-wrap items-center justify-between gap-3 text-sm text-gray-600 dark:text-gray-400">
+                <span>{{ summaryLabel }}</span>
+                <UBadge
+                  :label="totalNotesBadge"
+                  color="neutral"
+                  variant="soft"
+                />
               </div>
-            </template>
-            <div class="flex flex-col items-center justify-center gap-4 py-12 text-center text-gray-400">
-              <UIcon name="i-lucide-notebook" class="text-3xl" />
-              <p class="text-sm">正在同步笔记...</p>
+
+              <div class="note-stats-grid">
+                <div class="note-stat-card">
+                  <p class="note-stat-label">高价值笔记</p>
+                  <p class="note-stat-value text-primary">{{ highImportanceCount }}</p>
+                  <p class="note-stat-footnote">重点关注的核心记忆</p>
+                </div>
+                <div class="note-stat-card">
+                  <p class="note-stat-label">待复习</p>
+                  <p class="note-stat-value text-amber-500">{{ fadingNotesCount }}</p>
+                  <p class="note-stat-footnote">淡化等级 ≥ 3 的条目</p>
+                </div>
+                <div class="note-stat-card">
+                  <p class="note-stat-label">当前筛选</p>
+                  <p class="note-stat-value text-emerald-500">{{ activeFilteredCount }}</p>
+                  <p class="note-stat-footnote">符合条件的笔记数量</p>
+                </div>
+              </div>
             </div>
           </UCard>
+
+          <section class="note-workspace">
+            <header class="note-workspace__header">
+              <div>
+                <div class="note-editor-heading">
+                  <h2 class="note-editor-heading__title">
+                    {{ editorHeadline }}
+                  </h2>
+                  <UButton
+                    variant="soft"
+                    color="primary"
+                    size="sm"
+                    icon="i-lucide-plus"
+                    class="note-editor-heading__action"
+                    @click="openEditorForNew"
+                  >
+                    {{ noteCreateLabel }}
+                  </UButton>
+                </div>
+                <p class="note-editor-heading__subtext">
+                  {{ editorSubtext }}
+                </p>
+                <div v-if="isEditingExisting" class="note-editor-heading__meta">
+                  <UBadge
+                    v-if="editingBadge"
+                    :label="editingBadge.label"
+                    :color="editingBadge.color"
+                    :variant="editingBadge.variant"
+                    :icon="editingBadge.icon"
+                  />
+                  <UBadge
+                    v-if="typeof editingNote?.importanceScore === 'number'"
+                    :label="`价值 ${Math.round(editingNote.importanceScore ?? 0)}%`"
+                    color="primary"
+                    variant="outline"
+                    icon="i-lucide-activity"
+                  />
+                  <span v-if="editingNote?.lastAccessed">最近访问：{{ editingNote.lastAccessed }}</span>
+                  <span v-if="editingNote?.date">创建时间：{{ editingNote.date }}</span>
+                </div>
+              </div>
+
+              <template v-if="noteItems.length">
+                <NoteListPanel
+                  :items="noteItems"
+                  :active-id="activeNoteId ?? undefined"
+                  :header-title="noteListHeader"
+                  :total-label="totalNotesLabel"
+                  :icon="listHeaderIcon"
+                  :empty-state="noteListEmptyState"
+                  layout="horizontal"
+                  @select="openEditorForNote"
+                  @create="openEditorForNew"
+                  @detail="openNoteDetail"
+                />
+              </template>
+              <template v-else>
+                <UCard class="note-list-fallback">
+                  <template #header>
+                    <div class="flex items-center justify-between gap-2">
+                      <div class="flex items-center gap-2">
+                        <UIcon :name="listHeaderIcon" class="text-lg text-primary" />
+                        <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+                          {{ noteListHeader }}
+                        </h2>
+                      </div>
+                      <UBadge label="全部笔记: 0" variant="soft" />
+                    </div>
+                  </template>
+                  <div class="flex flex-col items-center justify-center gap-4 py-12 text-center text-gray-400">
+                    <UIcon name="i-lucide-notebook" class="text-3xl" />
+                    <p class="text-sm">正在同步笔记...</p>
+                  </div>
+                </UCard>
+              </template>
+            </header>
+
+            <div class="note-editor-panel">
+              <NoteEditor
+                ref="noteEditorRef"
+                :key="editingNote?.id ?? editorMode"
+                :initial-title="editingNote?.title"
+                :initial-content="editingNote?.content"
+                :initial-description="editingNote?.description"
+                :fade-level="editingNote?.fadeLevel ?? 0"
+                :initial-importance="editingNote?.importance"
+                :mode="editorMode"
+                :config="editorConfig"
+                @save="handleEditorSave"
+                @cancel="handleEditorCancel"
+                @content-change="handleContentChange"
+              />
+            </div>
+          </section>
+        </template>
+        <template #fallback>
+          <div class="space-y-6">
+            <USkeleton class="h-24 rounded-xl" />
+            <USkeleton class="h-[28rem] rounded-2xl" />
+          </div>
         </template>
       </ClientOnly>
-    </header>
-
-    <div class="note-editor-panel">
-      <NoteEditor
-        ref="noteEditorRef"
-        :key="editingNote?.id ?? editorMode"
-        :initial-title="editingNote?.title"
-        :initial-content="editingNote?.content"
-        :initial-description="editingNote?.description"
-        :fade-level="editingNote?.fadeLevel ?? 0"
-        :initial-importance="editingNote?.importance"
-        :mode="editorMode"
-        :config="editorConfig"
-        @save="handleEditorSave"
-        @cancel="handleEditorCancel"
-        @content-change="handleContentChange"
-      />
-    </div>
-  </section>
   </div>
 
   <MemoryDetailDialog

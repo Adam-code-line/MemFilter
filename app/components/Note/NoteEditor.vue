@@ -10,6 +10,14 @@
       :title-placeholder="config.titlePlaceholder"
       :description-placeholder="descriptionPlaceholder"
       :fade-level="fadeLevel"
+      :heading-title="headerTitle"
+      :heading-subtext="headerSubtext"
+      :context-badges="headerBadges"
+      :context-info="headerInfo"
+      :show-action="showNewButton"
+      :action-label="newButtonLabel"
+      :action-icon="newButtonIcon"
+      @action="emit('new-note')"
     />
 
     <ClientOnly>
@@ -25,14 +33,6 @@
           {{ contentPlaceholder }}
         </div>
       </div>
-      <template #fallback>
-        <UTextarea
-          v-model="noteContent"
-          :placeholder="contentPlaceholder"
-          :rows="12"
-          class="min-h-[18rem]"
-        />
-      </template>
     </ClientOnly>
 
     <footer class="editor-footer">
@@ -64,6 +64,16 @@
 
 <script setup lang="ts">
 
+interface ThemeEntry {
+  className: string
+  label?: string
+}
+
+interface EditorThemeConfig {
+  themeList?: ThemeEntry[]
+  codeBlockTheme?: string
+}
+
 interface EditorConfig {
   titlePlaceholder?: string
   contentPlaceholders?: {
@@ -86,6 +96,7 @@ interface EditorConfig {
     lastEdited?: string
   }
   aiBadgePrefix?: string
+  themeSettings?: EditorThemeConfig
 }
 
 const props = withDefaults(defineProps<{
@@ -96,6 +107,13 @@ const props = withDefaults(defineProps<{
   mode?: 'create' | 'edit'
   initialImportance?: ImportanceLevel
   config?: EditorConfig
+  headerTitle?: string
+  headerSubtext?: string
+  headerBadges?: Array<{ label: string; color?: string; variant?: 'solid' | 'soft' | 'subtle' | 'outline'; icon?: string }>
+  headerInfo?: string[]
+  newButtonLabel?: string
+  newButtonIcon?: string
+  showNewButton?: boolean
 }>(), {
   initialTitle: '',
   initialContent: '',
@@ -103,13 +121,21 @@ const props = withDefaults(defineProps<{
   fadeLevel: 0,
   mode: 'create',
   initialImportance: 'medium',
-  config: () => ({})
+  config: () => ({}),
+  headerTitle: '',
+  headerSubtext: '',
+  headerBadges: () => [],
+  headerInfo: () => [],
+  newButtonLabel: '新建笔记',
+  newButtonIcon: 'i-lucide-plus',
+  showNewButton: true
 })
 
 const emit = defineEmits<{
   (e: 'save', payload: NoteSavePayload): void
   (e: 'cancel'): void
   (e: 'content-change', value: string): void
+  (e: 'new-note'): void
 }>()
 
 const config = computed(() => props.config ?? {})
@@ -127,9 +153,15 @@ const metaLabels = computed(() => ({
   lastEdited: config.value.metaLabels?.lastEdited ?? '修改'
 }))
 
+const defaultThemeList: ThemeEntry[] = [
+  { className: 'light', label: '亮' },
+  { className: 'dark', label: '暗' }
+]
+
 const editorContainerId = `cherry-editor-${Math.random().toString(36).slice(2)}`
 const cherryInstance = shallowRef<any | null>(null)
 const isSyncingFromCherry = ref(false)
+const isPopulating = ref(false)
 let themeObserver: MutationObserver | null = null
 let currentTheme: 'light' | 'dark' | null = null
 
@@ -175,6 +207,13 @@ const importanceOptions: Array<{ label: string; value: ImportanceLevel }> = [
 const statusColor = computed(() =>
   saveStatus === statusLabels.saved ? 'success' : 'warning'
 )
+
+const themeConfig = computed(() => config.value.themeSettings ?? {})
+const themeList = computed(() => {
+  const list = themeConfig.value.themeList
+  return Array.isArray(list) && list.length ? list : defaultThemeList
+})
+const codeBlockTheme = computed(() => themeConfig.value.codeBlockTheme ?? 'default')
 
 const getCherryTheme = () => {
   if (import.meta.server || typeof document === 'undefined') {
@@ -224,7 +263,9 @@ const updateCherryTheme = () => {
     return
   }
 
-  if (typeof instance.setTheme === 'function') {
+  if (instance.theme && typeof instance.theme.setTheme === 'function') {
+    instance.theme.setTheme(theme)
+  } else if (typeof instance.setTheme === 'function') {
     instance.setTheme(theme)
   } else if (typeof instance.themeSwitch === 'function') {
     instance.themeSwitch(theme)
@@ -249,36 +290,85 @@ const observeThemeChanges = () => {
   })
 }
 
+const waitForEditorHost = async (attempts = 5) => {
+  if (import.meta.server || typeof document === 'undefined') {
+    return null
+  }
+
+  let tries = attempts
+  let host = document.getElementById(editorContainerId)
+
+  while (!host && tries > 0) {
+    await new Promise(resolve => setTimeout(resolve, 16))
+    host = document.getElementById(editorContainerId)
+    tries -= 1
+  }
+
+  return host
+}
+
 const initializeCherryEditor = async () => {
   if (cherryInstance.value || import.meta.server) {
     return
   }
 
-  await ensureEchartsReady()
-  const CherryModule = await import('cherry-markdown')
-  const Cherry = (CherryModule as unknown as { default?: any }).default ?? CherryModule
-  const theme = getCherryTheme()
-  const instance = new Cherry({
-    id: editorContainerId,
-    value: noteContent.value ?? '',
-    theme,
-    editor: {
-      defaultModel: 'edit&preview',
-      height: '100%'
-    },
-    callback: {
-      afterChange: (markdown: string) => {
-        isSyncingFromCherry.value = true
-        noteContent.value = markdown
-      }
-    }
-  })
+  const host = await waitForEditorHost()
+  if (!host) {
+    console.error('[NoteEditor] 未找到 Cherry Markdown 容器节点，初始化已跳过。')
+    return
+  }
 
-  cherryInstance.value = instance
-  currentTheme = theme
-  observeThemeChanges()
-  updateCherryTheme()
-  applyReadOnlyState(isSaving.value)
+  try {
+    await Promise.all([
+      ensureEchartsReady(),
+      import('cherry-markdown/dist/cherry-markdown.css')
+    ])
+  } catch (error) {
+    console.error('[NoteEditor] cherry-markdown 资源加载失败', error)
+    return
+  }
+
+  let Cherry: any
+  try {
+    const CherryModule = await import('cherry-markdown')
+    Cherry = (CherryModule as unknown as { default?: any }).default ?? CherryModule
+  } catch (error) {
+    console.error('[NoteEditor] Cherry Markdown 初始化失败', error)
+    return
+  }
+
+  const theme = getCherryTheme()
+
+  try {
+    const instance = new Cherry({
+      id: editorContainerId,
+      value: noteContent.value ?? '',
+      nameSpace: 'memfilter-note-editor',
+      themeSettings: {
+        themeList: themeList.value,
+        mainTheme: theme,
+        codeBlockTheme: codeBlockTheme.value
+      },
+      editor: {
+        defaultModel: 'edit&preview',
+        height: '100%'
+      },
+      callback: {
+        afterChange: (markdown: string) => {
+          isSyncingFromCherry.value = true
+          noteContent.value = markdown
+        }
+      }
+    })
+
+    cherryInstance.value = instance
+    currentTheme = theme
+    observeThemeChanges()
+    updateCherryTheme()
+    applyReadOnlyState(isSaving.value)
+  } catch (error) {
+    console.error('[NoteEditor] Cherry Markdown 实例化失败', error)
+  }
 }
 
 const applyReadOnlyState = (value: boolean) => {
@@ -329,6 +419,8 @@ watch(
     const hasEditPayload = title !== undefined || content !== undefined || description !== undefined
     const normalizedFade = normalizeFadeLevel(fade)
 
+    isPopulating.value = true
+
     if (mode === 'edit' && hasEditPayload) {
       noteTitle.value = title ?? ''
       noteContent.value = content ?? ''
@@ -339,29 +431,26 @@ watch(
       saveStatus.value = (noteContent.value || noteDescription.value) ? statusLabels.saved : statusLabels.unsaved
 
       lastModified.value = ''
-      return
+    } else {
+      resetContent()
+      setFadeLevel(normalizedFade)
+      setImportanceLevel(importance ?? 'medium')
     }
 
-    resetContent()
-    setFadeLevel(normalizedFade)
-    setImportanceLevel(importance ?? 'medium')
+    nextTick(() => {
+      isPopulating.value = false
+    })
   },
   { immediate: true }
 )
 
-watch(noteContent, (value, oldValue) => {
-  if (value === oldValue) return
-  touchContent()
-  emit('content-change', value)
-})
-
 watch(noteDescription, (value, oldValue) => {
-  if (value === oldValue) return
+  if (value === oldValue || isPopulating.value) return
   touchContent()
 })
 
 watch(noteTitle, (value, oldValue) => {
-  if (value === oldValue) return
+  if (value === oldValue || isPopulating.value) return
   setUnsaved()
 })
 
@@ -395,17 +484,31 @@ watch(isSaving, value => {
 })
 
 watch(noteContent, (value, oldValue) => {
-  if (!cherryInstance.value || value === oldValue) {
+  if (value === oldValue) {
     return
   }
 
-  if (isSyncingFromCherry.value) {
+  const populating = isPopulating.value
+  const fromCherry = isSyncingFromCherry.value
+  if (fromCherry) {
     isSyncingFromCherry.value = false
+  }
+
+  if (!populating) {
+    touchContent()
+    emit('content-change', value)
+  }
+
+  const instance: any = cherryInstance.value
+  if (!instance) {
+    return
+  }
+
+  if (fromCherry) {
     return
   }
 
   const markdown = value ?? ''
-  const instance: any = cherryInstance.value
 
   if (typeof instance.setMarkdown === 'function') {
     instance.setMarkdown(markdown)
@@ -441,16 +544,15 @@ defineExpose({
 .editor-frame {
   position: relative;
   border-radius: 1.25rem;
-  border: 1px solid rgba(148, 163, 184, 0.25);
-  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  background: transparent;
   min-height: clamp(30rem, 62vh, 38rem);
   padding: 1.25rem;
   transition: opacity 0.2s ease;
 }
 
 .dark .editor-frame {
-  background: rgba(30, 41, 59, 0.92);
-  border-color: rgba(71, 85, 105, 0.4);
+  border-color: rgba(71, 85, 105, 0.35);
 }
 
 .editor-frame--faded {
@@ -495,29 +597,14 @@ defineExpose({
   gap: 1rem;
 }
 
+
 .editor-actions {
   display: flex;
   gap: 0.75rem;
 }
 
 :deep(.cherry) {
-  background: transparent;
-  color: inherit;
-  font-family: inherit;
   height: 100%;
-}
-
-:deep(.cherry .cherry-toolbar) {
-  border-radius: 0.9rem;
-  border: 1px solid rgba(148, 163, 184, 0.25);
-  margin-bottom: 1rem;
-  padding: 0.6rem 0.75rem;
-  background: rgba(255, 255, 255, 0.92);
-}
-
-:deep(.dark .cherry .cherry-toolbar) {
-  background: rgba(30, 41, 59, 0.85);
-  border-color: rgba(71, 85, 105, 0.35);
 }
 
 :deep(.CodeMirror) {

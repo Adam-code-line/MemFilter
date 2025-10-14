@@ -1,5 +1,42 @@
 <template>
   <div class="meta-card" :class="{ 'meta-card--faded': fadeLevel > 0 }">
+    <div v-if="headingTitle || headingSubtext || hasContextMeta" class="meta-header">
+      <div class="meta-heading">
+        <h2 v-if="headingTitle" class="meta-heading__title">
+          {{ headingTitle }}
+        </h2>
+        <UButton
+          v-if="showActionButton"
+          :icon="actionIcon"
+          size="sm"
+          variant="soft"
+          color="primary"
+          class="meta-heading__action"
+          @click="emit('action')"
+        >
+          {{ actionLabel }}
+        </UButton>
+      </div>
+      <p v-if="headingSubtext" class="meta-heading__subtext">
+        {{ headingSubtext }}
+      </p>
+      <div v-if="hasContextMeta" class="meta-heading__meta">
+        <div v-if="contextBadges?.length" class="meta-heading__badges">
+          <UBadge
+            v-for="badge in contextBadges"
+            :key="badge.label"
+            :label="badge.label"
+            :color="badge.color ?? 'neutral'"
+            :variant="badge.variant ?? 'soft'"
+            :icon="badge.icon"
+          />
+        </div>
+        <div v-if="contextInfo?.length" class="meta-heading__info">
+          <span v-for="info in contextInfo" :key="info">{{ info }}</span>
+        </div>
+      </div>
+    </div>
+
     <div class="meta-top">
       <UInput
         v-model="titleModel"
@@ -49,6 +86,13 @@ const props = withDefaults(defineProps<{
   titlePlaceholder?: string
   descriptionPlaceholder?: string
   fadeLevel?: number
+  headingTitle?: string
+  headingSubtext?: string
+  contextBadges?: Array<{ label: string; color?: string; variant?: 'solid' | 'soft' | 'subtle' | 'outline'; icon?: string }>
+  contextInfo?: string[]
+  showAction?: boolean
+  actionLabel?: string
+  actionIcon?: string
 }>(), {
   title: '',
   description: '',
@@ -58,13 +102,21 @@ const props = withDefaults(defineProps<{
   statusColor: 'neutral',
   titlePlaceholder: '笔记标题...',
   descriptionPlaceholder: '补充上下文或灵感片段',
-  fadeLevel: 0
+  fadeLevel: 0,
+  headingTitle: '',
+  headingSubtext: '',
+  contextBadges: () => [],
+  contextInfo: () => [],
+  showAction: true,
+  actionLabel: '新建笔记',
+  actionIcon: 'i-lucide-plus'
 })
 
 const emit = defineEmits<{
   (event: 'update:title', value: string): void
   (event: 'update:description', value: string): void
   (event: 'update:importance', value: ImportanceLevel): void
+  (event: 'action'): void
 }>()
 
 const titleModel = computed({
@@ -81,34 +133,102 @@ const importanceModel = computed<ImportanceLevel>({
   get: () => props.importance,
   set: value => emit('update:importance', value)
 })
+
+const showActionButton = computed(() => props.showAction && !!props.actionLabel)
+const hasContextMeta = computed(() => (props.contextBadges?.length ?? 0) > 0 || (props.contextInfo?.length ?? 0) > 0)
 </script>
 
 <style scoped>
 .meta-card {
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
-  padding: 1.2rem 1.35rem;
-  border-radius: 1.25rem;
-  background: linear-gradient(135deg, rgba(15, 23, 42, 0.03), rgba(59, 130, 246, 0.04));
-  border: 1px solid rgba(148, 163, 184, 0.18);
-  backdrop-filter: blur(12px);
+  gap: 1.35rem;
+  padding: 1.4rem 1.6rem;
+  border-radius: 1.5rem;
+  background: linear-gradient(150deg, rgba(248, 250, 252, 0.9), rgba(219, 234, 254, 0.5));
+  border: 1px solid rgba(148, 163, 184, 0.2);
 }
 
 .dark .meta-card {
-  background: linear-gradient(135deg, rgba(15, 23, 42, 0.45), rgba(59, 130, 246, 0.12));
-  border-color: rgba(148, 163, 184, 0.25);
+  background: linear-gradient(150deg, rgba(15, 23, 42, 0.82), rgba(30, 41, 59, 0.72));
+  border-color: rgba(71, 85, 105, 0.35);
 }
 
 .meta-card--faded {
-  opacity: 0.8;
-  filter: blur(0.4px);
+  opacity: 0.85;
+  filter: blur(0.35px);
+}
+
+.meta-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.meta-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.meta-heading__title {
+  flex: 1;
+  min-width: 0;
+  font-size: 1.65rem;
+  font-weight: 700;
+  color: rgb(15, 23, 42);
+  word-break: break-word;
+  white-space: normal;
+}
+
+.dark .meta-heading__title {
+  color: rgb(226, 232, 240);
+}
+
+.meta-heading__action {
+  border-radius: 999px;
+}
+
+.meta-heading__subtext {
+  font-size: 0.92rem;
+  color: rgba(71, 85, 105, 0.82);
+  line-height: 1.6;
+}
+
+.dark .meta-heading__subtext {
+  color: rgba(148, 163, 184, 0.75);
+}
+
+.meta-heading__meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  font-size: 0.78rem;
+  color: rgba(71, 85, 105, 0.78);
+}
+
+.dark .meta-heading__meta {
+  color: rgba(148, 163, 184, 0.72);
+}
+
+.meta-heading__badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.meta-heading__info {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
 }
 
 .meta-top {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.8rem;
 }
 
 @media (min-width: 768px) {
@@ -120,14 +240,15 @@ const importanceModel = computed<ImportanceLevel>({
 }
 
 .meta-title {
+  flex: 1;
   font-size: 1.25rem;
   font-weight: 600;
-  height: 3rem;
+  height: 3.1rem;
   padding: 0;
-  border-bottom: 1px solid transparent;
 }
 
 .meta-title :deep(input) {
+  width: 100%;
   padding: 0;
 }
 
@@ -141,7 +262,7 @@ const importanceModel = computed<ImportanceLevel>({
 .meta-description {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.55rem;
 }
 
 .meta-label {
@@ -155,7 +276,17 @@ const importanceModel = computed<ImportanceLevel>({
 }
 
 .meta-textarea {
-  min-height: 6rem;
+  min-height: 6.5rem;
   border-radius: 1rem;
+}
+
+@media (max-width: 640px) {
+  .meta-card {
+    padding: 1.1rem 1.2rem;
+  }
+
+  .meta-heading__title {
+    font-size: 1.4rem;
+  }
 }
 </style>
