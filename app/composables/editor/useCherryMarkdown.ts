@@ -15,6 +15,7 @@ interface UseCherryMarkdownOptions {
   getInitialValue: () => string
   onContentChange: (markdown: string) => void
   getThemeConfig: () => CherryThemeConfig
+  getEditorHeight?: () => string | number | null | undefined
 }
 
 const waitForElement = async (id: string, attempts = 5) => {
@@ -148,6 +149,10 @@ export const useCherryMarkdown = (options: UseCherryMarkdownOptions) => {
 
     const { themeList, codeBlockTheme } = options.getThemeConfig()
     const theme = getCherryTheme()
+    const editorHeightRaw = options.getEditorHeight?.()
+    const editorHeight = typeof editorHeightRaw === 'number'
+      ? `${editorHeightRaw}px`
+      : (editorHeightRaw || '520px')
 
     try {
       const instance = new Cherry({
@@ -161,7 +166,7 @@ export const useCherryMarkdown = (options: UseCherryMarkdownOptions) => {
         },
         editor: {
           defaultModel: 'edit&preview',
-          height: '100%'
+          height: editorHeight
         },
         callback: {
           afterChange: (markdown: string) => {

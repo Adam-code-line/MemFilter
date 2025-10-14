@@ -86,12 +86,7 @@ const searchText = computed({
 
 const { resolveImportanceBadge, useNoteItems } = useImportanceBadges()
 
-const editorHeadline = computed(() => {
-  if (editorMode.value === 'edit') {
-    return editingNote.value?.title ? `编辑：${editingNote.value.title}` : '编辑笔记'
-  }
-  return '新建笔记'
-})
+const editorHeadline = computed(() => editorMode.value === 'edit' ? '编辑' : '新建笔记')
 
 const editorSubtext = computed(() => {
   if (editorMode.value === 'edit') {
@@ -103,6 +98,46 @@ const editorSubtext = computed(() => {
 const isEditingExisting = computed(() => editorMode.value === 'edit' && !!editingNote.value)
 
 const editingBadge = computed(() => (editingNote.value ? resolveImportanceBadge(editingNote.value.importance) : null))
+
+const editorHeaderBadges = computed(() => {
+  if (!isEditingExisting.value) {
+    return []
+  }
+
+  const badges: Array<{ label: string; color: string; variant: 'solid' | 'soft' | 'subtle' | 'outline'; icon?: string }> = []
+  if (editingBadge.value) {
+    badges.push(editingBadge.value)
+  }
+
+  if (typeof editingNote.value?.importanceScore === 'number') {
+    badges.push({
+      label: `价值 ${Math.round(editingNote.value.importanceScore ?? 0)}%`,
+      color: 'primary',
+      variant: 'outline',
+      icon: 'i-lucide-activity'
+    })
+  }
+
+  return badges
+})
+
+const editorHeaderInfo = computed(() => {
+  if (!isEditingExisting.value || !editingNote.value) {
+    return [] as string[]
+  }
+
+  const info: string[] = []
+
+  if (editingNote.value.lastAccessed) {
+    info.push(`最近访问：${editingNote.value.lastAccessed}`)
+  }
+
+  if (editingNote.value.date) {
+    info.push(`创建时间：${editingNote.value.date}`)
+  }
+
+  return info
+})
 
 const listConfigResolved = computed(() => listConfig.value ?? noteDefaults.list)
 const noteListHeader = computed(() => listConfigResolved.value.title ?? noteDefaults.list.title)
@@ -333,45 +368,6 @@ const resetFilters = () => {
 
           <section class="note-workspace">
             <header class="note-workspace__header">
-              <div>
-                <div class="note-editor-heading">
-                  <h2 class="note-editor-heading__title">
-                    {{ editorHeadline }}
-                  </h2>
-                  <UButton
-                    variant="soft"
-                    color="primary"
-                    size="sm"
-                    icon="i-lucide-plus"
-                    class="note-editor-heading__action"
-                    @click="openEditorForNew"
-                  >
-                    {{ noteCreateLabel }}
-                  </UButton>
-                </div>
-                <p class="note-editor-heading__subtext">
-                  {{ editorSubtext }}
-                </p>
-                <div v-if="isEditingExisting" class="note-editor-heading__meta">
-                  <UBadge
-                    v-if="editingBadge"
-                    :label="editingBadge.label"
-                    :color="editingBadge.color"
-                    :variant="editingBadge.variant"
-                    :icon="editingBadge.icon"
-                  />
-                  <UBadge
-                    v-if="typeof editingNote?.importanceScore === 'number'"
-                    :label="`价值 ${Math.round(editingNote.importanceScore ?? 0)}%`"
-                    color="primary"
-                    variant="outline"
-                    icon="i-lucide-activity"
-                  />
-                  <span v-if="editingNote?.lastAccessed">最近访问：{{ editingNote.lastAccessed }}</span>
-                  <span v-if="editingNote?.date">创建时间：{{ editingNote.date }}</span>
-                </div>
-              </div>
-
               <template v-if="noteItems.length">
                 <NoteListPanel
                   :items="noteItems"
@@ -418,9 +414,15 @@ const resetFilters = () => {
                 :initial-importance="editingNote?.importance"
                 :mode="editorMode"
                 :config="editorConfig"
+                :header-title="editorHeadline"
+                :header-subtext="editorSubtext"
+                :header-badges="editorHeaderBadges"
+                :header-info="editorHeaderInfo"
+                :new-button-label="noteCreateLabel"
                 @save="handleEditorSave"
                 @cancel="handleEditorCancel"
                 @content-change="handleContentChange"
+                @new-note="openEditorForNew"
               />
             </div>
           </section>
@@ -525,50 +527,6 @@ const resetFilters = () => {
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
-}
-
-.note-editor-heading {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-}
-
-.note-editor-heading__title {
-  font-size: 1.75rem;
-  font-weight: 700;
-  color: rgb(15, 23, 42);
-}
-
-.dark .note-editor-heading__title {
-  color: rgb(226, 232, 240);
-}
-
-.note-editor-heading__action {
-  border-radius: 999px;
-}
-
-.note-editor-heading__subtext {
-  font-size: 0.9rem;
-  color: rgba(71, 85, 105, 0.82);
-  max-width: 48rem;
-}
-
-.dark .note-editor-heading__subtext {
-  color: rgba(148, 163, 184, 0.75);
-}
-
-.note-editor-heading__meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-  font-size: 0.78rem;
-  color: rgba(71, 85, 105, 0.8);
-}
-
-.dark .note-editor-heading__meta {
-  color: rgba(148, 163, 184, 0.74);
 }
 
 .note-editor-panel {

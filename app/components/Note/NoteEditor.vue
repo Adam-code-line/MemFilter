@@ -1,16 +1,21 @@
 <template>
-  <section class="note-editor">
-    <header class="editor-header" :class="{ 'editor-header--faded': fadeLevel > 0 }">
+  <section class="flex flex-col gap-6 rounded-3xl border border-slate-200/50 bg-white/90 p-6 shadow-sm transition-opacity dark:border-slate-700/60 dark:bg-slate-900/80">
+    <header
+      :class="[
+        'flex flex-col gap-6',
+        fadeLevel > 0 ? 'opacity-90' : ''
+      ]"
+    >
       <div
         v-if="headerTitle || headerSubtext || headerBadgesList.length || headerInfoItems.length"
-        class="editor-header__meta"
+        class="flex flex-col gap-4"
       >
-        <div class="editor-header__heading">
-          <div class="editor-header__title-block">
-            <h2 v-if="headerTitle" class="editor-header__title">
+        <div class="flex flex-wrap items-center justify-between gap-4">
+          <div class="flex min-w-0 flex-1 flex-col gap-2">
+            <h2 v-if="headerTitle" class="break-words text-2xl font-semibold text-slate-900 dark:text-slate-100">
               {{ headerTitle }}
             </h2>
-            <p v-if="headerSubtext" class="editor-header__subtext">
+            <p v-if="headerSubtext" class="text-sm leading-relaxed text-slate-600 dark:text-slate-300">
               {{ headerSubtext }}
             </p>
           </div>
@@ -20,17 +25,18 @@
             size="sm"
             variant="soft"
             color="primary"
-            class="editor-header__action"
+            class="shrink-0"
             @click="emit('new-note')"
           >
             {{ newButtonLabel }}
           </UButton>
         </div>
+
         <div
           v-if="headerBadgesList.length || headerInfoItems.length"
-          class="editor-header__context"
+          class="flex flex-col gap-3 text-sm text-slate-600 dark:text-slate-300"
         >
-          <div v-if="headerBadgesList.length" class="editor-header__badges">
+          <div v-if="headerBadgesList.length" class="flex flex-wrap gap-2">
             <UBadge
               v-for="badge in headerBadgesList"
               :key="badge.label"
@@ -40,21 +46,22 @@
               :icon="badge.icon"
             />
           </div>
-          <div v-if="headerInfoItems.length" class="editor-header__info">
+          <div v-if="headerInfoItems.length" class="flex flex-wrap gap-2">
             <span v-for="info in headerInfoItems" :key="info">{{ info }}</span>
           </div>
         </div>
       </div>
 
-      <div class="editor-form">
-        <div class="editor-form__top">
-          <UInput
-            v-model="noteTitle"
-            :placeholder="config.titlePlaceholder"
-            variant="none"
-            class="editor-form__title"
-          />
-          <div class="editor-form__controls">
+      <div class="flex flex-col gap-5 rounded-2xl border border-slate-200/50 bg-white/95 p-5 dark:border-slate-700/60 dark:bg-slate-900/70">
+        <div class="flex flex-col gap-4">
+          <div>
+            <p class="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">笔记标题</p>
+            <h3 class="mt-2 text-lg font-semibold text-slate-900 dark:text-slate-100">
+              {{ noteTitle || config.titlePlaceholder || '未命名笔记' }}
+            </h3>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-3">
             <USelectMenu
               v-model="importanceLevel"
               :items="importanceOptions"
@@ -71,41 +78,44 @@
               variant="outline"
             />
           </div>
+
+          <UTextarea
+            v-model="noteTitle"
+            :placeholder="config.titlePlaceholder"
+            :rows="2"
+            autoresize
+            :ui="{
+              wrapper: 'w-full',
+              textarea: 'w-full resize-none rounded-xl border border-slate-200/60 bg-white/95 px-4 py-3 text-base leading-relaxed text-slate-800 focus:border-primary focus:ring-1 focus:ring-primary/40 dark:border-slate-700/60 dark:bg-slate-900/60 dark:text-slate-100'
+            }"
+          />
         </div>
-        <div class="editor-form__description">
-          <label class="editor-form__label">记忆描述</label>
+        <div class="flex flex-col gap-2">
+          <span class="text-xs font-medium text-slate-500 dark:text-slate-400">记忆描述</span>
           <UTextarea
             v-model="noteDescription"
             :placeholder="descriptionPlaceholder"
             :rows="3"
-            class="editor-form__textarea"
+            :ui="{
+              wrapper: 'w-full',
+              textarea: 'w-full rounded-xl border border-slate-200/60 bg-white/95 px-4 py-3 text-sm leading-relaxed text-slate-700 focus:border-primary focus:ring-1 focus:ring-primary/40 dark:border-slate-700/60 dark:bg-slate-900/60 dark:text-slate-200'
+            }"
           />
         </div>
       </div>
     </header>
 
     <ClientOnly>
-      <div
-        class="editor-frame"
-        :class="{ 'editor-frame--faded': fadeLevel > 0 }"
-      >
-        <div :id="editorContainerId" class="editor-host" />
-        <div
-          v-if="!noteContent"
-          class="editor-placeholder"
-        >
-          {{ contentPlaceholder }}
-        </div>
-      </div>
+        <div :id="editorContainerId" class="w-full min-h-[32rem]" />
     </ClientOnly>
 
-    <footer class="editor-footer">
-      <div class="editor-stats">
+    <footer class="flex flex-wrap items-center justify-between gap-4 text-sm text-slate-600 dark:text-slate-300">
+      <div class="flex flex-wrap gap-4">
         <span>{{ metaLabels.wordCount }}：{{ contentLength }}</span>
         <span>{{ metaLabels.readTime }}：{{ estimatedReadTime }} 分钟</span>
         <span v-if="lastModified">{{ metaLabels.lastEdited }}：{{ lastModified }}</span>
       </div>
-      <div class="editor-actions">
+      <div class="flex gap-3">
         <UButton
           variant="ghost"
           size="sm"
@@ -235,7 +245,6 @@ const {
   lastModified,
   contentLength,
   estimatedReadTime,
-  contentPlaceholder,
   descriptionPlaceholder,
   touchContent,
   beginSaving,
@@ -287,7 +296,8 @@ const {
   getThemeConfig: () => ({
     themeList: themeList.value,
     codeBlockTheme: codeBlockTheme.value
-  })
+  }),
+  getEditorHeight: () => 560
 })
 
 onMounted(async () => {
@@ -395,261 +405,3 @@ defineExpose({
 })
 </script>
 
-<style scoped>
-.note-editor {
-  display: flex;
-  flex-direction: column;
-  gap: 1.75rem;
-  width: 100%;
-  padding: 1.75rem;
-  border-radius: 1.75rem;
-  background: linear-gradient(180deg, rgba(248, 250, 252, 0.9), rgba(226, 232, 240, 0.75));
-  border: 1px solid rgba(148, 163, 184, 0.18);
-}
-
-.dark .note-editor {
-  background: linear-gradient(180deg, rgba(15, 23, 42, 0.9), rgba(30, 41, 59, 0.78));
-  border-color: rgba(51, 65, 85, 0.45);
-}
-
-.editor-header {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
-.editor-header--faded {
-  opacity: 0.88;
-  filter: blur(0.25px);
-}
-
-.editor-header__meta {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.editor-header__heading {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.85rem;
-}
-
-.editor-header__title-block {
-  display: flex;
-  flex-direction: column;
-  gap: 0.6rem;
-  min-width: 0;
-  flex: 1;
-}
-
-.editor-header__title {
-  font-size: 1.65rem;
-  font-weight: 700;
-  color: rgb(15, 23, 42);
-  word-break: break-word;
-}
-
-.dark .editor-header__title {
-  color: rgb(226, 232, 240);
-}
-
-.editor-header__subtext {
-  font-size: 0.92rem;
-  line-height: 1.6;
-  color: rgba(71, 85, 105, 0.82);
-  max-width: 48rem;
-}
-
-.dark .editor-header__subtext {
-  color: rgba(148, 163, 184, 0.75);
-}
-
-.editor-header__action {
-  border-radius: 999px;
-}
-
-.editor-header__context {
-  display: flex;
-  flex-direction: column;
-  gap: 0.6rem;
-  font-size: 0.82rem;
-  color: rgba(71, 85, 105, 0.78);
-}
-
-.dark .editor-header__context {
-  color: rgba(148, 163, 184, 0.72);
-}
-
-.editor-header__badges {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-
-.editor-header__info {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.6rem;
-}
-
-.editor-form {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  padding: 1.25rem 1.35rem;
-  border-radius: 1.25rem;
-  background: linear-gradient(160deg, rgba(255, 255, 255, 0.9), rgba(226, 232, 240, 0.55));
-  border: 1px solid rgba(148, 163, 184, 0.18);
-}
-
-.dark .editor-form {
-  background: linear-gradient(160deg, rgba(15, 23, 42, 0.88), rgba(30, 41, 59, 0.72));
-  border-color: rgba(71, 85, 105, 0.32);
-}
-
-.editor-form__top {
-  display: flex;
-  flex-direction: column;
-  gap: 0.85rem;
-}
-
-@media (min-width: 768px) {
-  .editor-form__top {
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
-  }
-}
-
-.editor-form__title {
-  flex: 1;
-  font-size: 1.25rem;
-  font-weight: 600;
-  height: 3.1rem;
-  padding: 0;
-}
-
-.editor-form__title :deep(input) {
-  width: 100%;
-  padding: 0;
-}
-
-.editor-form__controls {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.65rem;
-}
-
-.editor-form__description {
-  display: flex;
-  flex-direction: column;
-  gap: 0.55rem;
-}
-
-.editor-form__label {
-  font-size: 0.88rem;
-  font-weight: 500;
-  color: rgba(71, 85, 105, 0.82);
-}
-
-.dark .editor-form__label {
-  color: rgba(148, 163, 184, 0.82);
-}
-
-.editor-form__textarea {
-  min-height: 6.25rem;
-  border-radius: 1rem;
-}
-
-.editor-frame {
-  position: relative;
-  border-radius: 1.25rem;
-  border: 1px solid rgba(148, 163, 184, 0.18);
-  background: transparent;
-  min-height: clamp(30rem, 62vh, 38rem);
-  padding: 1.25rem;
-  transition: opacity 0.2s ease;
-}
-
-.dark .editor-frame {
-  border-color: rgba(71, 85, 105, 0.35);
-}
-
-.editor-frame--faded {
-  opacity: 0.85;
-  filter: blur(0.4px);
-}
-
-.editor-host {
-  height: 100%;
-}
-
-.editor-placeholder {
-  position: absolute;
-  inset: 1.5rem;
-  pointer-events: none;
-  font-size: 0.95rem;
-  line-height: 1.7;
-  color: rgba(100, 116, 139, 0.65);
-}
-
-.dark .editor-placeholder {
-  color: rgba(148, 163, 184, 0.6);
-}
-
-.editor-footer {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  font-size: 0.9rem;
-  color: rgba(71, 85, 105, 0.85);
-}
-
-.dark .editor-footer {
-  color: rgba(148, 163, 184, 0.75);
-}
-
-.editor-stats {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
-}
-
-
-.editor-actions {
-  display: flex;
-  gap: 0.75rem;
-}
-
-:deep(.cherry) {
-  height: 100%;
-}
-
-:deep(.CodeMirror) {
-  background: transparent;
-  font-size: 0.96rem;
-  line-height: 1.7;
-  min-height: clamp(20rem, 56vh, 28rem);
-}
-
-:deep(.cherry-previewer) {
-  padding: 1rem 1.5rem;
-}
-
-@media (max-width: 1024px) {
-  .note-editor {
-    padding: 1.25rem;
-  }
-
-  .editor-frame {
-    padding: 1rem;
-    min-height: 24rem;
-  }
-}
-</style>
