@@ -173,7 +173,10 @@ export const useCherryMarkdown = (options: UseCherryMarkdownOptions) => {
             isSyncingFromCherry.value = true
             options.onContentChange(markdown)
           }
-        }
+        },
+        toolbars: {
+            sidebar: ['mobilePreview', 'copy', 'theme'],
+  }
       })
 
       cherryInstance.value = instance

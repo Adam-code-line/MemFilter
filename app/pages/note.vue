@@ -353,7 +353,7 @@ const resetFilters = () => {
                   <p class="note-stat-footnote">重点关注的核心记忆</p>
                 </div>
                 <div class="note-stat-card">
-                  <p class="note-stat-label">待复习</p>
+                  <p class="note-stat-label">已折叠</p>
                   <p class="note-stat-value text-amber-500">{{ fadingNotesCount }}</p>
                   <p class="note-stat-footnote">淡化等级 ≥ 3 的条目</p>
                 </div>

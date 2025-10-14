@@ -225,7 +225,11 @@ const metaLabels = computed(() => ({
 
 const defaultThemeList: CherryThemeEntry[] = [
   { className: 'light', label: '亮' },
-  { className: 'dark', label: '暗' }
+  { className: 'dark', label: '暗' },
+  { className: 'violet', label: '淡雅' },
+  { className: 'blue', label: '清幽' },
+  { className: 'red', label: '粉' },
+
 ]
 
 const editorContainerId = `cherry-editor-${Math.random().toString(36).slice(2)}`
