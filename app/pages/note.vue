@@ -346,102 +346,99 @@ const resetFilters = () => {
       </div>
     </UCard>
 
-	<div class="note-content-grid">
-      <aside>
-	<UCard class="note-editor-card">
-          <template #header>
-            <div class="flex flex-col gap-2">
+  <section class="note-workspace">
+    <header class="note-workspace__header">
+      <div>
+        <div class="note-editor-heading">
+          <h2 class="note-editor-heading__title">
+            {{ editorHeadline }}
+          </h2>
+          <UButton
+            variant="soft"
+            color="primary"
+            size="sm"
+            icon="i-lucide-plus"
+            class="note-editor-heading__action"
+            @click="openEditorForNew"
+          >
+            {{ noteCreateLabel }}
+          </UButton>
+        </div>
+        <p class="note-editor-heading__subtext">
+          {{ editorSubtext }}
+        </p>
+        <div v-if="isEditingExisting" class="note-editor-heading__meta">
+          <UBadge
+            v-if="editingBadge"
+            :label="editingBadge.label"
+            :color="editingBadge.color"
+            :variant="editingBadge.variant"
+            :icon="editingBadge.icon"
+          />
+          <UBadge
+            v-if="typeof editingNote?.importanceScore === 'number'"
+            :label="`价值 ${Math.round(editingNote.importanceScore ?? 0)}%`"
+            color="primary"
+            variant="outline"
+            icon="i-lucide-activity"
+          />
+          <span v-if="editingNote?.lastAccessed">最近访问：{{ editingNote.lastAccessed }}</span>
+          <span v-if="editingNote?.date">创建时间：{{ editingNote.date }}</span>
+        </div>
+      </div>
+
+      <ClientOnly>
+        <NoteListPanel
+          :items="noteItems"
+          :active-id="activeNoteId ?? undefined"
+          :header-title="noteListHeader"
+          :total-label="totalNotesLabel"
+          :icon="listHeaderIcon"
+          :empty-state="noteListEmptyState"
+          layout="horizontal"
+          @select="openEditorForNote"
+          @create="openEditorForNew"
+          @detail="openNoteDetail"
+        />
+        <template #fallback>
+          <UCard class="note-list-fallback">
+            <template #header>
               <div class="flex items-center justify-between gap-2">
-                <h2 class="text-2xl font-semibold text-gray-900 dark:text-white">
-                  {{ editorHeadline }}
-                </h2>
-                <UButton
-                  variant="ghost"
-                  size="sm"
-                  icon="i-lucide-plus"
-                  class="shrink-0"
-                  @click="openEditorForNew"
-                >
-                  {{ noteCreateLabel }}
-                </UButton>
-              </div>
-              <p class="text-sm text-gray-500 dark:text-gray-400">
-                {{ editorSubtext }}
-              </p>
-              <div v-if="isEditingExisting" class="flex flex-wrap items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
-                <UBadge
-                  v-if="editingBadge"
-                  :label="editingBadge.label"
-                  :color="editingBadge.color"
-                  :variant="editingBadge.variant"
-                  :icon="editingBadge.icon"
-                />
-                <UBadge
-                  v-if="typeof editingNote?.importanceScore === 'number'"
-                  :label="`价值 ${Math.round(editingNote.importanceScore ?? 0)}%`"
-                  color="primary"
-                  variant="outline"
-                  icon="i-lucide-activity"
-                />
-                <span v-if="editingNote?.lastAccessed">最近访问：{{ editingNote.lastAccessed }}</span>
-                <span v-if="editingNote?.date">创建时间：{{ editingNote.date }}</span>
-              </div>
-            </div>
-          </template>
-
-          <NoteEditor
-            ref="noteEditorRef"
-            :key="editingNote?.id ?? editorMode"
-            class="w-full lg:min-h-[560px]"
-            :initial-title="editingNote?.title"
-            :initial-content="editingNote?.content"
-            :initial-description="editingNote?.description"
-            :fade-level="editingNote?.fadeLevel ?? 0"
-            :initial-importance="editingNote?.importance"
-            :mode="editorMode"
-            :config="editorConfig"
-            @save="handleEditorSave"
-            @cancel="handleEditorCancel"
-            @content-change="handleContentChange"
-          />
-        </UCard>
-      </aside>
-
-      <section class="w-full">
-        <ClientOnly>
-          <NoteListPanel
-            :items="noteItems"
-            :active-id="activeNoteId ?? undefined"
-            :header-title="noteListHeader"
-            :total-label="totalNotesLabel"
-            :icon="listHeaderIcon"
-            :empty-state="noteListEmptyState"
-            @select="openEditorForNote"
-            @create="openEditorForNew"
-            @detail="openNoteDetail"
-          />
-          <template #fallback>
-            <UCard class="border border-gray-200/80 dark:border-white/10">
-              <template #header>
-                <div class="flex items-center justify-between gap-2">
-                  <div class="flex items-center gap-2">
-                    <UIcon :name="listHeaderIcon" class="text-lg text-primary" />
-                    <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
-                      {{ noteListHeader }}
-                    </h2>
-                  </div>
-                  <UBadge label="全部笔记: 0" variant="soft" />
+                <div class="flex items-center gap-2">
+                  <UIcon :name="listHeaderIcon" class="text-lg text-primary" />
+                  <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+                    {{ noteListHeader }}
+                  </h2>
                 </div>
-              </template>
-              <div class="flex flex-col items-center justify-center gap-4 py-16 text-center text-gray-400">
-                <UIcon name="i-lucide-notebook" class="text-3xl" />
-                <p class="text-sm">正在同步笔记...</p>
+                <UBadge label="全部笔记: 0" variant="soft" />
               </div>
-            </UCard>
-          </template>
-        </ClientOnly>
-      </section>
+            </template>
+            <div class="flex flex-col items-center justify-center gap-4 py-12 text-center text-gray-400">
+              <UIcon name="i-lucide-notebook" class="text-3xl" />
+              <p class="text-sm">正在同步笔记...</p>
+            </div>
+          </UCard>
+        </template>
+      </ClientOnly>
+    </header>
+
+    <div class="note-editor-panel">
+      <NoteEditor
+        ref="noteEditorRef"
+        :key="editingNote?.id ?? editorMode"
+        :initial-title="editingNote?.title"
+        :initial-content="editingNote?.content"
+        :initial-description="editingNote?.description"
+        :fade-level="editingNote?.fadeLevel ?? 0"
+        :initial-importance="editingNote?.importance"
+        :mode="editorMode"
+        :config="editorConfig"
+        @save="handleEditorSave"
+        @cancel="handleEditorCancel"
+        @content-change="handleContentChange"
+      />
     </div>
+  </section>
   </div>
 
   <MemoryDetailDialog
@@ -524,44 +521,74 @@ const resetFilters = () => {
   color: rgba(148, 163, 184, 0.7);
 }
 
-.note-content-grid {
-  display: grid;
+.note-workspace {
+  display: flex;
+  flex-direction: column;
   gap: 2rem;
-  align-items: flex-start;
-  margin-top: 2rem;
+  margin-top: 2.25rem;
 }
 
-@media (min-width: 1024px) {
-  .note-content-grid {
-    gap: 2.5rem;
-    grid-template-columns: minmax(0, 1.65fr) minmax(0, 1fr);
-  }
+.note-workspace__header {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
 }
 
-@media (min-width: 1280px) {
-  .note-content-grid {
-    grid-template-columns: minmax(0, 1.85fr) minmax(0, 1fr);
-  }
+.note-editor-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
 }
 
-.note-editor-card {
-  border: 1px solid rgba(129, 140, 248, 0.25);
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(219, 234, 254, 0.35));
-  box-shadow: 0 24px 45px rgba(59, 130, 246, 0.18);
-  position: sticky;
-  top: 6rem;
+.note-editor-heading__title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: rgb(15, 23, 42);
 }
 
-.dark .note-editor-card {
-  border-color: rgba(129, 140, 248, 0.35);
-  background: linear-gradient(135deg, rgba(30, 41, 59, 0.92), rgba(30, 64, 175, 0.35));
-  box-shadow: 0 28px 48px rgba(30, 64, 175, 0.25);
+.dark .note-editor-heading__title {
+  color: rgb(226, 232, 240);
 }
 
-@media (max-width: 1023px) {
-  .note-editor-card {
-    position: static;
-    top: auto;
+.note-editor-heading__action {
+  border-radius: 999px;
+}
+
+.note-editor-heading__subtext {
+  font-size: 0.9rem;
+  color: rgba(71, 85, 105, 0.82);
+  max-width: 48rem;
+}
+
+.dark .note-editor-heading__subtext {
+  color: rgba(148, 163, 184, 0.75);
+}
+
+.note-editor-heading__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  font-size: 0.78rem;
+  color: rgba(71, 85, 105, 0.8);
+}
+
+.dark .note-editor-heading__meta {
+  color: rgba(148, 163, 184, 0.74);
+}
+
+.note-editor-panel {
+  width: 100%;
+}
+
+.note-list-fallback {
+  border: 1px solid rgba(148, 163, 184, 0.22);
+}
+
+@media (max-width: 1024px) {
+  .note-editor-panel {
+    padding: 1.1rem;
   }
 }
 </style>

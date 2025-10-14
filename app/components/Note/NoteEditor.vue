@@ -1,70 +1,65 @@
 <template>
-  <UCard class="note-editor-surface">
-    <div class="note-editor-stack">
-      <NoteEditorMeta
-        v-model:title="noteTitle"
-        v-model:description="noteDescription"
-        v-model:importance="importanceLevel"
-        :importance-options="importanceOptions"
-        :status-label="saveStatus"
-        :status-color="statusColor"
-        :title-placeholder="config.titlePlaceholder"
-        :description-placeholder="descriptionPlaceholder"
-        :fade-level="fadeLevel"
-      />
-      <ClientOnly>
+  <section class="note-editor">
+    <NoteEditorMeta
+      v-model:title="noteTitle"
+      v-model:description="noteDescription"
+      v-model:importance="importanceLevel"
+      :importance-options="importanceOptions"
+      :status-label="saveStatus"
+      :status-color="statusColor"
+      :title-placeholder="config.titlePlaceholder"
+      :description-placeholder="descriptionPlaceholder"
+      :fade-level="fadeLevel"
+    />
+
+    <ClientOnly>
+      <div
+        class="editor-frame"
+        :class="{ 'editor-frame--faded': fadeLevel > 0 }"
+      >
+        <div :id="editorContainerId" class="editor-host" />
         <div
-          class="editor-shell relative overflow-hidden rounded-3xl border border-primary/10 bg-gradient-to-br from-white/96 via-white/92 to-white/70 shadow-xl transition dark:from-slate-900/82 dark:via-slate-900/72 dark:to-slate-900/60"
-          :class="{ 'opacity-80 blur-[0.6px] text-gray-600 dark:text-gray-300': fadeLevel > 0 }"
+          v-if="!noteContent"
+          class="editor-placeholder"
         >
-          <div class="editor-glow pointer-events-none" />
-          <div :id="editorContainerId" class="editor-host" />
-          <div
-            v-if="!noteContent"
-            class="pointer-events-none absolute inset-[1.25rem] text-sm leading-6 text-gray-400 dark:text-gray-500"
-          >
-            {{ contentPlaceholder }}
-          </div>
-        </div>
-        <template #fallback>
-          <UTextarea
-            v-model="noteContent"
-            :placeholder="contentPlaceholder"
-            :rows="12"
-            class="min-h-[18rem]"
-          />
-        </template>
-      </ClientOnly>
-    </div>
-
-    <template #footer>
-      <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between text-sm text-gray-500 dark:text-gray-400">
-        <div class="flex flex-wrap items-center gap-4">
-          <span>{{ metaLabels.wordCount }}：{{ contentLength }}</span>
-          <span>{{ metaLabels.readTime }}：{{ estimatedReadTime }} 分钟</span>
-          <span v-if="lastModified">{{ metaLabels.lastEdited }}：{{ lastModified }}</span>
-        </div>
-
-        <div class="flex items-center gap-2">
-          <UButton
-            variant="ghost"
-            size="sm"
-            @click="emit('cancel')"
-          >
-            {{ config.actions?.cancel ?? '取消' }}
-          </UButton>
-          <UButton
-            color="primary"
-            size="sm"
-            :loading="isSaving"
-            @click="handleSave"
-          >
-            {{ config.actions?.save ?? '保存笔记' }}
-          </UButton>
+          {{ contentPlaceholder }}
         </div>
       </div>
-    </template>
-  </UCard>
+      <template #fallback>
+        <UTextarea
+          v-model="noteContent"
+          :placeholder="contentPlaceholder"
+          :rows="12"
+          class="min-h-[18rem]"
+        />
+      </template>
+    </ClientOnly>
+
+    <footer class="editor-footer">
+      <div class="editor-stats">
+        <span>{{ metaLabels.wordCount }}：{{ contentLength }}</span>
+        <span>{{ metaLabels.readTime }}：{{ estimatedReadTime }} 分钟</span>
+        <span v-if="lastModified">{{ metaLabels.lastEdited }}：{{ lastModified }}</span>
+      </div>
+      <div class="editor-actions">
+        <UButton
+          variant="ghost"
+          size="sm"
+          @click="emit('cancel')"
+        >
+          {{ config.actions?.cancel ?? '取消' }}
+        </UButton>
+        <UButton
+          color="primary"
+          size="sm"
+          :loading="isSaving"
+          @click="handleSave"
+        >
+          {{ config.actions?.save ?? '保存笔记' }}
+        </UButton>
+      </div>
+    </footer>
+  </section>
 </template>
 
 <script setup lang="ts">
@@ -427,48 +422,82 @@ defineExpose({
 </script>
 
 <style scoped>
-.note-editor-surface {
-  width: 100%;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(226, 232, 240, 0.45));
-  border: 1px solid rgba(148, 163, 184, 0.22);
-  backdrop-filter: blur(12px);
-}
-
-.dark .note-editor-surface {
-  background: linear-gradient(180deg, rgba(15, 23, 42, 0.88), rgba(30, 41, 59, 0.7));
-  border-color: rgba(51, 65, 85, 0.4);
-}
-
-.note-editor-stack {
+.note-editor {
   display: flex;
   flex-direction: column;
   gap: 1.75rem;
+  width: 100%;
+  padding: 1.75rem;
+  border-radius: 1.75rem;
+  background: linear-gradient(180deg, rgba(248, 250, 252, 0.9), rgba(226, 232, 240, 0.75));
+  border: 1px solid rgba(148, 163, 184, 0.18);
 }
 
-.editor-shell {
-  min-height: clamp(28rem, 60vh, 36rem);
-  padding: 1.25rem;
+.dark .note-editor {
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.9), rgba(30, 41, 59, 0.78));
+  border-color: rgba(51, 65, 85, 0.45);
+}
+
+.editor-frame {
   position: relative;
+  border-radius: 1.25rem;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  background: rgba(255, 255, 255, 0.96);
+  min-height: clamp(30rem, 62vh, 38rem);
+  padding: 1.25rem;
+  transition: opacity 0.2s ease;
+}
+
+.dark .editor-frame {
+  background: rgba(30, 41, 59, 0.92);
+  border-color: rgba(71, 85, 105, 0.4);
+}
+
+.editor-frame--faded {
+  opacity: 0.85;
+  filter: blur(0.4px);
 }
 
 .editor-host {
-  position: relative;
-  z-index: 10;
   height: 100%;
 }
 
-.editor-glow {
+.editor-placeholder {
   position: absolute;
-  inset: 12px;
-  border-radius: 1.25rem;
-  background: radial-gradient(circle at 30% 20%, rgba(56, 189, 248, 0.14), transparent 55%),
-    radial-gradient(circle at 75% 75%, rgba(125, 211, 252, 0.12), transparent 60%);
-  opacity: 0;
-  transition: opacity 0.35s ease;
+  inset: 1.5rem;
+  pointer-events: none;
+  font-size: 0.95rem;
+  line-height: 1.7;
+  color: rgba(100, 116, 139, 0.65);
 }
 
-.editor-shell:hover .editor-glow {
-  opacity: 1;
+.dark .editor-placeholder {
+  color: rgba(148, 163, 184, 0.6);
+}
+
+.editor-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  font-size: 0.9rem;
+  color: rgba(71, 85, 105, 0.85);
+}
+
+.dark .editor-footer {
+  color: rgba(148, 163, 184, 0.75);
+}
+
+.editor-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.editor-actions {
+  display: flex;
+  gap: 0.75rem;
 }
 
 :deep(.cherry) {
@@ -476,88 +505,40 @@ defineExpose({
   color: inherit;
   font-family: inherit;
   height: 100%;
-  display: flex;
-  flex-direction: column;
 }
 
 :deep(.cherry .cherry-toolbar) {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(255, 255, 255, 0.78));
+  border-radius: 0.9rem;
   border: 1px solid rgba(148, 163, 184, 0.25);
-  border-radius: 1rem;
   margin-bottom: 1rem;
-  padding: 0.65rem 0.75rem;
-  backdrop-filter: blur(14px);
+  padding: 0.6rem 0.75rem;
+  background: rgba(255, 255, 255, 0.92);
 }
 
 :deep(.dark .cherry .cherry-toolbar) {
-  background: linear-gradient(180deg, rgba(15, 23, 42, 0.88), rgba(15, 23, 42, 0.68));
-  border-color: rgba(148, 163, 184, 0.18);
-}
-
-:deep(.cherry-toolbar .cherry-toolbar-button) {
-  border-radius: 0.75rem;
-  transition: background-color 0.2s ease, color 0.2s ease;
-}
-
-:deep(.cherry-toolbar .cherry-toolbar-button:hover) {
-  background-color: rgba(59, 130, 246, 0.15);
-}
-
-:deep(.cherry .cherry-editor) {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(248, 250, 252, 0.85));
-  border-radius: 1rem;
-  border: 1px solid rgba(203, 213, 225, 0.3);
-  padding: 0.75rem 0.85rem;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2);
-}
-
-:deep(.dark .cherry .cherry-editor) {
-  background: linear-gradient(180deg, rgba(15, 23, 42, 0.92), rgba(30, 41, 59, 0.75));
-  border-color: rgba(148, 163, 184, 0.25);
-  box-shadow: inset 0 1px 0 rgba(148, 163, 184, 0.12);
+  background: rgba(30, 41, 59, 0.85);
+  border-color: rgba(71, 85, 105, 0.35);
 }
 
 :deep(.CodeMirror) {
   background: transparent;
-  font-size: 0.95rem;
-  line-height: 1.65;
-  min-height: clamp(18rem, 48vh, 24rem);
+  font-size: 0.96rem;
+  line-height: 1.7;
+  min-height: clamp(20rem, 56vh, 28rem);
 }
 
 :deep(.cherry-previewer) {
-  background: rgba(15, 23, 42, 0.03);
-  border-radius: 1rem;
-  border: 1px solid rgba(203, 213, 225, 0.35);
-  margin-left: 1rem;
   padding: 1rem 1.5rem;
-  overflow: auto;
-}
-
-:deep(.dark .cherry-previewer) {
-  background: rgba(15, 23, 42, 0.45);
-  border-color: rgba(71, 85, 105, 0.45);
-}
-
-:deep(.cherry-previewer h1),
-:deep(.cherry-previewer h2),
-:deep(.cherry-previewer h3) {
-  font-weight: 600;
-  margin: 1.25rem 0 0.75rem;
-}
-
-:deep(.cherry-previewer p) {
-  margin: 0.75rem 0;
 }
 
 @media (max-width: 1024px) {
-  .editor-shell {
-    min-height: 22rem;
-    padding: 1rem;
+  .note-editor {
+    padding: 1.25rem;
   }
 
-  :deep(.cherry-previewer) {
-    margin-left: 0.75rem;
-    padding: 0.75rem 1rem;
+  .editor-frame {
+    padding: 1rem;
+    min-height: 24rem;
   }
 }
 </style>
