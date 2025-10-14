@@ -109,7 +109,10 @@ const handleDetail = (item: NoteListItem) => {
         </div>
         <div class="note-list-content">
           <div class="note-list-header">
-            <p class="note-list-title">
+            <p
+              class="note-list-title text-slate-900 dark:text-slate-100"
+              :title="item.title"
+            >
               {{ item.title }}
             </p>
             <div class="note-list-meta">
@@ -119,7 +122,7 @@ const handleDetail = (item: NoteListItem) => {
                 :variant="item.badge.variant"
                 :icon="item.badge.icon"
               />
-              <span class="note-list-score">价值 {{ item.score }}%</span>
+              <span class="note-list-score text-slate-500 dark:text-slate-400">价值 {{ item.score }}%</span>
               <UButton
                 variant="ghost"
                 color="primary"
@@ -134,7 +137,7 @@ const handleDetail = (item: NoteListItem) => {
               </UButton>
             </div>
           </div>
-          <p class="note-list-description">
+          <p class="note-list-description text-slate-600 dark:text-slate-300">
             {{ item.description }}
           </p>
         </div>
@@ -262,18 +265,26 @@ const handleDetail = (item: NoteListItem) => {
   gap: 0.75rem;
 }
 
+.note-list-item--horizontal .note-list-header {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+  width: 100%;
+}
+
 .note-list-title {
   flex: 1;
   min-width: 0;
   font-weight: 600;
-  color: rgb(15, 23, 42);
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-height: 1.4;
 }
 
-.dark .note-list-title {
-  color: rgb(226, 232, 240);
+.note-list-item--horizontal .note-list-title {
+  width: 100%;
 }
 
 .note-list-meta {
@@ -282,26 +293,23 @@ const handleDetail = (item: NoteListItem) => {
   gap: 0.5rem;
 }
 
-.note-list-score {
-  font-size: 0.7rem;
-  color: rgba(71, 85, 105, 0.75);
+.note-list-item--horizontal .note-list-meta {
+  width: 100%;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.5rem;
 }
 
-.dark .note-list-score {
-  color: rgba(148, 163, 184, 0.7);
+.note-list-score {
+  font-size: 0.7rem;
 }
 
 .note-list-description {
   font-size: 0.78rem;
-  color: rgba(71, 85, 105, 0.78);
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-}
-
-.dark .note-list-description {
-  color: rgba(148, 163, 184, 0.72);
 }
 
 @media (max-width: 768px) {
