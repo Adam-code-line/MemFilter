@@ -177,27 +177,9 @@ const requestForget = (note: NoteRecord) => {
   openForgetDialog(note)
 }
 
-const {
-  selectedNote,
-  detailDialogOpen,
-  detailStatus,
-  detailActions,
-  openDetail,
-  closeDetail,
-  handleDetailAction
-} = useMemoryDetailController({
-  notes,
-  sectionSource,
-  sectionDefaults: memoryDefaults.sections,
-  detailPanel: detail,
-  autoSelectFirst: true,
-  onRestore: handleRestore,
-  onAccelerate: handleAccelerate,
-  onForget: openForgetDialog,
-  onOpenNote: note => {
-    router.push({ path: '/note', query: { noteId: String(note.id ?? '') } })
-  }
-})
+const openDetailPage = (note: NoteRecord) => {
+  router.push({ path: `/memory/${note.id}` })
+}
 </script>
 
 <template>
@@ -273,7 +255,7 @@ const {
             :last-accessed="note.lastAccessed"
             :is-collapsed="note.isCollapsed"
             class="memory-card-item"
-            @open="openDetail(note)"
+            @open="openDetailPage(note)"
             @restore="handleRestore(note)"
             @accelerate-forgetting="handleAccelerate(note)"
             @forget="requestForget(note)"
@@ -298,19 +280,6 @@ const {
     v-bind="forgetDialogBindings"
     @confirm="confirmForget"
     @cancel="forgetConfirm.open = false"
-  />
-
-  <MemoryDetailDialog
-    v-model="detailDialogOpen"
-    :title="detail.title"
-    :eyebrow="detail.eyebrow"
-    :clear-label="detail.clearLabel"
-    :note="selectedNote"
-    :actions="detailActions"
-    :status-label="detailStatus?.label"
-    :status-color="detailStatus?.color"
-    @action="handleDetailAction"
-    @close="closeDetail"
   />
 </template>
 

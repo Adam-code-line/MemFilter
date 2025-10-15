@@ -22,12 +22,6 @@ const handleLogout = async () => {
   await router.push('/auth/login')
 }
 
-const {
-  detail: memoryDetail,
-  sectionSource,
-  defaults: memoryDefaults
-} = await useMemoryContent()
-
 // 应用内导航菜单
 const items = computed<NavigationMenuItem[]>(() => [
   {
@@ -132,56 +126,9 @@ const searchSuggestions = computed<SearchSuggestion[]>(() => {
   ]
 })
 
-const { state: forgetConfirm, dialogBindings: forgetDialogBindings, openForNote: openForgetDialog, confirm: confirmForget, reset: resetForgetConfirm } = useForgetConfirm({
-  onExecuteForget: async (note) => {
-    try {
-      await notesStore.directForget(note)
-    } catch (error) {
-      console.error('[header] 直接遗忘失败', error)
-    }
-  }
-})
-
-const {
-  selectedNote: selectedMemory,
-  detailDialogOpen: isMemoryDetailOpen,
-  detailStatus,
-  detailActions,
-  openDetail,
-  closeDetail,
-  handleDetailAction
-} = useMemoryDetailController({
-  notes,
-  sectionSource,
-  sectionDefaults: memoryDefaults.sections,
-  detailPanel: memoryDetail,
-  onRestore: async note => {
-    try {
-      await notesStore.restoreNote(note)
-    } catch (error) {
-      console.error('[header] 恢复记忆失败', error)
-    }
-  },
-  onAccelerate: async note => {
-    try {
-      await notesStore.accelerateForgetting(note)
-    } catch (error) {
-      console.error('[header] 加速遗忘失败', error)
-    }
-  },
-  onForget: note => openForgetDialog(note),
-  onOpenNote: note => {
-    router.push({ path: '/note', query: { noteId: String(note.id ?? '') } })
-    closeDetail()
-  }
-})
-
 const handleSuggestionSelect = (suggestion: SearchSuggestion) => {
   if (suggestion.type === 'memory' && suggestion.noteId !== undefined) {
-    const target = notes.value.find(note => String(note.id) === String(suggestion.noteId))
-    if (target) {
-      openDetail(target)
-    }
+    router.push({ path: `/memory/${suggestion.noteId}` })
     globalSearchQuery.value = ''
     isSearchDialogOpen.value = false
     return
@@ -324,24 +271,4 @@ const handleGlobalSearch = (value: string) => {
     @select="handleSuggestionSelect"
   />
 
-  <MemoryDetailDialog
-    v-model="isMemoryDetailOpen"
-    :title="memoryDetail.title"
-    :eyebrow="memoryDetail.eyebrow"
-    :clear-label="memoryDetail.clearLabel"
-    :note="selectedMemory"
-    :actions="detailActions"
-    :status-label="detailStatus?.label"
-    :status-color="detailStatus?.color"
-    width="sm:max-w-4xl"
-    @action="handleDetailAction"
-    @close="closeDetail"
-  />
-
-  <CommonConfirmDialog
-    v-model="forgetConfirm.open"
-    v-bind="forgetDialogBindings"
-    @confirm="confirmForget"
-    @cancel="resetForgetConfirm"
-  />
 </template>

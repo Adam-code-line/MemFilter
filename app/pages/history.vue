@@ -96,87 +96,10 @@ const importanceLabels: Record<string, string> = {
 	noise: '噪声'
 }
 
-const inspectedRecord = ref<HistoryRecord | null>(null)
-const detailDialogOpen = ref(false)
-
-const detailStatusMap: Record<HistoryRecord['status'], { label: string; color: string }> = {
-	recoverable: { label: '等待决策', color: 'warning' },
-	archived: { label: '已折叠', color: 'neutral' },
-	purged: { label: '已彻底遗忘', color: 'error' }
-}
-
-const detailStatus = computed(() => {
-	const record = inspectedRecord.value
-	return record ? detailStatusMap[record.status] : null
-})
-
-const detailActions = computed(() => {
-	const record = inspectedRecord.value
-	if (!record) {
-		return []
-	}
-
-	if (record.status === 'purged') {
-		return [
-			{
-				key: 'purged',
-				label: '记录已清理',
-				icon: 'i-lucide-shield-off',
-				color: 'neutral',
-				variant: 'soft' as const,
-				disabled: true,
-				tooltip: '该条目已永久清理，无法恢复。'
-			}
-		]
-	}
-
-	const actions: Array<{
-		key: string
-		label: string
-		icon: string
-		color: 'primary' | 'secondary' | 'neutral' | 'error' | 'warning' | 'success' | 'info'
-		variant: 'solid' | 'soft' | 'subtle' | 'outline' | 'ghost'
-	}> = []
-
-	actions.push({
-		key: 'restore',
-		label: '恢复记忆',
-		icon: 'i-lucide-rotate-ccw',
-		color: 'primary',
-		variant: 'solid'
-	})
-
-	if (record.status === 'archived') {
-		actions.push({
-			key: 'purge',
-			label: '彻底遗忘',
-			icon: 'i-lucide-trash-2',
-			color: 'error',
-			variant: 'outline'
-		})
-	}
-
-	return actions
-})
+const router = useRouter()
 
 const openRecordDetail = (recordId: number) => {
-	const allGroups = historyRecords.groupedRecords.value
-	const record = [
-		...allGroups.recoverable,
-		...allGroups.archived,
-		...allGroups.purged
-	].find(item => item.id === recordId)
-
-	inspectedRecord.value = record ?? null
-
-	if (record) {
-		detailDialogOpen.value = true
-	}
-}
-
-const closeRecordDetail = () => {
-	detailDialogOpen.value = false
-	inspectedRecord.value = null
+	router.push({ path: `/memory/${recordId}` })
 }
 
 const handleRestore = async (record: HistoryRecord) => {
@@ -188,27 +111,8 @@ const handleRestore = async (record: HistoryRecord) => {
 			color: 'primary',
 			icon: 'i-lucide-rotate-ccw'
 		})
-
-		if (inspectedRecord.value?.id === record.id) {
-			closeRecordDetail()
-		}
 	} catch (error) {
 		console.error('[history] 恢复操作失败', error)
-	}
-}
-
-const handleDetailAction = async (key: string) => {
-	const record = inspectedRecord.value
-	if (!record) {
-		return
-	}
-
-	if (key === 'restore' && record.status !== 'purged') {
-		await handleRestore(record)
-	}
-
-	if (key === 'purge' && record.status === 'archived') {
-		openPurgeConfirm(record)
 	}
 }
 
@@ -242,22 +146,12 @@ const executePurge = async () => {
 			icon: 'i-lucide-trash-2',
 			color: 'error'
 		})
-		inspectedRecord.value = purged
 	}
 
 	resetPurgeConfirm()
 }
 
 const heroAction = computed(() => heroSection.value?.action ?? null)
-
-const allRecords = computed(() => {
-	const groups = historyRecords.groupedRecords.value
-	return [
-		...groups.recoverable,
-		...groups.archived,
-		...groups.purged
-	]
-})
 
 watch(() => purgeConfirm.value.open, open => {
 	if (!open) {
@@ -266,24 +160,6 @@ watch(() => purgeConfirm.value.open, open => {
 		purgeConfirm.value.description = ''
 	}
 })
-
-watch(allRecords, records => {
-	if (!records.length) {
-		inspectedRecord.value = null
-		detailDialogOpen.value = false
-		return
-	}
-
-	if (inspectedRecord.value) {
-		const refreshed = records.find(entry => entry.id === inspectedRecord.value?.id)
-		if (refreshed) {
-			inspectedRecord.value = refreshed
-			return
-		}
-	}
-
-	inspectedRecord.value = records[0]
-}, { immediate: true })
 </script>
 
 <template>
@@ -411,19 +287,6 @@ watch(allRecords, records => {
 	      @confirm="executePurge"
 	      @cancel="resetPurgeConfirm"
 	    />
-
-		    <MemoryDetailDialog
-		      v-model="detailDialogOpen"
-		      title="记忆日志详情"
-		      eyebrow="History Focus"
-		      clear-label="清除选择"
-		      :note="inspectedRecord"
-		      :actions="detailActions"
-		      :status-label="detailStatus?.label"
-		      :status-color="detailStatus?.color"
-		      @action="handleDetailAction"
-		      @close="closeRecordDetail"
-		    />
 
 	</div>
 </template>

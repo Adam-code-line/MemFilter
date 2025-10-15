@@ -207,33 +207,8 @@ const { state: forgetConfirm, dialogBindings: forgetDialogBindings, openForNote:
   onExecuteForget: note => forgetNote(note)
 })
 
-const {
-  selectedNote: selectedDetailNote,
-  detailDialogOpen,
-  detailStatus,
-  detailActions,
-  openDetail,
-  closeDetail,
-  handleDetailAction
-} = useMemoryDetailController({
-  notes,
-  sectionSource: memorySectionSource,
-  sectionDefaults: memoryDefaults.sections,
-  detailPanel: memoryDetail,
-  onRestore: restoreNote,
-  onAccelerate: accelerateForgetting,
-  onForget: requestForget,
-  onOpenNote: note => {
-    openEditorForNote(note)
-  }
-})
-
 const openNoteDetail = (note: NoteRecord) => {
-  openDetail(note)
-}
-
-const closeNoteDetail = () => {
-  closeDetail()
+  router.push({ path: `/memory/${note.id}` })
 }
 
 useNoteRouteSync({
@@ -435,21 +410,6 @@ const resetFilters = () => {
         </template>
       </ClientOnly>
   </div>
-
-  <MemoryDetailDialog
-    v-model="detailDialogOpen"
-    :title="memoryDetail.title"
-    :eyebrow="memoryDetail.eyebrow"
-    :clear-label="memoryDetail.clearLabel"
-    :note="selectedDetailNote"
-    :actions="detailActions"
-    :status-label="detailStatus?.label"
-    :status-color="detailStatus?.color"
-    width="sm:max-w-4xl"
-    @action="handleDetailAction"
-    @close="closeNoteDetail"
-  />
-
   <CommonConfirmDialog
     v-model="forgetConfirm.open"
     v-bind="forgetDialogBindings"
