@@ -8,7 +8,7 @@ definePageMeta({
 })
 
 const notesStore = useNotesStore()
-notesStore.ensureInitialized()
+await notesStore.ensureInitialized()
 
 const router = useRouter()
 
@@ -245,7 +245,7 @@ const openDetailPage = (note: NoteRecord) => {
             :key="note.id"
             :title="note.title"
             :date="note.date"
-            :snippet="note.content"
+            :description="note.description || ''"
             :icon="note.icon"
             :importance="note.importance"
             :importance-score="note.importanceScore"

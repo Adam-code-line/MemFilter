@@ -90,9 +90,15 @@
           个人描述
         </div>
       </template>
-      <div class="text-sm leading-relaxed text-gray-700 dark:text-gray-100 whitespace-pre-wrap">
-        {{ descriptionText || '暂无描述，您可以在编辑笔记时补充一段备注。' }}
-      </div>
+      <p
+        v-if="hasDescription"
+        class="text-sm leading-relaxed text-gray-700 dark:text-gray-100 whitespace-pre-line"
+      >
+        {{ detail.description }}
+      </p>
+      <p v-else class="text-sm text-gray-400 dark:text-gray-500">
+        暂无描述，您可以在编辑笔记时补充一段备注。
+      </p>
     </UCard>
 
     <UCard class="border border-gray-200/70 dark:border-white/10">
@@ -102,9 +108,23 @@
           正文内容
         </div>
       </template>
-      <div class="text-sm leading-relaxed text-gray-700 dark:text-gray-100 whitespace-pre-wrap">
-        {{ detail.content || '暂无正文内容。' }}
-      </div>
+      <ClientOnly>
+        <div class="relative">
+          <div
+            :id="previewContainerId"
+            class="cherry-preview-container min-h-[220px] rounded-xl border border-gray-200/60 bg-white/70 px-4 py-3 text-sm leading-relaxed text-gray-700 dark:border-white/15 dark:bg-slate-900/40 dark:text-gray-100"
+          />
+          <div
+            v-if="!hasContent"
+            class="absolute inset-0 flex items-center justify-center rounded-xl text-sm text-gray-400 dark:text-gray-500"
+          >
+            暂无正文内容。
+          </div>
+        </div>
+        <template #fallback>
+          <div class="text-sm text-gray-400">内容加载中...</div>
+        </template>
+      </ClientOnly>
     </UCard>
 
     <div v-if="actions.length" class="pt-4 border-t border-gray-200/60 dark:border-white/10 flex flex-wrap gap-2">
@@ -134,6 +154,7 @@
 </template>
 
 <script setup lang="ts">
+import { computed, onBeforeUnmount, onMounted, watch } from 'vue'
 
 interface MemoryDetailRecord {
   id?: number | string
@@ -175,11 +196,53 @@ const emit = defineEmits<{ action: [string] }>()
 
 const detail = computed(() => props.note ?? {})
 const hasNote = computed(() => !!props.note)
-const descriptionText = computed(() => (detail.value.description ?? '').trim())
-
 const derivedImportance = computed<MemoryImportance>(() => detail.value.importance ?? 'medium')
 const derivedFadeLevel = computed<MemoryFadeLevel>(() => detail.value.fadeLevel ?? 0)
 const derivedProgress = computed<number>(() => detail.value.forgettingProgress ?? 0)
+
+const previewContainerId = 'memory-detail-preview'
+const hasContent = computed(() => {
+  const value = detail.value.content ?? ''
+  return typeof value === 'string' && value.trim().length > 0
+})
+const hasDescription = computed(() => {
+  const value = detail.value.description ?? ''
+  return typeof value === 'string' && value.trim().length > 0
+})
+
+// Cherry Markdown preview mirrors the editor styling but stays read-only here.
+const { initialize: initializePreview, destroy: destroyPreview, updateContent: updatePreviewContent } = useCherryPreview({
+  containerId: previewContainerId,
+  getValue: () => detail.value.content ?? '',
+  getThemeConfig: () => ({
+    themeList: [
+      { className: 'light', label: '亮' },
+      { className: 'dark', label: '暗' },
+      { className: 'violet', label: '淡雅' },
+      { className: 'blue', label: '清幽' },
+      { className: 'red', label: '粉' }
+    ],
+    codeBlockTheme: 'default'
+  })
+})
+
+onMounted(async () => {
+  if (import.meta.client) {
+    await initializePreview()
+  }
+})
+
+watch(
+  () => detail.value.content ?? '',
+  (value) => {
+    updatePreviewContent(value)
+  },
+  { immediate: true }
+)
+
+onBeforeUnmount(() => {
+  destroyPreview()
+})
 
 const {
   importanceLabel,

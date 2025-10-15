@@ -1,8 +1,9 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 
 interface HistoryRecordCardProps {
   title: string
-  snippet?: string
+  description?: string
   icon?: string
   status?: 'recoverable' | 'archived' | 'purged'
   importanceLabel?: string
@@ -15,7 +16,7 @@ interface HistoryRecordCardProps {
 }
 
 const props = withDefaults(defineProps<HistoryRecordCardProps>(), {
-  snippet: '',
+  description: '',
   icon: '🗒️',
   status: 'recoverable',
   importanceLabel: '普通',
@@ -39,14 +40,15 @@ const statusBadgeProps: Record<string, { label: string; color: string }> = {
   purged: { label: '已清理', color: 'error' }
 }
 
-const displaySnippet = computed(() => {
-  if (!props.snippet) {
-    return '内容已模糊，但仍可恢复查看。'
+const displayDescription = computed(() => {
+  const text = props.description?.trim() ?? ''
+  if (!text) {
+    return '暂无描述，查看详情以了解更多。'
   }
-  if (props.snippet.length <= 140) {
-    return props.snippet
+  if (text.length <= 140) {
+    return text
   }
-  return `${props.snippet.slice(0, 140)}...`
+  return `${text.slice(0, 140)}...`
 })
 </script>
 
@@ -70,8 +72,8 @@ const displaySnippet = computed(() => {
     </template>
 
     <div class="space-y-3">
-      <p class="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
-        {{ displaySnippet }}
+      <p class="text-sm text-gray-600 dark:text-gray-300 leading-relaxed whitespace-pre-line">
+        {{ displayDescription }}
       </p>
 
       <div class="grid gap-3 text-xs text-gray-500 dark:text-gray-400 sm:grid-cols-3">

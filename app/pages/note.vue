@@ -6,6 +6,7 @@ definePageMeta({
 })
 
 const notesStore = useNotesStore()
+const router = useRouter()
 
 const {
   notes,

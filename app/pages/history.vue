@@ -250,7 +250,7 @@ watch(() => purgeConfirm.value.open, open => {
 					v-for="record in section.items"
 					:key="record.id"
 					:title="record.title"
-					:snippet="record.content"
+					:description="record.description || ''"
 					:icon="record.icon"
 					:status="record.status"
 					:importance-label="importanceLabels[record.importance] ?? '普通'"

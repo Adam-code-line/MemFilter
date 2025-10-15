@@ -68,6 +68,66 @@ const ensureEchartsReady = async () => {
   }
 }
 
+const toolbarLabels: Record<string, string> = {
+  bold: '加粗',
+  italic: '斜体',
+  underline: '下划线',
+  strike: '删除线',
+  quote: '引用',
+  inlinecode: '行内代码',
+  code: '代码块',
+  table: '表格',
+  list: '无序列表',
+  orderedlist: '有序列表',
+  checklist: '任务列表',
+  h1: '标题一',
+  h2: '标题二',
+  h3: '标题三',
+  image: '插入图片',
+  link: '插入链接',
+  preview: '预览',
+  settings: '设置',
+  undo: '撤销',
+  redo: '重做',
+  save: '保存'
+}
+
+const enhanceAccessibility = (root: HTMLElement) => {
+  const buttonNodes = Array.from(root.querySelectorAll<HTMLButtonElement>('button'))
+  buttonNodes.forEach(button => {
+    const hasText = button.textContent?.trim().length
+    if (hasText) {
+      return
+    }
+
+    const existingLabel = button.getAttribute('aria-label') || button.getAttribute('title')
+    if (existingLabel) {
+      return
+    }
+
+    const datasetKey = (button.dataset.name || button.dataset.type || button.getAttribute('name') || '').toLowerCase()
+    const mappedLabel = datasetKey ? toolbarLabels[datasetKey] : null
+    const fallback = mappedLabel ?? '工具按钮'
+
+    button.setAttribute('aria-label', fallback)
+    button.setAttribute('title', fallback)
+  })
+
+  const hiddenTextareas = Array.from(root.querySelectorAll<HTMLTextAreaElement>('textarea'))
+  hiddenTextareas.forEach(textarea => {
+    const isHidden = textarea.style.display === 'none' || textarea.getAttribute('aria-hidden') === 'true' || textarea.classList.contains('CodeMirror-hiddenTextarea')
+    if (isHidden) {
+      textarea.setAttribute('aria-hidden', 'true')
+      textarea.setAttribute('tabindex', '-1')
+      return
+    }
+
+    if (!textarea.getAttribute('aria-label') && !textarea.getAttribute('placeholder')) {
+      textarea.setAttribute('aria-label', 'Markdown 编辑内容')
+    }
+  })
+}
+
 export const useCherryMarkdown = (options: UseCherryMarkdownOptions) => {
   const cherryInstance = shallowRef<any | null>(null)
   const isSyncingFromCherry = ref(false)
@@ -183,6 +243,12 @@ export const useCherryMarkdown = (options: UseCherryMarkdownOptions) => {
       currentTheme.value = theme
       observeThemeChanges()
       updateCherryTheme()
+      requestAnimationFrame(() => {
+        const hostRoot = document.getElementById(options.containerId)
+        if (hostRoot instanceof HTMLElement) {
+          enhanceAccessibility(hostRoot)
+        }
+      })
     } catch (error) {
       console.error('[useCherryMarkdown] Cherry Markdown 实例化失败', error)
     }

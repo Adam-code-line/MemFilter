@@ -40,7 +40,7 @@
           <span>摘要备注</span>
         </div>
       </template>
-      <p class="text-sm leading-relaxed text-gray-600 dark:text-gray-300 whitespace-pre-wrap">
+      <p class="text-sm leading-relaxed text-gray-600 dark:text-gray-300 whitespace-pre-line">
         {{ note?.description }}
       </p>
     </UCard>

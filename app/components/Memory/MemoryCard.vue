@@ -79,9 +79,12 @@
           'content-hidden': isCollapsed
         }"
       >
-        <div v-if="!isCollapsed">
-          {{ displaySnippet }}
-        </div>
+        <p
+          v-if="!isCollapsed"
+          class="memory-snippet whitespace-pre-line"
+        >
+          {{ cardDescription }}
+        </p>
         <div v-else class="collapsed-hint text-xs text-gray-400 italic">
           内容已折叠...
         </div>
@@ -149,12 +152,12 @@
 </template>
 
 <script lang="ts" setup>
-import { toRefs } from 'vue'
+import { computed, toRefs } from 'vue'
 
 interface Props {
   title: string
   date: string
-  snippet: string
+  description?: string
   icon?: string
   importance?: MemoryImportance
   fadeLevel?: MemoryFadeLevel
@@ -166,6 +169,7 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
+  description: '',
   icon: '📝',
   importance: 'medium',
   fadeLevel: 0,
@@ -184,6 +188,8 @@ const emit = defineEmits<{
 
 const note = toRefs(props)
 
+const descriptionRef = computed(() => note.description.value ?? '')
+
 const {
   importanceLabel,
   importanceColor,
@@ -196,17 +202,23 @@ const {
   displayDate
 } = useMemoryMeta({
   title: note.title,
-  snippet: note.snippet,
+  snippet: descriptionRef,
   date: note.date,
   icon: note.icon,
   importance: note.importance,
   fadeLevel: note.fadeLevel,
   forgettingProgress: note.forgettingProgress
 }, {
+  snippetLimit: 160,
   blurredDateMessage: '时间模糊...'
 })
 
 const { cardStyle } = useMemoryCardVisuals(note.fadeLevel, note.forgettingProgress)
+
+const cardDescription = computed(() => {
+  const value = displaySnippet.value?.trim()
+  return value ? value : '暂无描述，点击查看详情。'
+})
 
 const handleOpen = () => emit('open')
 const handleRestore = () => emit('restore')
@@ -324,6 +336,11 @@ const handleForget = () => emit('forget')
 
 .content-fading {
   color: rgba(156, 163, 175, 0.9);
+}
+
+.memory-snippet {
+  max-height: 8rem;
+  overflow: hidden;
 }
 
 .content-blurred {

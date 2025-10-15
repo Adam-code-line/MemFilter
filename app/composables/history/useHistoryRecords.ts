@@ -1,5 +1,6 @@
 
 import { useState } from '#imports'
+import type { NoteRecord } from '~/composables/note/types'
 
 export type HistoryStatus = 'recoverable' | 'archived' | 'purged'
 
@@ -68,7 +69,7 @@ export const useHistoryRecords = (options: UseHistoryRecordsOptions) => {
       events.push({
         id: record.id,
         title: record.title,
-        snippet: record.content.slice(0, 96),
+        snippet: buildDescriptionPreview(record),
         timestamp: record.lastAccessed ?? record.date,
         status: 'recoverable',
         icon: record.icon,
@@ -80,7 +81,7 @@ export const useHistoryRecords = (options: UseHistoryRecordsOptions) => {
       events.push({
         id: record.id,
         title: record.title,
-        snippet: record.content.slice(0, 96),
+        snippet: buildDescriptionPreview(record),
         timestamp: record.lastAccessed ?? record.date,
         status: 'archived',
         icon: record.icon,
@@ -151,4 +152,15 @@ function isRestoredThisWeek(date: Date) {
   const diff = now.getTime() - date.getTime()
   const sevenDays = 7 * 24 * 60 * 60 * 1000
   return diff <= sevenDays
+}
+
+function buildDescriptionPreview(record: NoteRecord) {
+  const text = (record.description ?? '').trim()
+  if (!text) {
+    return '暂无描述，查看详情以了解更多。'
+  }
+  if (text.length <= 96) {
+    return text
+  }
+  return `${text.slice(0, 96)}...`
 }
