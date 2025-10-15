@@ -37,10 +37,10 @@ const formatDateLabel = (date: Date) =>
 
 const RECENT_LIMIT = 6
 
-const createSnippet = (content: string) => {
-  const normalized = (content ?? '').replace(/\s+/g, ' ').trim()
+const createDescriptionPreview = (description?: string | null) => {
+  const normalized = (description ?? '').replace(/\s+/g, ' ').trim()
   if (!normalized) {
-    return '暂无内容'
+    return '暂无描述，点击查看详情'
   }
   return normalized.length > 90 ? `${normalized.slice(0, 90)}…` : normalized
 }
@@ -102,7 +102,7 @@ const recentMemories = computed(() =>
   notesStore.getRecentNotes(RECENT_LIMIT).map(note => ({
     id: note.id,
     title: note.title,
-    snippet: createSnippet(note.content),
+    description: createDescriptionPreview(note.description),
     importance: note.importance,
     badge: resolveImportanceBadge(note.importance),
     lastAccessed: note.lastAccessed,
@@ -113,6 +113,10 @@ const recentMemories = computed(() =>
 // 快速导航
 const navigateTo = (path: string) => {
   router.push(path)
+}
+
+const navigateToMemoryDetail = (id: number | string) => {
+  router.push({ path: `/memory/${id}` })
 }
 </script>
 
@@ -326,7 +330,12 @@ const navigateTo = (path: string) => {
         <div
           v-for="item in recentMemories"
           :key="item.id"
-          class="p-4 border border-gray-200 dark:border-gray-700 rounded-lg transition-colors hover:bg-gray-50/80 dark:hover:bg-gray-800/80"
+          class="p-4 border border-gray-200 dark:border-gray-700 rounded-lg transition-colors hover:bg-gray-50/80 dark:hover:bg-gray-800/80 cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/40"
+          role="button"
+          tabindex="0"
+          @click="navigateToMemoryDetail(item.id)"
+          @keydown.enter.prevent="navigateToMemoryDetail(item.id)"
+          @keydown.space.prevent="navigateToMemoryDetail(item.id)"
         >
           <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
             <div class="space-y-2">
@@ -335,7 +344,7 @@ const navigateTo = (path: string) => {
                 <span class="font-medium">{{ item.title }}</span>
               </div>
               <p class="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
-                {{ item.snippet }}
+                {{ item.description }}
               </p>
             </div>
             <div class="flex flex-col items-start md:items-end gap-2">
