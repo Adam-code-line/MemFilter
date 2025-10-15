@@ -109,14 +109,14 @@
         </div>
       </template>
       <ClientOnly>
-        <div class="relative">
+        <div class="relative cherry-preview-shell">
           <div
             :id="previewContainerId"
-            class="cherry-preview-container min-h-[220px] rounded-xl border border-gray-200/60 bg-white/70 px-4 py-3 text-sm leading-relaxed text-gray-700 dark:border-white/15 dark:bg-slate-900/40 dark:text-gray-100"
+            class="cherry-preview-container min-h-[20rem] md:min-h-[24rem] rounded-xl bg-white/75 px-4 py-3 text-sm leading-relaxed text-gray-700 dark:bg-slate-900/45 dark:text-gray-100"
           />
           <div
             v-if="!hasContent"
-            class="absolute inset-0 flex items-center justify-center rounded-xl text-sm text-gray-400 dark:text-gray-500"
+            class="absolute inset-0 flex items-center justify-center rounded-xl px-4 py-3 text-sm text-gray-400 dark:text-gray-500"
           >
             暂无正文内容。
           </div>
@@ -277,3 +277,87 @@ const resolveActionProps = (action: MemoryDetailAction) => ({
   disabled: action.disabled
 })
 </script>
+
+<style scoped>
+.cherry-preview-shell {
+  min-height: 20rem;
+  border-radius: 0.75rem;
+  overflow: hidden;
+}
+
+.cherry-preview-container {
+  width: 100%;
+  height: 100%;
+}
+
+@media (min-width: 768px) {
+  .cherry-preview-shell {
+    min-height: 24rem;
+  }
+}
+
+:deep(#memory-detail-preview .cherry) {
+  background-color: transparent !important;
+  border-radius: 0.75rem !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+:deep(#memory-detail-preview .cherry-previewer) {
+  background-color: transparent !important;
+  color: inherit !important;
+  padding: 0 !important;
+  border: none !important;
+  box-shadow: none !important;
+  border-left: none !important;
+  background-clip: padding-box !important;
+}
+
+:deep(#memory-detail-preview .cherry-theme-light .cherry-previewer),
+:deep(#memory-detail-preview .cherry-theme-violet .cherry-previewer),
+:deep(#memory-detail-preview .cherry-theme-blue .cherry-previewer),
+:deep(#memory-detail-preview .cherry-theme-red .cherry-previewer) {
+  background-color: rgba(255, 255, 255, 0.9) !important;
+  color: rgb(30 41 59) !important;
+}
+
+:deep(#memory-detail-preview .cherry-theme-light .cherry-previewer .cherry-markdown),
+:deep(#memory-detail-preview .cherry-theme-violet .cherry-previewer .cherry-markdown),
+:deep(#memory-detail-preview .cherry-theme-blue .cherry-previewer .cherry-markdown),
+:deep(#memory-detail-preview .cherry-theme-red .cherry-previewer .cherry-markdown) {
+  color: inherit !important;
+}
+
+:deep(#memory-detail-preview .cherry-theme-dark .cherry-previewer) {
+  background-color: rgba(15, 23, 42, 0.75) !important;
+  color: rgb(226 232 240) !important;
+}
+
+:deep(#memory-detail-preview .cherry-theme-dark .cherry-previewer .cherry-markdown) {
+  color: inherit !important;
+}
+
+:deep(#memory-detail-preview .cherry-previewer pre),
+:deep(#memory-detail-preview .cherry-previewer code) {
+  background-color: rgba(15, 23, 42, 0.08) !important;
+  border-radius: 0.5rem !important;
+  color: inherit !important;
+}
+
+:deep(.dark #memory-detail-preview .cherry-previewer pre),
+:deep(.dark #memory-detail-preview .cherry-previewer code) {
+  background-color: rgba(148, 163, 184, 0.08) !important;
+}
+
+:deep(#memory-detail-preview .cherry-previewer blockquote) {
+  background-color: rgba(96, 165, 250, 0.08) !important;
+  border-left: 3px solid rgba(59, 130, 246, 0.45) !important;
+  border-radius: 0.75rem !important;
+  padding: 0.75rem 1rem !important;
+}
+
+:deep(.dark #memory-detail-preview .cherry-previewer blockquote) {
+  background-color: rgba(56, 189, 248, 0.08) !important;
+  border-left-color: rgba(125, 211, 252, 0.55) !important;
+}
+</style>
