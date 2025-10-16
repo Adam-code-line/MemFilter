@@ -1,4 +1,6 @@
 import { acceptHMRUpdate, defineStore } from 'pinia'
+import { useNotificationCenter } from '~/composables/notifications/useNotificationCenter'
+import { useNotesApi } from '~/composables/note/useNotesApi'
 
 const MAX_FORGET_WINDOW = 999
 const BASE_FORGET_WINDOW = 14
@@ -394,6 +396,14 @@ export const useNotesStore = defineStore('notes', () => {
   const initialized = ref(false)
   const dashboardOptions = ref<NoteDashboardOptions | undefined>(undefined)
   let isFetching = false
+  const notificationCenter = useNotificationCenter()
+
+  const handleNotificationTransition = (previous: NoteRecord | null | undefined, next: NoteRecord | null | undefined) => {
+    if (!next) {
+      return
+    }
+    notificationCenter.handleNoteTransition(previous, next)
+  }
 
   const loadFromServer = async (force = false) => {
     if ((isHydrated.value && !force) || isFetching) {
@@ -487,8 +497,10 @@ export const useNotesStore = defineStore('notes', () => {
         return null
       }
 
+      const previous = notes.value[index]
+
       const draft = {
-        ...notes.value[index],
+        ...previous,
         title: payload.title,
         content: payload.content,
         description: payload.description ?? '',
@@ -506,6 +518,7 @@ export const useNotesStore = defineStore('notes', () => {
       })
       const finalNote = applyEvaluation(normalized, dashboardOptions.value, { preserveProgress: true })
       notes.value.splice(index, 1, finalNote)
+      handleNotificationTransition(previous, finalNote)
       return finalNote
     }
 
@@ -543,8 +556,10 @@ export const useNotesStore = defineStore('notes', () => {
       return
     }
 
+    const previous = notes.value[index]
+
     const draft = {
-      ...notes.value[index],
+      ...previous,
       fadeLevel: 0 as FadeLevel,
       forgettingProgress: 0,
       isCollapsed: false,
@@ -561,6 +576,8 @@ export const useNotesStore = defineStore('notes', () => {
     })
     const finalNote = applyEvaluation(normalized, dashboardOptions.value, { preserveProgress: true })
     notes.value.splice(index, 1, finalNote)
+    notificationCenter.resetNoteDeliveryState(String(target.id))
+    handleNotificationTransition(previous, finalNote)
   }
 
   const accelerateForgetting = async (target: NoteRecord) => {
@@ -569,8 +586,10 @@ export const useNotesStore = defineStore('notes', () => {
       return
     }
 
+    const previous = notes.value[index]
+
     const draft = {
-      ...notes.value[index],
+      ...previous,
       lastAccessed: '刚刚'
     }
 
@@ -584,6 +603,7 @@ export const useNotesStore = defineStore('notes', () => {
     })
     const finalNote = applyEvaluation(normalized, dashboardOptions.value, { preserveProgress: true })
     notes.value.splice(index, 1, finalNote)
+    handleNotificationTransition(previous, finalNote)
   }
 
   const directForget = async (target: NoteRecord) => {
@@ -616,6 +636,7 @@ export const useNotesStore = defineStore('notes', () => {
     })
     const finalNote = applyEvaluation(normalized, dashboardOptions.value, { preserveProgress: true })
     notes.value.splice(index, 1, finalNote)
+    handleNotificationTransition(current, finalNote)
   }
 
   const purgeNote = async (target: NoteRecord) => {
@@ -626,6 +647,7 @@ export const useNotesStore = defineStore('notes', () => {
 
     await notesApi.remove(Number(target.id))
     const [removed] = notes.value.splice(index, 1)
+    notificationCenter.resetNoteDeliveryState(String(removed.id))
     return removed
   }
 

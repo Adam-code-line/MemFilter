@@ -3,6 +3,7 @@ import { storeToRefs } from 'pinia'
 import type { DropdownMenuItem, NavigationMenuItem } from '@nuxt/ui'
 import { useNotesStore } from '~~/stores/notes'
 import { useAuthStore } from '~~/stores/auth'
+import { useNotificationCenter } from '~/composables/notifications/useNotificationCenter'
 
 const route = useRoute()
 const router = useRouter()
@@ -16,6 +17,20 @@ authStore.initialize()
 const { user: authUser } = storeToRefs(authStore)
 
 const user = computed(() => authUser.value ?? { name: '访客', avatar: null })
+
+const { unreadCount: notificationUnreadCount, openModal: openNotificationModal } = useNotificationCenter()
+
+const hasUnreadNotifications = computed(() => notificationUnreadCount.value > 0)
+const notificationChipText = computed(() => {
+  const count = notificationUnreadCount.value
+  if (count <= 0) return ''
+  if (count > 99) return '99+'
+  return String(count)
+})
+
+const openNotifications = () => {
+  openNotificationModal()
+}
 
 const handleLogout = async () => {
   await authStore.logout()
@@ -199,12 +214,29 @@ const handleGlobalSearch = (value: string) => {
       />
       
       <!-- 通知按钮 -->
+      <UChip
+        v-if="hasUnreadNotifications"
+        :text="notificationChipText"
+        color="primary"
+        size="sm"
+        class="hidden md:inline-flex"
+      >
+        <UButton
+          icon="i-lucide-bell"
+          color="neutral"
+          variant="ghost"
+          aria-label="通知"
+          @click="openNotifications"
+        />
+      </UChip>
       <UButton
+        v-else
         icon="i-lucide-bell"
         color="neutral"
         variant="ghost"
         aria-label="通知"
         class="hidden md:inline-flex"
+        @click="openNotifications"
       />
 
       <UButton
@@ -250,6 +282,7 @@ const handleGlobalSearch = (value: string) => {
           icon="i-lucide-bell"
           variant="ghost"
           block
+          @click="openNotifications"
         />
         <UButton
           label="设置"
@@ -270,5 +303,7 @@ const handleGlobalSearch = (value: string) => {
     @search="handleGlobalSearch"
     @select="handleSuggestionSelect"
   />
+
+  <LayoutNotificationCenterModal />
 
 </template>

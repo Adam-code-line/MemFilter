@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, ref, watch, onMounted } from 'vue'
 import { useToast } from '#imports'
 
 definePageMeta({
@@ -89,6 +89,8 @@ const purgeConfirm = ref<{
 	}
 )
 
+const isHydrated = ref(false)
+
 const importanceLabels: Record<string, string> = {
 	high: '核心',
 	medium: '重要',
@@ -160,6 +162,10 @@ watch(() => purgeConfirm.value.open, open => {
 		purgeConfirm.value.description = ''
 	}
 })
+
+onMounted(() => {
+	isHydrated.value = true
+})
 </script>
 
 <template>
@@ -203,7 +209,7 @@ watch(() => purgeConfirm.value.open, open => {
 				<h2 class="text-xl font-semibold text-gray-900 dark:text-white">{{ overviewTitle }}</h2>
 				<p v-if="overviewDescription" class="text-sm text-gray-500 dark:text-gray-400">{{ overviewDescription }}</p>
 			</div>
-			<div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+			<div v-if="isHydrated" class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
 				<HistorySummaryCard
 					v-for="stat in overviewStats"
 					:key="stat.key"
@@ -214,24 +220,33 @@ watch(() => purgeConfirm.value.open, open => {
 					:color="stat.color ?? 'neutral'"
 				/>
 			</div>
+			<div v-else class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+				<USkeleton v-for="n in 4" :key="n" class="h-24 rounded-2xl" />
+			</div>
 		</section>
 
 		<section class="grid gap-6 lg:grid-cols-[2fr_1fr]">
-			<HistoryTimeline
-				:title="timelineConfig?.title"
-				:description="timelineConfig?.description"
-				:empty-title="timelineConfig?.empty?.title"
-				:empty-description="timelineConfig?.empty?.description"
-				:events="timelineEvents"
-				@inspect="openRecordDetail"
-			/>
-			<HistoryRestoreLog
-				:title="restoreLogConfig?.title"
-				:description="restoreLogConfig?.description"
-				:empty-title="restoreLogConfig?.empty?.title"
-				:empty-description="restoreLogConfig?.empty?.description"
-				:items="restoreLogItems"
-			/>
+			<template v-if="isHydrated">
+				<HistoryTimeline
+					:title="timelineConfig?.title"
+					:description="timelineConfig?.description"
+					:empty-title="timelineConfig?.empty?.title"
+					:empty-description="timelineConfig?.empty?.description"
+					:events="timelineEvents"
+					@inspect="openRecordDetail"
+				/>
+				<HistoryRestoreLog
+					:title="restoreLogConfig?.title"
+					:description="restoreLogConfig?.description"
+					:empty-title="restoreLogConfig?.empty?.title"
+					:empty-description="restoreLogConfig?.empty?.description"
+					:items="restoreLogItems"
+				/>
+			</template>
+			<template v-else>
+				<USkeleton class="h-72 rounded-2xl" />
+				<USkeleton class="h-72 rounded-2xl" />
+			</template>
 		</section>
 
 		<section v-for="section in groupedSections" :key="section.key" class="space-y-4">
@@ -245,35 +260,40 @@ watch(() => purgeConfirm.value.open, open => {
 				</div>
 			</div>
 
-			<div v-if="section.items.length" class="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-				<HistoryRecordCard
-					v-for="record in section.items"
-					:key="record.id"
-					:title="record.title"
-					:description="record.description || ''"
-					:icon="record.icon"
-					:status="record.status"
-					:importance-label="importanceLabels[record.importance] ?? '普通'"
-					:importance-score="record.importanceScore"
-					:forgetting-progress="record.forgettingProgress"
-					:days-until-forgotten="record.daysUntilForgotten ?? 0"
-					:last-accessed="record.lastAccessed"
-					:restorable="record.status !== 'purged'"
-					:purgeable="record.status === 'archived'"
-					@restore="handleRestore(record)"
-					@inspect="openRecordDetail(record.id)"
-					@purge="openPurgeConfirm(record)"
+			<div v-if="isHydrated">
+				<div v-if="section.items.length" class="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+					<HistoryRecordCard
+						v-for="record in section.items"
+						:key="record.id"
+						:title="record.title"
+						:description="record.description || ''"
+						:icon="record.icon"
+						:status="record.status"
+						:importance-label="importanceLabels[record.importance] ?? '普通'"
+						:importance-score="record.importanceScore"
+						:forgetting-progress="record.forgettingProgress"
+						:days-until-forgotten="record.daysUntilForgotten ?? 0"
+						:last-accessed="record.lastAccessed"
+						:restorable="record.status !== 'purged'"
+						:purgeable="record.status === 'archived'"
+						@restore="handleRestore(record)"
+						@inspect="openRecordDetail(record.id)"
+						@purge="openPurgeConfirm(record)"
+					/>
+				</div>
+				<UAlert
+					v-else
+					icon="i-lucide-check-circle-2"
+					:title="section.empty?.title || '暂无记录'"
+					:description="section.empty?.description || '遗忘引擎近期未产生此类条目。'"
+					color="neutral"
+					variant="soft"
+					class="border border-dashed border-gray-300/60 dark:border-white/20"
 				/>
 			</div>
-			<UAlert
-				v-else
-				icon="i-lucide-check-circle-2"
-				:title="section.empty?.title || '暂无记录'"
-				:description="section.empty?.description || '遗忘引擎近期未产生此类条目。'"
-				color="neutral"
-				variant="soft"
-				class="border border-dashed border-gray-300/60 dark:border-white/20"
-			/>
+			<div v-else class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+				<USkeleton v-for="n in 3" :key="n" class="h-44 rounded-2xl" />
+			</div>
 		</section>
 
 	    <CommonConfirmDialog
