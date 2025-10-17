@@ -12,7 +12,9 @@
         <slot />
       </UMain>
     </div>
-    <CommonButton icon='rocket' />
+    <ClientOnly>
+      <CommonButton icon="rocket" />
+    </ClientOnly>
     <!-- 应用内底部 -->
     <LayoutFooter />
   </div>

@@ -1,27 +1,23 @@
 from zai import ZhipuAiClient
 
-client = ZhipuAiClient(api_key="e128af75aa474f1a8ccace9d3bf038f3.omXS4KHZhMvIsTRV")  # 填写您自己的 APIKey
+# 初始化客户端
+client = ZhipuAiClient(api_key="e128af75aa474f1a8ccace9d3bf038f3.omXS4KHZhMvIsTRV")
+
+# 创建聊天完成请求
 response = client.chat.completions.create(
-    model="glm-4.5v",  # 填写需要调用的模型名称
+    model="glm-4.5",
     messages=[
         {
-            "content": [
-                {
-                    "type": "image_url",
-                    "image_url": {
-                        "url": "https://cloudcovert-1305175928.cos.ap-guangzhou.myqcloud.com/%E5%9B%BE%E7%89%87grounding.PNG"
-                    }
-                },
-                {
-                    "type": "text",
-                    "text": "Where is the second bottle of beer from the right on the table?  Provide coordinates in [[xmin,ymin,xmax,ymax]] format"
-                }
-            ],
-            "role": "user"
+            "role": "system",
+            "content": "你是一个有用的AI助手。"
+        },
+        {
+            "role": "user",
+            "content": "你好，请介绍一下自己。"
         }
     ],
-    thinking={
-        "type":"enabled"
-    }
+    temperature=0.6
 )
-print(response.choices[0].message)
+
+# 获取回复
+print(response.choices[0].message.content)

@@ -29,7 +29,7 @@ const mainItems = computed<NavigationMenuItem[]>(() => [
 const aiItems = computed<NavigationMenuItem[]>(() => [
   {
     label: 'AI 分析',
-    to: '/home',
+    to: '/ai-chat',
     icon: 'i-lucide-brain-circuit',
     active: route.path === '/analysis'
   },

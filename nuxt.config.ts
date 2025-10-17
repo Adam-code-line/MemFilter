@@ -43,18 +43,32 @@ export default defineNuxtConfig({
 
   runtimeConfig: {
     mysql: {
-      host: process.env.MYSQL_HOST || '127.0.0.1',
-      port: Number(process.env.MYSQL_PORT || 3306),
-      database: process.env.MYSQL_DATABASE || 'memfilter',
-      user: process.env.MYSQL_USER || 'root',
-      password: process.env.MYSQL_PASSWORD || '123456'
+      host: process.env.MYSQL_HOST,
+      port: process.env.MYSQL_PORT ? Number(process.env.MYSQL_PORT) : undefined,
+      database: process.env.MYSQL_DATABASE,
+      user: process.env.MYSQL_USER,
+      password: process.env.MYSQL_PASSWORD
     },
     session: {
-      cookieName: process.env.AUTH_SESSION_COOKIE || 'memfilter-auth-session',
-      tokenExpiresInSeconds: Number(process.env.AUTH_SESSION_TTL || 60 * 60 * 24)
+      cookieName: process.env.AUTH_SESSION_COOKIE,
+      tokenExpiresInSeconds: process.env.AUTH_SESSION_TTL ? Number(process.env.AUTH_SESSION_TTL) : undefined
     },
     ingestion: {
-      tianApiKey: process.env.TIAN_API_KEY || 'b5c631948cfbce627c0df44e7def7b97'
+      tianApiKey: process.env.TIAN_API_KEY
+    },
+    ai: {
+      baseUrl: process.env.AI_API_BASE_URL,
+      apiKey: process.env.AI_API_KEY,
+      defaultModel: process.env.AI_DEFAULT_MODEL,
+      temperature: process.env.AI_TEMPERATURE ? Number(process.env.AI_TEMPERATURE) : undefined
+    },
+    public: {
+      aiModels: (process.env.AI_AVAILABLE_MODELS || '')
+        .split(',')
+        .map(segment => segment.trim())
+        .filter(Boolean),
+      aiDefaultModel: process.env.AI_DEFAULT_MODEL,
+      aiTemperature: process.env.AI_TEMPERATURE ? Number(process.env.AI_TEMPERATURE) : undefined
     }
   },
 
