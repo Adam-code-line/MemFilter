@@ -26,12 +26,6 @@ const aiChat = useAIChat({
 
 const { input, messages, isWaiting, activeModel, errorMessage, sendMessage, resetConversation } = aiChat
 
-const searchRecommendations = [
-  '总结今天的工作亮点，并给出优化建议',
-  '为产品发布会准备一个 30 分钟的讲稿结构',
-  '帮我列出学习一门新技能的 7 日计划'
-]
-
 const modelOptions = computed(() => {
   if (!availableModelNames.length) {
     return [{ label: defaultModel.toUpperCase(), value: defaultModel }]
@@ -150,27 +144,6 @@ onBeforeUnmount(() => {
           </ChatInputBar>
         </div>
       </UCard>
-
-      <div class="grid w-full max-w-5xl gap-3 md:grid-cols-3">
-        <UCard
-          v-for="(item, index) in searchRecommendations"
-          :key="index"
-          class="border border-white/5 bg-white/8 backdrop-blur-lg"
-          :ui="{ body: 'space-y-2 text-sm text-white/70' }"
-        >
-          <h3 class="text-sm font-semibold text-white/80">灵感提示 {{ index + 1 }}</h3>
-          <p>{{ item }}</p>
-          <UButton
-            color="primary"
-            variant="ghost"
-            size="xs"
-            class="mt-2"
-            @click="applyPrompt(item)"
-          >
-            使用提示
-          </UButton>
-        </UCard>
-      </div>
     </UContainer>
   </div>
 </template>

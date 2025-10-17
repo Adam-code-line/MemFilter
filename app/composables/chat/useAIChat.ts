@@ -52,6 +52,10 @@ export const useAIChat = (options: UseAIChatOptions = {}) => {
     ))
   }
 
+  const replaceMessages = (nextMessages: AIChatMessage[]) => {
+    messages.value = nextMessages.map(entry => ({ ...entry }))
+  }
+
   const sendMessage = async () => {
     if (!trimmedInput.value || isWaiting.value) {
       return
@@ -135,6 +139,9 @@ export const useAIChat = (options: UseAIChatOptions = {}) => {
     activeModel,
     errorMessage,
     formattedPayload,
+    appendMessage,
+    updateMessage,
+    replaceMessages,
     sendMessage,
     resetConversation
   }
