@@ -8,7 +8,7 @@
         class="flex h-10 w-10 items-center justify-center rounded-xl border border-white/15 shadow-md"
         :class="isAssistant ? 'bg-primary/10 text-primary dark:bg-primary/20' : 'bg-emerald-500 text-white dark:bg-emerald-400 dark:text-slate-900'"
       >
-        <AppLogo v-if="isAssistant" class="h-6 w-auto" />
+  <AppLogo v-if="isAssistant" variant="icon" class="h-6 w-auto" />
         <UIcon
           v-else
           name="i-lucide-user"

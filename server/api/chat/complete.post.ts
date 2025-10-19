@@ -189,12 +189,40 @@ export default defineEventHandler(async (event) => {
     const id = nanoid()
     const content = `【离线演示】您刚刚说：${userMessage}`
 
+    let timer: ReturnType<typeof setTimeout> | null = null
+
     const stream = new ReadableStream<Uint8Array>({
       start(controller) {
-        emitSse(controller, { id, delta: content, done: false })
-        emitSse(controller, { id, content, done: true, finishReason: 'mock' })
-        emitDone(controller)
-        controller.close()
+  const segments = content.match(/.{1,16}/gs) ?? [content]
+        let index = 0
+
+        const flushFinal = () => {
+          if (timer) {
+            clearTimeout(timer)
+            timer = null
+          }
+          emitSse(controller, { id, content, done: true, finishReason: 'mock' })
+          emitDone(controller)
+          controller.close()
+        }
+
+        const pushNext = () => {
+          if (index >= segments.length) {
+            flushFinal()
+            return
+          }
+          emitSse(controller, { id, delta: segments[index], done: false })
+          index += 1
+          timer = setTimeout(pushNext, 70)
+        }
+
+        pushNext()
+      },
+      cancel() {
+        if (timer) {
+          clearTimeout(timer)
+          timer = null
+        }
       }
     })
 

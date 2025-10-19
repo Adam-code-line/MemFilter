@@ -10,7 +10,7 @@ interface UseAIChatOptions {
 
 interface StreamEventState {
   id?: string | null
-  delta?: string
+  delta?: any
   content?: string
   done?: boolean
   finishReason?: string | null
@@ -76,43 +76,46 @@ const normalizeStreamDelta = (raw: string): StreamEventState | null => {
     const delta = choice?.delta ?? {}
 
     const extractText = (source: any): string => {
+      if (!source) {
+        return ''
+      }
       if (typeof source === 'string') {
         return source
       }
       if (Array.isArray(source)) {
         return source
-          .map(item => {
-            if (typeof item === 'string') {
-              return item
-            }
-            if (item && typeof item === 'object') {
-              if (typeof item.text === 'string') {
-                return item.text
-              }
-              if (typeof item.content === 'string') {
-                return item.content
-              }
-            }
-            return ''
-          })
+          .map(item => extractText(item))
           .join('')
       }
-      if (source && typeof source === 'object' && typeof source.text === 'string') {
-        return source.text
+      if (typeof source === 'object') {
+        if (typeof source.text === 'string') {
+          return source.text
+        }
+        if (typeof source.content === 'string') {
+          return source.content
+        }
+        if (Array.isArray(source.content)) {
+          return extractText(source.content)
+        }
       }
       return ''
     }
 
-    const text = extractText(delta.content ?? choice?.message?.content ?? '')
+    const text =
+      extractText(parsed.delta) ||
+      extractText(delta.content) ||
+      extractText(delta) ||
+      extractText(choice?.message?.content) ||
+      ''
 
-    const finishReason = choice?.finish_reason ?? (typeof (parsed as any).finishReason === 'string' ? (parsed as any).finishReason : null)
+    const finishReason = choice?.finish_reason ?? (typeof parsed.finishReason === 'string' ? parsed.finishReason : null)
 
     return {
       id: parsed.id ?? null,
       delta: text,
       done: Boolean(parsed.done ?? delta?.done ?? false),
       finishReason,
-      content: typeof parsed.content === 'string' ? parsed.content : (typeof (parsed as any).content === 'string' ? (parsed as any).content : undefined)
+      content: typeof parsed.content === 'string' ? parsed.content : undefined
     }
   } catch (error) {
     console.warn('[useAIChat] 无法解析 AI 流式片段', error, raw)
