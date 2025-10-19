@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { ChatSessionSummary } from '~/app/composables/chat/useAIChatSessions'
+import type { ChatSessionSummary } from '~/composables/chat/useAIChatSessions'
 
 const props = defineProps<{
   sessions: ChatSessionSummary[]
@@ -137,7 +137,7 @@ const rootClasses = computed(() => {
             <span>{{ formatTimestamp(session.updatedAt) }}</span>
           </div>
         </div>
-        <UDropdown :items="buildMenuItems(session)" mode="hover" :popper="{ placement: 'left-start' }">
+        <UDropdownMenu :items="buildMenuItems(session)" mode="hover" :popper="{ placement: 'left-start' }">
           <UButton
             variant="ghost"
             color="gray"
@@ -146,7 +146,7 @@ const rootClasses = computed(() => {
             class="opacity-0 transition group-hover:opacity-100"
             @click.stop
           />
-        </UDropdown>
+        </UDropdownMenu>
       </div>
     </div>
   </aside>

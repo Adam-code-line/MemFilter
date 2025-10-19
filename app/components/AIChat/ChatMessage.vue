@@ -8,7 +8,7 @@
         class="flex h-10 w-10 items-center justify-center rounded-xl border border-white/15 shadow-md"
         :class="isAssistant ? 'bg-primary/10 text-primary dark:bg-primary/20' : 'bg-emerald-500 text-white dark:bg-emerald-400 dark:text-slate-900'"
       >
-        <AppLogo v-if="isAssistant" class="h-6 w-6" />
+        <AppLogo v-if="isAssistant" class="h-6 w-auto" />
         <UIcon
           v-else
           name="i-lucide-user"
@@ -41,9 +41,10 @@
           </div>
         </template>
         <div class="prose prose-invert max-w-none text-sm leading-relaxed">
-          <p v-for="(chunk, idx) in formattedContent" :key="idx" class="mb-2 last:mb-0 whitespace-pre-wrap">
-            {{ chunk }}
-          </p>
+          <MDC
+            :value="markdownContent"
+            tag="div"
+          />
         </div>
         <template #footer>
           <div class="flex items-center justify-between text-[11px] uppercase tracking-wider text-white/40">
@@ -58,7 +59,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { AIChatMessage } from '~/app/composables/chat/types'
+import type { AIChatMessage } from '~/composables/chat/types'
 
 const props = defineProps<{
   message: AIChatMessage
@@ -80,7 +81,7 @@ const cardUi = {
   ring: 'ring-0'
 }
 
-const formattedContent = computed(() => props.message.content?.split('\n\n') ?? [])
+const markdownContent = computed(() => props.message.content ?? '')
 
 const formattedTimestamp = computed(() => {
   const date = new Date(props.message.createdAt)
@@ -90,3 +91,32 @@ const formattedTimestamp = computed(() => {
   })
 })
 </script>
+
+<style scoped>
+:deep(.prose pre) {
+  background: rgba(15, 23, 42, 0.65);
+  border-radius: 0.75rem;
+  padding: 1rem 1.25rem;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+}
+
+:deep(.prose code) {
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 0.85rem;
+}
+
+:deep(.prose ul) {
+  list-style: disc;
+  padding-left: 1.25rem;
+}
+
+:deep(.prose ol) {
+  list-style: decimal;
+  padding-left: 1.25rem;
+}
+
+:deep(.prose a) {
+  color: rgb(56 189 248);
+  text-decoration: underline;
+}
+</style>

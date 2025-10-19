@@ -1,6 +1,6 @@
 import { computed, onMounted, ref } from 'vue'
 import { nanoid } from 'nanoid'
-import type { AIChatMessage } from '~/app/composables/chat/types'
+import type { AIChatMessage } from '~/composables/chat/types'
 
 export interface ChatSessionRecord {
   id: string
