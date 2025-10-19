@@ -35,7 +35,8 @@ const {
   sendMessage,
   resetConversation,
   replaceMessages,
-  getInitialMessages
+  getInitialMessages,
+  stopGenerating
 } = aiChat
 
 const {
@@ -256,11 +257,23 @@ onBeforeUnmount(() => {
               </div>
               <div class="flex flex-wrap items-center gap-2 text-xs text-white/60">
                 <UButton
+                  v-if="isWaiting"
+                  color="red"
+                  variant="soft"
+                  size="xs"
+                  icon="i-lucide-square"
+                  class="bg-red-500/20 text-red-100 hover:bg-red-500/30"
+                  @click="stopGenerating"
+                >
+                  停止生成
+                </UButton>
+                <UButton
                   color="white"
                   variant="soft"
                   size="xs"
                   icon="i-lucide-sparkles"
                   class="bg-white/10"
+                  :disabled="isWaiting"
                   @click="handleSessionCreate"
                 >
                   新建会话
@@ -271,6 +284,7 @@ onBeforeUnmount(() => {
                   size="xs"
                   icon="i-lucide-rotate-ccw"
                   class="hover:bg-white/10"
+                  :disabled="isWaiting"
                   @click="clearConversation"
                 >
                   清空对话

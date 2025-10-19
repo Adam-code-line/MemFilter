@@ -1,5 +1,6 @@
 import { nanoid } from 'nanoid'
 import type { AIChatMessage, SendAIChatPayload } from '~/composables/chat/types'
+import { useAIChatStreamController } from '~/composables/chat/useAIChatStreamController'
 
 interface UseAIChatOptions {
   systemPrompt?: string
@@ -131,6 +132,8 @@ export const useAIChat = (options: UseAIChatOptions = {}) => {
     temperature = 0.6
   } = options
 
+  const streamController = useAIChatStreamController()
+
   const createSystemMessage = (): AIChatMessage | null => {
     if (!systemPrompt) {
       return null
@@ -181,13 +184,14 @@ export const useAIChat = (options: UseAIChatOptions = {}) => {
 
   const getInitialMessages = () => buildInitialMessages().map(entry => ({ ...entry }))
 
-  const streamCompletion = async (payload: SendAIChatPayload, placeholderId: string) => {
+  const streamCompletion = async (payload: SendAIChatPayload, placeholderId: string, signal?: AbortSignal) => {
     const response = await fetch(apiPath, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify(payload)
+      body: JSON.stringify(payload),
+      signal
     })
 
     if (!response.ok) {
@@ -210,6 +214,10 @@ export const useAIChat = (options: UseAIChatOptions = {}) => {
       const { value, done } = await reader.read()
       if (done) {
         break
+      }
+
+      if (signal?.aborted) {
+        throw new DOMException('Aborted', 'AbortError')
       }
 
       buffer += decoder.decode(value, { stream: true })
@@ -288,6 +296,8 @@ export const useAIChat = (options: UseAIChatOptions = {}) => {
 
     isWaiting.value = true
 
+    const controller = streamController.begin()
+
     try {
       const payload: SendAIChatPayload = {
         ...formattedPayload.value,
@@ -297,7 +307,7 @@ export const useAIChat = (options: UseAIChatOptions = {}) => {
         ]
       }
 
-      const { id: responseId, content } = await streamCompletion(payload, placeholderId)
+      const { id: responseId, content } = await streamCompletion(payload, placeholderId, controller.signal)
 
       updateMessage(placeholderId, {
         id: responseId ?? placeholderId,
@@ -306,15 +316,31 @@ export const useAIChat = (options: UseAIChatOptions = {}) => {
         createdAt: new Date().toISOString()
       })
     } catch (error) {
-      console.error('[useAIChat] 请求失败', error)
-      errorMessage.value = (error as Error).message ?? 'AI 服务暂时不可用'
-      updateMessage(placeholderId, {
-        status: 'error',
-        content: '请求失败，请稍后再试。'
-      })
+      const err = error as Error
+      if (err.name === 'AbortError') {
+        updateMessage(placeholderId, {
+          status: 'complete',
+          createdAt: new Date().toISOString()
+        })
+      } else {
+        console.error('[useAIChat] 请求失败', error)
+        errorMessage.value = err.message ?? 'AI 服务暂时不可用'
+        updateMessage(placeholderId, {
+          status: 'error',
+          content: '请求失败，请稍后再试。'
+        })
+      }
     } finally {
+      streamController.clear()
       isWaiting.value = false
     }
+  }
+
+  const stopGenerating = () => {
+    if (!isWaiting.value) {
+      return
+    }
+    streamController.abort()
   }
 
   const resetConversation = () => {
@@ -334,6 +360,7 @@ export const useAIChat = (options: UseAIChatOptions = {}) => {
     replaceMessages,
     getInitialMessages,
     sendMessage,
-    resetConversation
+    resetConversation,
+    stopGenerating
   }
 }
