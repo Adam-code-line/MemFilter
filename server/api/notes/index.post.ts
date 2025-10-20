@@ -2,6 +2,32 @@ import { createError, defineEventHandler, readBody } from 'h3'
 import { z } from 'zod'
 import { useNotesService } from '~/composables/services/useNotesService'
 
+const aiUsageSchema = z.object({
+  promptTokens: z.number().optional(),
+  completionTokens: z.number().optional(),
+  totalTokens: z.number().optional()
+}).partial()
+
+const aiEvaluationSchema = z.object({
+  id: z.string().min(1),
+  importance: z.enum(['high', 'medium', 'low', 'noise']),
+  confidence: z.number().min(0).max(1),
+  rationale: z.string().min(1),
+  suggestedAction: z.enum(['retain', 'compress', 'discard']),
+  usage: aiUsageSchema.optional(),
+  generatedAt: z.string().datetime()
+})
+
+const aiCompressionSchema = z.object({
+  id: z.string().min(1),
+  summary: z.string().min(1),
+  bullets: z.array(z.string()).optional().default([]),
+  retentionScore: z.number().min(0).max(100),
+  tokensSaved: z.number().int().nonnegative().optional(),
+  usage: aiUsageSchema.optional(),
+  generatedAt: z.string().datetime()
+})
+
 const createNoteSchema = z.object({
   title: z.string().min(1).max(200),
   content: z.string().default(''),
@@ -15,7 +41,9 @@ const createNoteSchema = z.object({
   decayRate: z.number().int().optional().nullable(),
   isCollapsed: z.boolean().optional(),
   lastAccessed: z.string().datetime().optional().nullable(),
-  date: z.string().optional().nullable()
+  date: z.string().optional().nullable(),
+  aiEvaluation: aiEvaluationSchema.optional().nullable(),
+  aiCompression: aiCompressionSchema.optional().nullable()
 })
 
 export default defineEventHandler(async (event) => {

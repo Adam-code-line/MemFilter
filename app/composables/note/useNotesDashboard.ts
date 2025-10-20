@@ -4,6 +4,8 @@ import { storeToRefs } from 'pinia'
 import { useNotesStore } from '~~/stores/notes'
 import type {
   ImportanceLevel,
+  NoteAIEvaluation,
+  NoteAICompression,
   NoteDashboardOptions,
   NoteRecord,
   NoteSavePayload
@@ -202,6 +204,24 @@ export const useNotesDashboard = (options: NoteDashboardOptions = {}) => {
     }
   }
 
+  const setNoteAIEvaluation = async (noteId: number, evaluation: NoteAIEvaluation | null) => {
+    try {
+      return await notesStore.setNoteAIEvaluation(noteId, evaluation)
+    } catch (error) {
+      console.error('[notes] 更新 AI 价值评估失败', error)
+      return null
+    }
+  }
+
+  const setNoteAICompression = async (noteId: number, compression: NoteAICompression | null) => {
+    try {
+      return await notesStore.setNoteAICompression(noteId, compression)
+    } catch (error) {
+      console.error('[notes] 更新 AI 摘要失败', error)
+      return null
+    }
+  }
+
   const purgeNote = async (note: NoteRecord) => {
     try {
       return await notesStore.purgeNote(note)
@@ -268,6 +288,8 @@ export const useNotesDashboard = (options: NoteDashboardOptions = {}) => {
     restoreNote,
     accelerateForgetting,
     forgetNote,
+    setNoteAIEvaluation,
+    setNoteAICompression,
     refreshNotes,
     purgeNote
   }

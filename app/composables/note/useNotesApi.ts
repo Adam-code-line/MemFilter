@@ -1,5 +1,5 @@
 import { useRequestFetch } from '#app'
-import type { NoteRecord } from './types'
+import type { NoteAIEvaluation, NoteAICompression, NoteRecord } from './types'
 
 interface PersistPayload {
   title: string
@@ -15,6 +15,8 @@ interface PersistPayload {
   isCollapsed?: boolean
   lastAccessed?: string | null
   date?: string | null
+  aiEvaluation?: NoteAIEvaluation | null
+  aiCompression?: NoteAICompression | null
 }
 
 export const useNotesApi = () => {

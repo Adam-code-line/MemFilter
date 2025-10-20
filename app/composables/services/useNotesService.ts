@@ -3,6 +3,7 @@ import { createError, type H3Event } from 'h3'
 import { useRuntimeConfig } from '#imports'
 import { getCookie } from 'h3'
 import { ensureAuthSchema, useMysql } from '~~/server/utils/db'
+import type { NoteAIEvaluation, NoteAICompression } from '~/composables/note/types'
 import { useAuthService } from './useAuthService'
 
 export interface NoteRow extends RowDataPacket {
@@ -23,6 +24,8 @@ export interface NoteRow extends RowDataPacket {
   date_label: string | null
   created_at: Date
   updated_at: Date
+  ai_evaluation: string | null
+  ai_compression: string | null
 }
 
 interface PersistedNote {
@@ -43,6 +46,8 @@ interface PersistedNote {
   date: string
   createdAt: string
   updatedAt: string
+  aiEvaluation?: NoteAIEvaluation | null
+  aiCompression?: NoteAICompression | null
 }
 
 export interface NotePersistPayload {
@@ -59,6 +64,8 @@ export interface NotePersistPayload {
   isCollapsed?: boolean
   lastAccessed?: string | null
   date?: string | null
+  aiEvaluation?: NoteAIEvaluation | null
+  aiCompression?: NoteAICompression | null
 }
 
 const formatDateLabel = (input: Date | null) => {
@@ -71,6 +78,30 @@ const formatDateLabel = (input: Date | null) => {
     month: '2-digit',
     day: '2-digit'
   })
+}
+
+const parseJsonColumn = <T>(value: unknown): T | undefined => {
+  if (value === null || value === undefined) {
+    return undefined
+  }
+
+  try {
+    if (typeof value === 'string') {
+      return JSON.parse(value) as T
+    }
+
+    if (value instanceof Buffer) {
+      return JSON.parse(value.toString('utf-8')) as T
+    }
+
+    if (typeof value === 'object') {
+      return value as T
+    }
+  } catch (error) {
+    console.warn('[notes] Failed to parse JSON column', error)
+  }
+
+  return undefined
 }
 
 const mapRowToNote = (row: NoteRow): PersistedNote => {
@@ -94,7 +125,9 @@ const mapRowToNote = (row: NoteRow): PersistedNote => {
     lastAccessed: (lastAccessedDate ?? createdAt).toISOString(),
     date: row.date_label ?? formatDateLabel(createdAt),
     createdAt: createdAt.toISOString(),
-    updatedAt: row.updated_at.toISOString()
+    updatedAt: row.updated_at.toISOString(),
+    aiEvaluation: parseJsonColumn<NoteAIEvaluation>(row.ai_evaluation) ?? null,
+    aiCompression: parseJsonColumn<NoteAICompression>(row.ai_compression) ?? null
   }
 }
 
@@ -132,8 +165,8 @@ export const useNotesService = async (event: H3Event) => {
       `INSERT INTO notes (
         user_id, title, content, description, icon, importance, fade_level,
         forgetting_progress, days_until_forgotten, importance_score, decay_rate,
-        is_collapsed, last_accessed_at, date_label
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        ai_evaluation, ai_compression, is_collapsed, last_accessed_at, date_label
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         session.user.id,
         payload.title,
@@ -146,6 +179,8 @@ export const useNotesService = async (event: H3Event) => {
         payload.daysUntilForgotten ?? null,
         payload.importanceScore ?? null,
         payload.decayRate ?? null,
+        payload.aiEvaluation ? JSON.stringify(payload.aiEvaluation) : null,
+        payload.aiCompression ? JSON.stringify(payload.aiCompression) : null,
         payload.isCollapsed ? 1 : 0,
         lastAccessed,
         payload.date ?? formatDateLabel(now)
@@ -171,7 +206,7 @@ export const useNotesService = async (event: H3Event) => {
       `UPDATE notes
        SET title = ?, content = ?, description = ?, icon = ?, importance = ?,
            fade_level = ?, forgetting_progress = ?, days_until_forgotten = ?,
-           importance_score = ?, decay_rate = ?, is_collapsed = ?,
+           importance_score = ?, decay_rate = ?, ai_evaluation = ?, ai_compression = ?, is_collapsed = ?,
            last_accessed_at = COALESCE(?, last_accessed_at), date_label = COALESCE(?, date_label)
        WHERE id = ? AND user_id = ?`,
       [
@@ -185,6 +220,8 @@ export const useNotesService = async (event: H3Event) => {
         payload.daysUntilForgotten ?? null,
         payload.importanceScore ?? null,
         payload.decayRate ?? null,
+        payload.aiEvaluation ? JSON.stringify(payload.aiEvaluation) : null,
+        payload.aiCompression ? JSON.stringify(payload.aiCompression) : null,
         payload.isCollapsed ? 1 : 0,
         lastAccessed,
         payload.date ?? null,

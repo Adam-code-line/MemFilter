@@ -105,8 +105,22 @@
       </div>
     </header>
 
+    <NoteAIInsightsPanel
+      :note-id="noteIdentifier"
+      :content="noteContent"
+      :title="noteTitle"
+      :importance="importanceLevel"
+      :mode="props.mode"
+      :evaluation="aiEvaluation"
+      :compression="aiCompression"
+      @evaluation-updated="handleAIEvaluationUpdated"
+      @compression-updated="handleAICompressionUpdated"
+      @apply-importance="handleApplyImportance"
+      @apply-summary="handleApplySummary"
+    />
+
     <ClientOnly>
-        <div :id="editorContainerId" class="w-full min-h-[32rem]" />
+      <div :id="editorContainerId" class="w-full min-h-[32rem]" />
     </ClientOnly>
 
     <footer class="flex flex-wrap items-center justify-between gap-4 text-sm text-slate-600 dark:text-slate-300">
@@ -138,6 +152,8 @@
 
 <script setup lang="ts">
 import type { CherryThemeEntry } from '~/composables/editor/useCherryMarkdown'
+import { IMPORTANCE_METADATA } from '~/composables/note-memory/importanceMetadata'
+import type { ImportanceLevel, NoteAIEvaluation, NoteAICompression, NoteSavePayload } from '~/composables/note/types'
 
 interface EditorThemeConfig {
   themeList?: CherryThemeEntry[]
@@ -176,6 +192,8 @@ const props = withDefaults(defineProps<{
   fadeLevel?: number
   mode?: 'create' | 'edit'
   initialImportance?: ImportanceLevel
+  initialAiEvaluation?: NoteAIEvaluation | null
+  initialAiCompression?: NoteAICompression | null
   config?: EditorConfig
   headerTitle?: string
   headerSubtext?: string
@@ -184,6 +202,7 @@ const props = withDefaults(defineProps<{
   newButtonLabel?: string
   newButtonIcon?: string
   showNewButton?: boolean
+  noteId?: string | number | null
 }>(), {
   initialTitle: '',
   initialContent: '',
@@ -191,6 +210,8 @@ const props = withDefaults(defineProps<{
   fadeLevel: 0,
   mode: 'create',
   initialImportance: 'medium',
+  initialAiEvaluation: null,
+  initialAiCompression: null,
   config: () => ({}),
   headerTitle: '',
   headerSubtext: '',
@@ -198,7 +219,8 @@ const props = withDefaults(defineProps<{
   headerInfo: () => [],
   newButtonLabel: '新建笔记',
   newButtonIcon: 'i-lucide-plus',
-  showNewButton: true
+  showNewButton: true,
+  noteId: null
 })
 
 const emit = defineEmits<{
@@ -206,6 +228,8 @@ const emit = defineEmits<{
   (e: 'cancel'): void
   (e: 'content-change', value: string): void
   (e: 'new-note'): void
+  (e: 'ai-evaluation-updated', value: NoteAIEvaluation | null): void
+  (e: 'ai-compression-updated', value: NoteAICompression | null): void
 }>()
 
 const config = computed(() => props.config ?? {})
@@ -280,6 +304,52 @@ const statusColor = computed(() =>
   saveStatus === statusLabels.saved ? 'success' : 'warning'
 )
 
+const toast = useToast()
+
+const aiEvaluation = ref<NoteAIEvaluation | null>(props.initialAiEvaluation ?? null)
+const aiCompression = ref<NoteAICompression | null>(props.initialAiCompression ?? null)
+
+const noteIdentifier = computed(() => props.noteId ?? null)
+
+const handleAIEvaluationUpdated = (value: NoteAIEvaluation | null) => {
+  aiEvaluation.value = value
+  emit('ai-evaluation-updated', value)
+}
+
+const handleAICompressionUpdated = (value: NoteAICompression | null) => {
+  aiCompression.value = value
+  emit('ai-compression-updated', value)
+}
+
+const handleApplyImportance = (value: ImportanceLevel) => {
+  if (!value || value === importanceLevel.value) {
+    return
+  }
+
+  setImportanceLevel(value)
+  setUnsaved()
+  toast.add({
+    title: '已应用 AI 建议的重要度',
+    description: IMPORTANCE_METADATA[value].label,
+    color: 'primary'
+  })
+}
+
+const handleApplySummary = (summary: string) => {
+  const normalized = summary?.trim()
+  if (!normalized) {
+    return
+  }
+
+  noteDescription.value = normalized
+  setUnsaved()
+  toast.add({
+    title: '已更新记忆描述',
+    description: 'AI 摘要已填充到描述字段。',
+    color: 'emerald'
+  })
+}
+
 const themeConfig = computed(() => config.value.themeSettings ?? {})
 const themeList = computed(() => {
   const list = themeConfig.value.themeList
@@ -310,7 +380,11 @@ onMounted(async () => {
 })
 
 const handleSave = async () => {
-  const payload = buildSavePayload()
+  const payload: NoteSavePayload = {
+    ...buildSavePayload(),
+    aiEvaluation: aiEvaluation.value ?? undefined,
+    aiCompression: aiCompression.value ?? undefined
+  }
   if (!payload.title || !payload.content) {
     return
   }
@@ -336,8 +410,17 @@ const normalizeFadeLevel = (value?: number) => {
 }
 
 watch(
-  () => [props.mode, props.initialTitle, props.initialContent, props.fadeLevel, props.initialImportance, props.initialDescription] as const,
-  ([mode, title, content, fade, importance, description]) => {
+  () => ({
+    mode: props.mode,
+    title: props.initialTitle,
+    content: props.initialContent,
+    fade: props.fadeLevel,
+    importance: props.initialImportance,
+    description: props.initialDescription,
+    evaluation: props.initialAiEvaluation,
+    compression: props.initialAiCompression
+  }),
+  ({ mode, title, content, fade, importance, description, evaluation, compression }) => {
     const hasEditPayload = title !== undefined || content !== undefined || description !== undefined
     const normalizedFade = normalizeFadeLevel(fade)
 
@@ -358,6 +441,9 @@ watch(
       setFadeLevel(normalizedFade)
       setImportanceLevel(importance ?? 'medium')
     }
+
+    aiEvaluation.value = evaluation ?? null
+    aiCompression.value = compression ?? null
 
     nextTick(() => {
       isPopulating.value = false

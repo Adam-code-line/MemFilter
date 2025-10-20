@@ -82,6 +82,23 @@ export const ensureAuthSchema = async () => {
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;`
       )
 
+      const hasColumn = async (name: string) => {
+        const [rows] = await client.query<Array<{ Field: string }>>('SHOW COLUMNS FROM notes LIKE ?', [name])
+        return Array.isArray(rows) && rows.length > 0
+      }
+
+      if (!(await hasColumn('ai_evaluation'))) {
+        await client.query(
+          'ALTER TABLE notes ADD COLUMN ai_evaluation JSON NULL AFTER decay_rate'
+        )
+      }
+
+      if (!(await hasColumn('ai_compression'))) {
+        await client.query(
+          'ALTER TABLE notes ADD COLUMN ai_compression JSON NULL AFTER ai_evaluation'
+        )
+      }
+
       await client.query(
         `CREATE TABLE IF NOT EXISTS memory_sources (
           id CHAR(36) NOT NULL,

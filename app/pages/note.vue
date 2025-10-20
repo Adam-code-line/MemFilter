@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { useNotesStore } from "~~/stores/notes";
+import { useNotesStore } from "~~/stores/notes"
+import type { ImportanceLevel, NoteRecord, NoteSavePayload, NoteAIEvaluation, NoteAICompression } from '~/composables/note/types'
 
 definePageMeta({
   layout: 'app'
@@ -27,6 +28,8 @@ const {
   restoreNote,
   accelerateForgetting,
   forgetNote,
+  setNoteAIEvaluation,
+  setNoteAICompression,
   refreshNotes
 } = useNotesDashboard()
 
@@ -171,6 +174,14 @@ const activeFilteredCount = computed(() => filteredNotes.value.length)
 const noteEditorRef = ref<{ triggerSave?: () => void } | null>(null)
 const isEditorActive = computed(() => editorMode.value === 'edit' || editorMode.value === 'create')
 
+const pendingAIEvaluation = ref<NoteAIEvaluation | null>(null)
+const pendingAICompression = ref<NoteAICompression | null>(null)
+
+watch(editingNote, value => {
+  pendingAIEvaluation.value = value?.aiEvaluation ?? null
+  pendingAICompression.value = value?.aiCompression ?? null
+}, { immediate: true })
+
 const handleIngestionPromoted = async () => {
   await refreshNotes()
 }
@@ -252,6 +263,42 @@ const handleEditorCancel = () => {
 
 const handleContentChange = (_value: string) => {
   // 占位钩子，未来可在此响应内容变化
+}
+
+const handleEditorEvaluationUpdated = async (value: NoteAIEvaluation | null) => {
+  pendingAIEvaluation.value = value ?? null
+
+  const current = editingNote.value
+  if (current) {
+    editingNote.value = { ...current, aiEvaluation: value ?? null }
+  }
+
+  if (editorMode.value !== 'edit' || !current?.id) {
+    return
+  }
+
+  const updated = await setNoteAIEvaluation(current.id, value ?? null)
+  if (updated) {
+    editingNote.value = { ...updated }
+  }
+}
+
+const handleEditorCompressionUpdated = async (value: NoteAICompression | null) => {
+  pendingAICompression.value = value ?? null
+
+  const current = editingNote.value
+  if (current) {
+    editingNote.value = { ...current, aiCompression: value ?? null }
+  }
+
+  if (editorMode.value !== 'edit' || !current?.id) {
+    return
+  }
+
+  const updated = await setNoteAICompression(current.id, value ?? null)
+  if (updated) {
+    editingNote.value = { ...updated }
+  }
 }
 
 const resetFilters = () => {
@@ -383,11 +430,14 @@ const resetFilters = () => {
               <NoteEditor
                 ref="noteEditorRef"
                 :key="editingNote?.id ?? editorMode"
+                :note-id="editingNote?.id"
                 :initial-title="editingNote?.title"
                 :initial-content="editingNote?.content"
                 :initial-description="editingNote?.description"
                 :fade-level="editingNote?.fadeLevel ?? 0"
                 :initial-importance="editingNote?.importance"
+                :initial-ai-evaluation="pendingAIEvaluation"
+                :initial-ai-compression="pendingAICompression"
                 :mode="editorMode"
                 :config="editorConfig"
                 :header-title="editorHeadline"
@@ -398,6 +448,8 @@ const resetFilters = () => {
                 @save="handleEditorSave"
                 @cancel="handleEditorCancel"
                 @content-change="handleContentChange"
+                @ai-evaluation-updated="handleEditorEvaluationUpdated"
+                @ai-compression-updated="handleEditorCompressionUpdated"
                 @new-note="openEditorForNew"
               />
             </div>

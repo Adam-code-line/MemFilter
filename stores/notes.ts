@@ -1,6 +1,15 @@
 import { acceptHMRUpdate, defineStore } from 'pinia'
 import { useNotificationCenter } from '~/composables/notifications/useNotificationCenter'
 import { useNotesApi } from '~/composables/note/useNotesApi'
+import type {
+  FadeLevel,
+  ImportanceLevel,
+  NoteAIEvaluation,
+  NoteAICompression,
+  NoteDashboardOptions,
+  NoteRecord,
+  NoteSavePayload
+} from '~/composables/note/types'
 
 const MAX_FORGET_WINDOW = 999
 const BASE_FORGET_WINDOW = 14
@@ -201,6 +210,29 @@ const remainingDaysByStage = (importance: ImportanceLevel, forgettingWindow: num
   return Math.max(1, estimate)
 }
 
+const cloneEvaluation = (value?: NoteAIEvaluation | null): NoteAIEvaluation | null => {
+  if (!value) {
+    return null
+  }
+
+  return {
+    ...value,
+    usage: value.usage ? { ...value.usage } : undefined
+  }
+}
+
+const cloneCompression = (value?: NoteAICompression | null): NoteAICompression | null => {
+  if (!value) {
+    return null
+  }
+
+  return {
+    ...value,
+    bullets: Array.isArray(value.bullets) ? [...value.bullets] : [],
+    usage: value.usage ? { ...value.usage } : undefined
+  }
+}
+
 const normalizeRecord = (record: Partial<NoteRecord> & { id?: number }): NoteRecord => {
   const now = new Date()
   const importance = record.importance ?? 'medium'
@@ -232,6 +264,8 @@ const normalizeRecord = (record: Partial<NoteRecord> & { id?: number }): NoteRec
     isCollapsed: record.isCollapsed ?? false,
     importanceScore: record.importanceScore ?? 0,
     decayRate: record.decayRate ?? undefined,
+    aiEvaluation: cloneEvaluation(record.aiEvaluation ?? null),
+    aiCompression: cloneCompression(record.aiCompression ?? null),
     createdAt,
     updatedAt: record.updatedAt ?? createdAt
   }
@@ -385,7 +419,9 @@ const toPersistPayload = (note: NoteRecord) => {
     decayRate: note.decayRate ?? null,
     isCollapsed: note.isCollapsed,
     lastAccessed: normalizeTimestamp(note.lastAccessed),
-    date: note.date
+    date: note.date,
+    aiEvaluation: note.aiEvaluation ?? null,
+    aiCompression: note.aiCompression ?? null
   }
 }
 
@@ -499,13 +535,18 @@ export const useNotesStore = defineStore('notes', () => {
 
       const previous = notes.value[index]
 
+      const nextEvaluation = payload.aiEvaluation === undefined ? previous.aiEvaluation ?? null : payload.aiEvaluation
+      const nextCompression = payload.aiCompression === undefined ? previous.aiCompression ?? null : payload.aiCompression
+
       const draft = {
         ...previous,
         title: payload.title,
         content: payload.content,
         description: payload.description ?? '',
         importance: payload.importance,
-        lastAccessed: '刚刚'
+        lastAccessed: '刚刚',
+        aiEvaluation: cloneEvaluation(nextEvaluation),
+        aiCompression: cloneCompression(nextCompression)
       }
 
       const evaluated = applyEvaluation(draft, dashboardOptions.value, { forceProgressReset: true })
@@ -534,7 +575,9 @@ export const useNotesStore = defineStore('notes', () => {
       fadeLevel: 0 as FadeLevel,
       forgettingProgress: 0,
       daysUntilForgotten: BASE_FORGET_WINDOW,
-      isCollapsed: false
+      isCollapsed: false,
+      aiEvaluation: cloneEvaluation(payload.aiEvaluation ?? null),
+      aiCompression: cloneCompression(payload.aiCompression ?? null)
     })
 
     const evaluated = applyEvaluation(base, dashboardOptions.value, { forceProgressReset: true })
@@ -606,6 +649,52 @@ export const useNotesStore = defineStore('notes', () => {
     handleNotificationTransition(previous, finalNote)
   }
 
+    const setNoteAIEvaluation = async (noteId: number, evaluation: NoteAIEvaluation | null) => {
+      const index = notes.value.findIndex(item => item.id === noteId)
+      if (index === -1) {
+        return null
+      }
+
+      const draft = {
+        ...notes.value[index],
+        aiEvaluation: cloneEvaluation(evaluation)
+      }
+
+      const persisted = await notesApi.update(noteId, toPersistPayload(draft))
+      const normalized = normalizeRecord({
+        ...persisted,
+        lastAccessed: persisted.lastAccessed,
+        createdAt: persisted.createdAt,
+        updatedAt: persisted.updatedAt
+      })
+      const finalNote = applyEvaluation(normalized, dashboardOptions.value, { preserveProgress: true })
+      notes.value.splice(index, 1, finalNote)
+      return finalNote
+    }
+
+    const setNoteAICompression = async (noteId: number, compression: NoteAICompression | null) => {
+      const index = notes.value.findIndex(item => item.id === noteId)
+      if (index === -1) {
+        return null
+      }
+
+      const draft = {
+        ...notes.value[index],
+        aiCompression: cloneCompression(compression)
+      }
+
+      const persisted = await notesApi.update(noteId, toPersistPayload(draft))
+      const normalized = normalizeRecord({
+        ...persisted,
+        lastAccessed: persisted.lastAccessed,
+        createdAt: persisted.createdAt,
+        updatedAt: persisted.updatedAt
+      })
+      const finalNote = applyEvaluation(normalized, dashboardOptions.value, { preserveProgress: true })
+      notes.value.splice(index, 1, finalNote)
+      return finalNote
+    }
+
   const directForget = async (target: NoteRecord) => {
     const index = notes.value.findIndex(item => item.id === target.id)
     if (index === -1) {
@@ -667,11 +756,13 @@ export const useNotesStore = defineStore('notes', () => {
     sortedByRecency,
     sortedByImportance,
     ensureInitialized,
-  refreshFromServer,
+    refreshFromServer,
     getRecentNotes,
     upsertNote,
     restoreNote,
     accelerateForgetting,
+    setNoteAIEvaluation,
+    setNoteAICompression,
     directForget,
     purgeNote,
     resetState

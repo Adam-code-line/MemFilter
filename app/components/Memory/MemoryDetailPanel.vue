@@ -101,6 +101,71 @@
       </p>
     </UCard>
 
+    <UCard class="border border-gray-200/70 dark:border-white/10 bg-white/60 dark:bg-slate-900/40">
+      <template #header>
+        <div class="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-200">
+          <UIcon name="i-lucide-starry" />
+          AI 内容摘要
+        </div>
+      </template>
+      <div class="space-y-4">
+        <div class="flex flex-wrap items-center gap-2 text-xs text-gray-500 dark:text-gray-300">
+          <UBadge
+            v-if="aiImportanceMeta"
+            :label="aiImportanceMeta.label"
+            :color="aiImportanceMeta.color"
+            :variant="aiImportanceMeta.badgeVariant"
+            :icon="aiImportanceMeta.icon"
+          />
+          <UBadge
+            v-if="aiConfidenceLabel"
+            :label="`置信度 ${aiConfidenceLabel}`"
+            color="emerald"
+            variant="outline"
+            icon="i-lucide-activity"
+          />
+          <UBadge
+            v-if="aiEvaluationTimestamp"
+            :label="`评估于 ${aiEvaluationTimestamp}`"
+            color="neutral"
+            variant="outline"
+            icon="i-lucide-clock"
+          />
+          <UBadge
+            v-if="aiCompressionTimestamp"
+            :label="`摘要于 ${aiCompressionTimestamp}`"
+            color="primary"
+            variant="soft"
+            icon="i-lucide-history"
+          />
+        </div>
+
+        <p
+          v-if="aiEvaluation?.rationale"
+          class="rounded-lg bg-slate-100/70 p-3 text-sm leading-relaxed text-gray-700 dark:bg-slate-800/60 dark:text-gray-200"
+        >
+          {{ aiEvaluation.rationale }}
+        </p>
+
+        <NoteAISummaryBlock
+          :summary="aiSummary"
+          :bullets="aiBullets"
+          :tokens-saved="aiTokensSaved"
+          :usage="aiCompressionUsage"
+          empty-message="暂未生成 AI 摘要，可在编辑笔记时调用「AI 摘要压缩」功能。"
+        />
+
+        <div
+          v-if="aiEvaluationMetaEntries.length"
+          class="flex flex-wrap gap-3 text-xs text-gray-500 dark:text-gray-400"
+        >
+          <span v-for="entry in aiEvaluationMetaEntries" :key="entry.label">
+            {{ entry.label }}：{{ entry.value }}
+          </span>
+        </div>
+      </div>
+    </UCard>
+
     <UCard class="border border-gray-200/70 dark:border-white/10">
       <template #header>
         <div class="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-200">
@@ -155,6 +220,8 @@
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, watch } from 'vue'
+import { IMPORTANCE_METADATA } from '~/composables/note-memory/importanceMetadata'
+import type { NoteAIEvaluation, NoteAICompression, ImportanceLevel } from '~/composables/note/types'
 
 interface MemoryDetailRecord {
   id?: number | string
@@ -170,6 +237,8 @@ interface MemoryDetailRecord {
   forgettingProgress?: number
   daysUntilForgotten?: number
   isCollapsed?: boolean
+  aiEvaluation?: NoteAIEvaluation | null
+  aiCompression?: NoteAICompression | null
 }
 
 interface MemoryDetailAction {
@@ -199,6 +268,63 @@ const hasNote = computed(() => !!props.note)
 const derivedImportance = computed<MemoryImportance>(() => detail.value.importance ?? 'medium')
 const derivedFadeLevel = computed<MemoryFadeLevel>(() => detail.value.fadeLevel ?? 0)
 const derivedProgress = computed<number>(() => detail.value.forgettingProgress ?? 0)
+const aiEvaluation = computed<NoteAIEvaluation | null>(() => detail.value.aiEvaluation ?? null)
+const aiCompression = computed<NoteAICompression | null>(() => detail.value.aiCompression ?? null)
+const aiSummary = computed(() => {
+  const summary = aiCompression.value?.summary ?? ''
+  return typeof summary === 'string' ? summary.trim() : ''
+})
+const aiBullets = computed(() => {
+  const bullets = aiCompression.value?.bullets
+  if (!Array.isArray(bullets)) return []
+  return bullets
+    .map((bullet) => (typeof bullet === 'string' ? bullet.trim() : ''))
+    .filter((bullet) => bullet.length > 0)
+})
+const aiImportanceMeta = computed(() => {
+  const importance = aiEvaluation.value?.importance
+  return importance ? IMPORTANCE_METADATA[importance as ImportanceLevel] : null
+})
+const aiConfidenceLabel = computed(() => {
+  if (!aiEvaluation.value) return null
+  return `${Math.round(Math.min(Math.max(aiEvaluation.value.confidence, 0), 1) * 100)}%`
+})
+const formatGeneratedAt = (value?: string | null) => {
+  if (!value) return null
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return null
+  return date.toLocaleString(undefined, {
+    month: 'numeric',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  })
+}
+const aiEvaluationTimestamp = computed(() => formatGeneratedAt(aiEvaluation.value?.generatedAt))
+const aiCompressionTimestamp = computed(() => formatGeneratedAt(aiCompression.value?.generatedAt))
+const aiTokensSaved = computed(() => {
+  const value = aiCompression.value?.tokensSaved
+  return typeof value === 'number' && value > 0 ? value : null
+})
+const aiEvaluationUsage = computed(() => aiEvaluation.value?.usage ?? null)
+const aiCompressionUsage = computed(() => aiCompression.value?.usage ?? null)
+const aiEvaluationMetaEntries = computed(() => {
+  const usage = aiEvaluationUsage.value
+  if (!usage) return [] as Array<{ label: string; value: number }>
+
+  const entries: Array<{ label: string; value: number }> = []
+  if (typeof usage.promptTokens === 'number') {
+    entries.push({ label: '评估 Prompt', value: usage.promptTokens })
+  }
+  if (typeof usage.completionTokens === 'number') {
+    entries.push({ label: '评估 Completion', value: usage.completionTokens })
+  }
+  if (typeof usage.totalTokens === 'number') {
+    entries.push({ label: '评估总计', value: usage.totalTokens })
+  }
+
+  return entries
+})
 
 const previewContainerId = 'memory-detail-preview'
 const hasContent = computed(() => {

@@ -4,6 +4,34 @@ export type ImportanceLevel = NoteImportanceLevel
 
 export type FadeLevel = NoteFadeLevel
 
+export interface NoteAIUsageSummary {
+  promptTokens?: number
+  completionTokens?: number
+  totalTokens?: number
+}
+
+export type NoteAISuggestedAction = 'retain' | 'compress' | 'discard'
+
+export interface NoteAIEvaluation {
+  id: string
+  importance: ImportanceLevel
+  confidence: number
+  rationale: string
+  suggestedAction: NoteAISuggestedAction
+  usage?: NoteAIUsageSummary
+  generatedAt: string
+}
+
+export interface NoteAICompression {
+  id: string
+  summary: string
+  bullets: string[]
+  retentionScore: number
+  tokensSaved?: number
+  usage?: NoteAIUsageSummary
+  generatedAt: string
+}
+
 export interface NoteRecord extends NoteBase {
   id: number
   content: string
@@ -11,6 +39,8 @@ export interface NoteRecord extends NoteBase {
   lastAccessed: string
   icon: string
   isCollapsed: boolean
+  aiEvaluation?: NoteAIEvaluation | null
+  aiCompression?: NoteAICompression | null
 }
 
 export interface NoteEditorOptions {
@@ -45,4 +75,6 @@ export interface NoteSavePayload {
   content: string
   description?: string
   importance: ImportanceLevel
+  aiEvaluation?: NoteAIEvaluation | null
+  aiCompression?: NoteAICompression | null
 }
