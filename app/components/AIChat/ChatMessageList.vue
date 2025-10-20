@@ -8,7 +8,11 @@
         v-for="message in messages"
         :key="message.id"
         :message="message"
-      />
+      >
+        <template #actions>
+          <ChatMessageActions :message="message" />
+        </template>
+      </ChatMessage>
     </TransitionGroup>
     <div
       v-if="!messages.length"
@@ -27,6 +31,7 @@
 
 <script setup lang="ts">
 import ChatMessage from '~/components/AIChat/ChatMessage.vue'
+import ChatMessageActions from '~/components/AIChat/ChatMessageActions.vue'
 import type { AIChatMessage } from '~/composables/chat/types'
 
 const props = defineProps<{ messages: AIChatMessage[] }>()

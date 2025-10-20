@@ -275,6 +275,43 @@ const createInitialState = (initialNotes?: NoteRecord[]) =>
   initialNotes ? initialNotes.map(normalizeRecord) : []
 
 const computeEvaluation = (note: NoteRecord, options: NoteDashboardOptions = {}) => {
+  if (note.aiEvaluation) {
+    const evaluation = note.aiEvaluation
+    const importance = evaluation.importance ?? note.importance ?? 'medium'
+    const action = evaluation.suggestedAction
+    const confidence = Number.isFinite(evaluation.confidence)
+      ? clamp(Math.round(evaluation.confidence * 100), 0, 100)
+      : 50
+
+    const baseWindow = importance === 'high'
+      ? MAX_FORGET_WINDOW
+      : defaultForgetWindows[importance] ?? BASE_FORGET_WINDOW
+
+    const windowMultiplier = action === 'retain'
+      ? 1.6
+      : action === 'discard'
+        ? 0.6
+        : 1
+
+    const forgettingWindow = importance === 'high'
+      ? MAX_FORGET_WINDOW
+      : clamp(Math.round(baseWindow * windowMultiplier), 3, MAX_FORGET_WINDOW)
+
+    const baseDecay = defaultDecayRates[importance] ?? defaultDecayRates.medium
+    const decayAdjust = action === 'retain'
+      ? -8
+      : action === 'discard'
+        ? 12
+        : 0
+    const decayRate = clamp(Math.round(baseDecay + decayAdjust), 0, 100)
+
+    return {
+      importanceScore: confidence,
+      decayRate,
+      forgettingWindow
+    }
+  }
+
   if (options.evaluateNote) {
     const evaluation = options.evaluateNote(note) ?? {}
     const importance = note.importance ?? 'medium'
@@ -325,7 +362,9 @@ const applyEvaluation = (
   options: NoteDashboardOptions = {},
   context: { accelerated?: boolean; preserveProgress?: boolean; forceProgressReset?: boolean } = {}
 ): NoteRecord => {
-  const evaluation = computeEvaluation(note, options)
+  const importanceFromEvaluation = note.aiEvaluation?.importance ?? note.importance
+  const resolvedImportance = importanceFromEvaluation ?? 'medium'
+  const evaluation = computeEvaluation({ ...note, importance: resolvedImportance }, options)
   const importanceScore = evaluation.importanceScore
   const decayRate = evaluation.decayRate
   const forgettingWindow = evaluation.forgettingWindow
@@ -336,39 +375,39 @@ const applyEvaluation = (
 
   let fadeLevel = (note.fadeLevel ?? 0) as FadeLevel
   let progress = clamp(Math.round(note.forgettingProgress ?? 0), 0, 100)
-  let daysUntilForgotten = note.importance === 'high'
+  let daysUntilForgotten = resolvedImportance === 'high'
     ? MAX_FORGET_WINDOW
     : (note.daysUntilForgotten ?? forgettingWindow)
 
   if (forceProgressReset) {
     fadeLevel = 0 as FadeLevel
     progress = 0
-    daysUntilForgotten = note.importance === 'high' ? MAX_FORGET_WINDOW : forgettingWindow
+    daysUntilForgotten = resolvedImportance === 'high' ? MAX_FORGET_WINDOW : forgettingWindow
   } else {
-    const baselineProgress = computeBaselineProgress(note, importanceScore, forgettingWindow)
+    const baselineProgress = computeBaselineProgress({ ...note, importance: resolvedImportance }, importanceScore, forgettingWindow)
     const mergedProgress = preserveProgress
       ? Math.max(progress, baselineProgress)
       : baselineProgress
 
     if (accelerated) {
-      progress = calculateAcceleratedProgress(note.importance, mergedProgress, importanceScore)
+      progress = calculateAcceleratedProgress(resolvedImportance, mergedProgress, importanceScore)
     } else {
       progress = mergedProgress
     }
 
-    fadeLevel = calculateFadeLevelFromProgress(note.importance, progress)
+    fadeLevel = calculateFadeLevelFromProgress(resolvedImportance, progress)
 
-    if (note.importance === 'high' && !accelerated) {
+    if (resolvedImportance === 'high' && !accelerated) {
       fadeLevel = Math.min(fadeLevel, 1) as FadeLevel
       progress = 0
       daysUntilForgotten = MAX_FORGET_WINDOW
     } else {
-      if (accelerated && note.importance === 'high') {
+      if (accelerated && resolvedImportance === 'high') {
         fadeLevel = Math.min(fadeLevel, 2) as FadeLevel
       }
 
       daysUntilForgotten = remainingDaysByStage(
-        note.importance,
+        resolvedImportance,
         forgettingWindow,
         fadeLevel,
         progress
@@ -378,6 +417,7 @@ const applyEvaluation = (
 
   return {
     ...note,
+    importance: resolvedImportance,
     fadeLevel,
     forgettingProgress: clamp(Math.round(progress), 0, 100),
     daysUntilForgotten,
