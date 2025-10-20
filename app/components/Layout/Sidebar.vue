@@ -28,10 +28,10 @@ const mainItems = computed<NavigationMenuItem[]>(() => [
 // 智能功能
 const aiItems = computed<NavigationMenuItem[]>(() => [
   {
-    label: 'AI 分析',
+    label: 'AI 会话',
     to: '/ai-chat',
     icon: 'i-lucide-brain-circuit',
-    active: route.path === '/analysis'
+    active: route.path === '/ai-chat'
   },
   {
     label: '重要度评估',
