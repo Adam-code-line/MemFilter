@@ -182,10 +182,6 @@ watch(editingNote, value => {
   pendingAICompression.value = value?.aiCompression ?? null
 }, { immediate: true })
 
-const handleIngestionPromoted = async () => {
-  await refreshNotes()
-}
-
 useKeyboardShortcut({
   key: 'Enter',
   allowInInput: true,
@@ -330,12 +326,23 @@ const resetFilters = () => {
       </div>
 
         <div class="flex flex-wrap items-center gap-3 self-start">
-          <NoteIngestionLauncher
-            :create-label="noteCreateLabel"
-            button-size="lg"
-            @create="openEditorForNew"
-            @promoted="handleIngestionPromoted"
-          />
+          <UButton
+            color="primary"
+            size="lg"
+            icon="i-lucide-plus"
+            @click="openEditorForNew"
+          >
+            {{ noteCreateLabel }}
+          </UButton>
+          <UButton
+            variant="outline"
+            size="lg"
+            color="primary"
+            icon="i-lucide-compass"
+            @click="router.push('/discover')"
+          >
+            探索资讯
+          </UButton>
         </div>
     </div>
       <ClientOnly>

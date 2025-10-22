@@ -12,6 +12,12 @@ const mainItems = computed<NavigationMenuItem[]>(() => [
     active: route.path === '/note'
   },
   {
+    label: '探索资讯',
+    to: '/discover',
+    icon: 'i-lucide-compass',
+    active: route.path === '/discover'
+  },
+  {
     label: '记忆回溯',
     to: '/memory',
     icon: 'i-lucide-brain',
