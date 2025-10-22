@@ -22,6 +22,8 @@ const emit = defineEmits<{
   (event: 'open-notes'): void
 }>()
 
+const discovery = useDiscoveryFeed({ items: computed(() => props.items) })
+
 const {
   searchQuery,
   selectedTopic,
@@ -31,9 +33,18 @@ const {
   curatedCollections,
   stats,
   filteredItems,
+  highlightItem,
   setTopic,
   setTimeRange
-} = useDiscoveryFeed({ items: computed(() => props.items) })
+} = discovery
+
+const displayItems = computed(() => {
+  const items = filteredItems.value
+  if (!highlightItem.value) {
+    return items
+  }
+  return items.slice(1)
+})
 
 const promotingKey = computed(() => (props.promotingId !== null ? String(props.promotingId) : null))
 
@@ -55,25 +66,16 @@ const handleOpenLink = (item: { link: string | null }) => {
       :stats="stats"
       :is-syncing="isSyncing"
       :last-sync-summary="lastSyncSummary"
+      :highlight="highlightItem"
       @update:search-query="value => (searchQuery.value = value)"
       @fetch-latest="handleFetchLatest"
       @open-history="emit('open-notes')"
     />
 
-    <div class="grid flex-1 gap-6 xl:grid-cols-[260px_minmax(0,1fr)_260px]">
-      <DiscoveryTopicRail
-        :categories="categories"
-        :trending="trendingTopics"
-        :selected-category="selectedTopic"
-        :selected-range="selectedTimeRange"
-        @select-category="setTopic"
-        @select-range="setTimeRange"
-        @select-topic="setTopic"
-      />
-
-      <div class="flex flex-col gap-4">
+    <div class="grid flex-1 gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
+      <div class="flex flex-col gap-5">
         <div class="flex items-center justify-between gap-3">
-          <h3 class="text-sm font-semibold text-gray-900 dark:text-white">
+          <h3 class="text-sm font-semibold tracking-wide text-gray-900 dark:text-white">
             最新资讯
           </h3>
           <div class="flex items-center gap-2 text-xs text-gray-500 dark:text-slate-400">
@@ -86,12 +88,12 @@ const handleOpenLink = (item: { link: string | null }) => {
             >
               刷新列表
             </UButton>
-            <span>显示 {{ filteredItems.length }} / {{ stats.total }}</span>
+            <span>显示 {{ displayItems.length }} / {{ stats.total }}</span>
           </div>
         </div>
 
         <DiscoveryFeedList
-          :items="filteredItems"
+          :items="displayItems"
           :is-loading="isLoading"
           :promoting-id="promotingKey"
           @promote="item => emit('promote', item.raw)"
@@ -99,7 +101,19 @@ const handleOpenLink = (item: { link: string | null }) => {
         />
       </div>
 
-      <DiscoverySidebar :collections="curatedCollections" />
+      <div class="flex flex-col gap-6">
+        <DiscoveryTopicRail
+          :categories="categories"
+          :trending="trendingTopics"
+          :selected-category="selectedTopic"
+          :selected-range="selectedTimeRange"
+          @select-category="setTopic"
+          @select-range="setTimeRange"
+          @select-topic="setTopic"
+        />
+
+        <DiscoverySidebar :collections="curatedCollections" />
+      </div>
     </div>
   </div>
 </template>

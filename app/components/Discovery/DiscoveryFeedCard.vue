@@ -6,6 +6,7 @@ const props = defineProps<{
   item: DiscoveryFeedItem
   isPromoting: boolean
   highlight?: boolean
+  variant?: 'wide' | 'compact'
 }>()
 
 const emit = defineEmits<{
@@ -23,38 +24,58 @@ const publishedLabel = computed(() => {
 })
 
 const primaryTag = computed(() => props.item.tags[0] ?? '综合资讯')
+const variant = computed(() => props.variant ?? 'wide')
+const isCompact = computed(() => variant.value === 'compact')
 </script>
 
 <template>
   <UCard
-    class="h-full border border-gray-200/70 transition hover:border-primary/40 hover:shadow-lg dark:border-slate-700/40 dark:hover:border-primary/40"
-    :class="highlight ? 'ring-2 ring-primary/40' : ''"
+    class="feed-card h-full border border-gray-200/70 transition hover:border-primary/40 hover:shadow-lg dark:border-slate-700/40 dark:hover:border-primary/40"
+    :class="[
+      highlight ? 'ring-2 ring-primary/40' : '',
+      isCompact ? 'feed-card-compact' : 'feed-card-wide'
+    ]"
   >
-    <div class="flex flex-col gap-4">
+    <div class="flex flex-col" :class="isCompact ? 'gap-3' : 'gap-4'">
       <div class="flex items-start justify-between gap-3">
         <div class="space-y-1">
-          <div class="flex flex-wrap items-center gap-2">
-            <UBadge :label="primaryTag" color="primary" variant="soft" />
+          <div class="flex flex-wrap items-center gap-2" :class="isCompact ? 'text-[11px]' : ''">
+            <UBadge :label="primaryTag" color="primary" variant="soft" :size="isCompact ? 'xs' : 'sm'" />
             <span class="text-xs text-gray-400 dark:text-slate-400">{{ props.item.source }}</span>
           </div>
-          <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+          <h3
+            class="font-semibold text-gray-900 transition-colors dark:text-white"
+            :class="isCompact ? 'text-base leading-snug line-clamp-2' : 'text-lg leading-snug'"
+          >
             {{ props.item.title }}
           </h3>
         </div>
         <UButton
           v-if="props.item.link"
-          variant="ghost"
+          :variant="isCompact ? 'soft' : 'ghost'"
           size="xs"
           icon="i-lucide-external-link"
           @click="emit('open-link', props.item)"
         />
       </div>
 
-      <p class="text-sm leading-relaxed text-gray-600 dark:text-slate-300">
+      <p
+        v-if="!isCompact"
+        class="text-sm leading-relaxed text-gray-600 dark:text-slate-300"
+      >
+        {{ props.item.summary }}
+      </p>
+      <p
+        v-else
+        class="text-xs leading-relaxed text-gray-500 line-clamp-3 dark:text-slate-300/80"
+      >
         {{ props.item.summary }}
       </p>
 
-      <div class="flex flex-wrap items-center gap-3 text-xs text-gray-400 dark:text-slate-400">
+      <div
+        class="flex flex-wrap items-center gap-3 text-gray-400 dark:text-slate-400"
+        :class="isCompact ? 'text-[11px]' : 'text-xs'"
+      >
         <div class="flex items-center gap-1">
           <UIcon name="i-lucide-calendar-days" class="text-primary" />
           <span>{{ publishedLabel }}</span>
@@ -64,29 +85,64 @@ const primaryTag = computed(() => props.item.tags[0] ?? '综合资讯')
             v-for="tag in props.item.tags"
             :key="tag"
             color="neutral"
-            variant="outline"
-            class="text-[10px]"
+            :variant="isCompact ? 'soft' : 'outline'"
+            :class="isCompact ? 'text-[10px]' : 'text-[11px]'"
             :label="tag"
           />
         </div>
       </div>
 
       <div class="flex flex-wrap items-center justify-between gap-3">
-        <div class="flex items-center gap-2 text-xs text-gray-400 dark:text-slate-400">
-          <UIcon name="i-lucide-lightbulb" />
-          <span>快速整理这条资讯，生成结构化记忆。</span>
+        <div class="flex items-center gap-2 text-gray-400 dark:text-slate-400" :class="isCompact ? 'text-[11px]' : 'text-xs'">
+          <UIcon :name="isCompact ? 'i-lucide-notebook-pen' : 'i-lucide-lightbulb'" />
+          <span>{{ isCompact ? '快速收藏稍后整理。' : '快速整理这条资讯，生成结构化记忆。' }}</span>
         </div>
         <div class="flex items-center gap-2">
           <UButton
             color="primary"
-            icon="i-lucide-flashlight"
+            :icon="isCompact ? 'i-lucide-plus' : 'i-lucide-flashlight'"
+            :size="isCompact ? 'xs' : 'sm'"
             :loading="isPromoting"
             @click="emit('promote', props.item)"
           >
-            生成记忆
+            {{ isCompact ? '收藏' : '生成记忆' }}
           </UButton>
         </div>
       </div>
     </div>
   </UCard>
 </template>
+
+<style scoped>
+.feed-card {
+  border-radius: 1.5rem;
+  overflow: hidden;
+}
+
+.feed-card-wide {
+  padding: 1.5rem;
+}
+
+.feed-card-compact {
+  padding: 1.25rem;
+  background: linear-gradient(160deg, rgba(248, 250, 252, 0.9), rgba(226, 232, 240, 0.4));
+}
+
+:global(.dark) .feed-card-compact {
+  background: linear-gradient(160deg, rgba(15, 23, 42, 0.75), rgba(30, 41, 59, 0.6));
+}
+
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.line-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+</style>

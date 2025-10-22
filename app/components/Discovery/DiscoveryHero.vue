@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { toRefs } from '#imports'
+import { computed, toRefs } from '#imports'
+import type { DiscoveryFeedItem } from '~/composables/discovery/useDiscoveryFeed'
 
 const props = defineProps<{
   searchQuery: string
@@ -10,9 +11,10 @@ const props = defineProps<{
   }
   lastSyncSummary: string | null
   isSyncing: boolean
+  highlight: DiscoveryFeedItem | null
 }>()
 
-const { stats, searchQuery } = toRefs(props)
+const { stats, searchQuery, highlight } = toRefs(props)
 
 const emit = defineEmits<{
   (event: 'update:searchQuery', value: string): void
@@ -20,86 +22,124 @@ const emit = defineEmits<{
   (event: 'open-history'): void
 }>()
 
+const syncLabel = computed(() => props.lastSyncSummary ?? '尚未同步资讯')
+const highlightTitle = computed(() => highlight.value?.title ?? '探索值得记录的资讯')
+const highlightSummary = computed(() => highlight.value?.summary ?? '同步资讯后，系统会推荐最值得关注的焦点话题，帮助你快速捕捉灵感。')
+const highlightSource = computed(() => highlight.value?.source ?? 'MemFilter 推荐')
+
 const handleSubmit = () => {
   emit('fetch-latest')
+}
+
+const handleSearchUpdate = (value: string) => {
+  emit('update:searchQuery', value)
 }
 </script>
 
 <template>
-  <section class="relative overflow-hidden rounded-3xl border border-primary/20 bg-gradient-to-br from-primary/10 via-white/90 to-white/95 p-6 shadow-lg dark:from-slate-800/60 dark:via-slate-900/75 dark:to-slate-900/60">
-    <div class="absolute inset-0 pointer-events-none">
-      <div class="absolute -right-20 top-10 h-64 w-64 rounded-full bg-primary/20 blur-3xl" />
-      <div class="absolute -bottom-6 left-12 h-44 w-44 rounded-full bg-sky-200/30 blur-3xl dark:bg-sky-500/10" />
+  <section class="relative overflow-hidden rounded-3xl border border-gray-200/20 bg-slate-900 text-white shadow-xl">
+    <div class="absolute inset-0 opacity-70">
+      <div class="absolute -left-32 top-10 h-72 w-72 rounded-full bg-primary/40 blur-3xl" />
+      <div class="absolute -right-24 bottom-10 h-80 w-80 rounded-full bg-sky-500/30 blur-3xl" />
+      <div class="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(148,163,254,0.35),_transparent_55%)]" />
     </div>
-    <div class="relative flex flex-col gap-6">
-      <header class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-        <div class="space-y-2">
-          <div class="flex items-center gap-3">
-            <UBadge color="primary" variant="soft" label="发现" />
-            <p class="text-sm text-gray-500 dark:text-gray-400">探索原始资讯，挑选值得保留的记忆。</p>
+
+    <div class="relative grid gap-8 p-8 lg:grid-cols-[minmax(0,1fr)_340px]">
+      <div class="flex flex-col gap-6">
+        <div class="space-y-4">
+          <div class="flex items-center gap-3 text-sm text-slate-200">
+            <UBadge label="Discover" color="white" variant="outline" class="bg-white/10 text-white" />
+            <span class="hidden sm:block text-slate-300">精选全球科技、效率工具与行业趋势资讯</span>
           </div>
-          <h2 class="text-2xl font-semibold text-gray-900 dark:text-white">
+          <h1 class="text-3xl font-semibold tracking-tight sm:text-4xl">
             灵感探索中心
-          </h2>
-        </div>
-        <div class="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-          <UIcon name="i-lucide-clock-3" class="text-primary" />
-          <span v-if="lastSyncSummary">{{ lastSyncSummary }}</span>
-          <span v-else>尚未同步资讯</span>
-        </div>
-      </header>
+          </h1>
+          <p class="max-w-xl text-sm text-slate-300">
+            从海量资讯中筛选真正值得记录的内容。通过主题、时间和关键词筛选，及时将焦点资讯转化为你的结构化记忆。
+          </p>
 
-      <UFormField
-        label="搜索资讯或话题"
-        class="space-y-3"
-      >
-        <div class="flex flex-col gap-3 lg:flex-row lg:items-center">
-          <UInput
-            :model-value="searchQuery"
-            placeholder="输入关键词，例如 “AI 知识管理”"
-            size="lg"
-            icon="i-lucide-search"
-            class="flex-1"
-            @update:model-value="value => emit('update:searchQuery', value)"
-            @keyup.enter="handleSubmit"
-          />
-          <div class="flex flex-wrap items-center gap-2">
-            <UButton
-              color="primary"
-              size="lg"
-              :loading="isSyncing"
-              icon="i-lucide-radar"
-              @click="handleSubmit"
-            >
-              获取最新资讯
-            </UButton>
-            <UButton
-              variant="soft"
-              size="lg"
-              icon="i-lucide-inbox"
-              @click="emit('open-history')"
-            >
-              查看已生成记忆
-            </UButton>
+          <div class="flex flex-wrap items-center gap-3 text-xs text-slate-300/90">
+            <UIcon name="i-lucide-clock-3" class="text-primary-light" />
+            <span>{{ syncLabel }}</span>
           </div>
         </div>
-      </UFormField>
 
-      <div class="grid gap-3 sm:grid-cols-3">
-        <div class="stat-card">
-          <span class="stat-label">待筛选资讯</span>
-          <span class="stat-value">{{ stats.total }}</span>
-          <span class="stat-hint">同步后自动更新</span>
+        <div class="flex flex-col gap-4">
+          <label class="text-xs font-medium uppercase tracking-widest text-slate-300/80">搜索资讯或话题</label>
+          <div class="flex flex-col gap-3 lg:flex-row lg:items-center">
+            <UInput
+              :model-value="searchQuery"
+              placeholder="输入关键词，例如 “AI 知识管理”"
+              size="lg"
+              icon="i-lucide-search"
+              class="flex-1"
+              color="white"
+              @update:model-value="handleSearchUpdate"
+              @keyup.enter="handleSubmit"
+            />
+            <div class="flex flex-wrap items-center gap-2">
+              <UButton
+                color="primary"
+                size="lg"
+                :loading="isSyncing"
+                icon="i-lucide-radar"
+                @click="handleSubmit"
+              >
+                获取最新资讯
+              </UButton>
+              <UButton
+                variant="soft"
+                size="lg"
+                color="white"
+                icon="i-lucide-inbox"
+                class="text-slate-900"
+                @click="emit('open-history')"
+              >
+                查看已生成记忆
+              </UButton>
+            </div>
+          </div>
         </div>
-        <div class="stat-card">
-          <span class="stat-label">今日新增</span>
-          <span class="stat-value">{{ stats.today }}</span>
-          <span class="stat-hint">基于发布时间统计</span>
+
+        <div class="grid gap-3 sm:grid-cols-3">
+          <div class="stat-card">
+            <span class="stat-label">待筛选资讯</span>
+            <span class="stat-value">{{ stats.total }}</span>
+            <span class="stat-hint">同步后实时更新</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">今日新增</span>
+            <span class="stat-value">{{ stats.today }}</span>
+            <span class="stat-hint">基于发布时间统计</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">近 7 日热点</span>
+            <span class="stat-value">{{ stats.thisWeek }}</span>
+            <span class="stat-hint">帮助你快速了解趋势</span>
+          </div>
         </div>
-        <div class="stat-card">
-          <span class="stat-label">近 7 日热点</span>
-          <span class="stat-value">{{ stats.thisWeek }}</span>
-          <span class="stat-hint">帮助你快速了解趋势</span>
+      </div>
+
+      <div class="relative flex min-h-[280px] flex-col justify-between overflow-hidden rounded-3xl border border-white/10 bg-white/5 p-6 shadow-2xl">
+        <div class="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(56,189,248,0.18),_transparent_60%)]" />
+        <div class="relative flex flex-col gap-4">
+          <div class="flex items-center gap-2 text-xs uppercase tracking-widest text-slate-200/80">
+            <UIcon name="i-lucide-star" class="text-primary-light" />
+            <span>今日焦点</span>
+          </div>
+          <h3 class="text-xl font-semibold leading-snug text-white">
+            {{ highlightTitle }}
+          </h3>
+          <p class="text-sm leading-relaxed text-slate-200/90">
+            {{ highlightSummary }}
+          </p>
+        </div>
+        <div class="relative flex items-center justify-between text-xs text-slate-200/70">
+          <div class="flex items-center gap-2">
+            <UIcon name="i-lucide-compass" class="text-primary-light" />
+            <span>{{ highlightSource }}</span>
+          </div>
+          <span class="rounded-full bg-white/10 px-3 py-1 text-[11px] uppercase tracking-widest">自动推荐</span>
         </div>
       </div>
     </div>
@@ -110,49 +150,35 @@ const handleSubmit = () => {
 .stat-card {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: 0.35rem;
   border-radius: 1rem;
-  border: 1px solid rgba(255, 255, 255, 0.4);
-  background-color: rgba(255, 255, 255, 0.7);
-  padding: 1rem;
-  color: #334155;
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+  border: 1px solid rgba(148, 163, 254, 0.25);
+  background: linear-gradient(145deg, rgba(30, 41, 59, 0.65), rgba(30, 41, 59, 0.35));
+  padding: 1rem 1.25rem;
+  color: #e2e8f0;
+  box-shadow: 0 20px 45px rgba(15, 23, 42, 0.25);
   backdrop-filter: blur(18px);
 }
 
-:global(.dark) .stat-card {
-  border-color: rgba(51, 65, 85, 0.5);
-  background-color: rgba(15, 23, 42, 0.7);
-  color: #cbd5f5;
-}
-
 .stat-label {
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #64748b;
-}
-
-:global(.dark) .stat-label {
-  color: #94a3b8;
+  color: rgba(226, 232, 240, 0.7);
 }
 
 .stat-value {
-  font-size: 1.75rem;
+  font-size: 1.9rem;
   font-weight: 600;
-  color: #0f172a;
-}
-
-:global(.dark) .stat-value {
-  color: #f8fafc;
+  color: white;
 }
 
 .stat-hint {
   font-size: 0.75rem;
-  color: #94a3b8;
+  color: rgba(226, 232, 240, 0.8);
 }
 
-:global(.dark) .stat-hint {
-  color: #64748b;
+.text-primary-light {
+  color: #93c5fd;
 }
 </style>
