@@ -239,7 +239,7 @@ const openDetailPage = (note: NoteRecord) => {
           </div>
         </template>
 
-        <div v-if="section.items.length" class="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+  <div v-if="section.items.length" class="memory-grid grid gap-6 md:grid-cols-2 xl:grid-cols-3">
           <MemoryCard
             v-for="note in section.items"
             :key="note.id"
@@ -291,5 +291,9 @@ const openDetailPage = (note: NoteRecord) => {
 .memory-card-item:hover {
   transform: translateY(-4px);
   box-shadow: 0 18px 36px rgba(15, 23, 42, 0.16);
+}
+
+.memory-grid {
+  grid-auto-rows: 1fr;
 }
 </style>

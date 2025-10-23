@@ -9,7 +9,7 @@
     :style="cardStyle"
   >
     <UCard 
-      class="memory-card transition-all duration-700 ease-out"
+      class="memory-card transition-all duration-700 ease-out flex flex-col h-full"
       :class="{
         'card-fading': fadeLevel > 0,
         'card-blurred': fadeLevel > 2,
@@ -96,7 +96,7 @@
       </div>
 
       <template #footer>
-        <div class="flex justify-between items-center">
+  <div class="memory-footer flex justify-between items-center">
           <div class="flex space-x-2">
             <UButton 
               size="sm" 
@@ -231,6 +231,13 @@ const handleForget = () => emit('forget')
   transition: all 0.7s cubic-bezier(0.4, 0, 0.2, 1);
   transform-origin: center;
   position: relative;
+  height: 100%;
+}
+
+.memory-card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }
 
 /* 重要度样式 */
@@ -324,6 +331,18 @@ const handleForget = () => emit('forget')
   filter: grayscale(50%) brightness(0.8);
 }
 
+.memory-meta {
+  min-width: 0;
+}
+
+.memory-title {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  word-break: break-word;
+}
+
 /* 文字渐变效果 */
 .text-fading {
   color: rgba(156, 163, 175, 0.8);
@@ -332,6 +351,9 @@ const handleForget = () => emit('forget')
 /* 内容区域效果 */
 .memory-content {
   position: relative;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 
 .content-fading {
@@ -339,8 +361,12 @@ const handleForget = () => emit('forget')
 }
 
 .memory-snippet {
-  max-height: 8rem;
+  flex: 1;
   overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  word-break: break-word;
 }
 
 .content-blurred {
@@ -352,6 +378,7 @@ const handleForget = () => emit('forget')
   max-height: 0;
   padding: 0;
   overflow: hidden;
+  flex: 0 !important;
 }
 
 /* 遗忘指示器 */
@@ -366,6 +393,10 @@ const handleForget = () => emit('forget')
   padding: 2px 6px;
   border-radius: 4px;
   font-size: 0.75rem;
+}
+
+.memory-footer {
+  margin-top: auto;
 }
 
 /* 遗忘提示 */
