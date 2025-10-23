@@ -40,6 +40,7 @@ const {
 
 const DEFAULT_FETCH_LIMIT = 20
 const fetchLimit = ref<number | null>(DEFAULT_FETCH_LIMIT)
+const searchWasActive = ref(false)
 
 const displayItems = computed(() => {
   const items = filteredItems.value
@@ -72,8 +73,17 @@ const handleFetchLatest = () => emit('fetch', {
   limit: resolveLimit()
 })
 const handleRefresh = () => emit('refresh')
-const handleSearchQueryUpdate = (value: string) => {
-  searchQuery.value = value
+const handleSearchQueryUpdate = (value: string | null | undefined) => {
+  const normalized = typeof value === 'string' ? value : ''
+  searchQuery.value = normalized
+
+  const trimmed = normalized.trim()
+  const previouslyActive = searchWasActive.value
+  searchWasActive.value = trimmed.length > 0
+
+  if (previouslyActive && trimmed.length === 0) {
+    emit('refresh')
+  }
 }
 const handleFetchLimitUpdate = (value: number | null) => {
   fetchLimit.value = value
