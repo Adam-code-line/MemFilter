@@ -72,21 +72,17 @@ const handleCopy = async () => {
 }
 
 const deriveTitle = (summary: string | null, content: string) => {
-  const candidate = (summary || content).split(/\r?\n/).find(line => line.trim().length) ?? content
+  const summaryCandidate = summary?.replace(/\s+/g, ' ').trim()
+  if (summaryCandidate && summaryCandidate.length) {
+    return summaryCandidate.length > 36 ? `${summaryCandidate.slice(0, 36)}…` : summaryCandidate
+  }
+
+  const candidate = content.split(/\r?\n/).find(line => line.trim().length) ?? content
   const trimmed = candidate.trim()
   if (!trimmed) {
     return '新建记忆'
   }
   return trimmed.length > 36 ? `${trimmed.slice(0, 36)}…` : trimmed
-}
-
-const deriveDescription = (summary: string | null, content: string) => {
-  const base = summary ?? content
-  const normalized = base.replace(/\s+/g, ' ').trim()
-  if (!normalized) {
-    return ''
-  }
-  return normalized.length > 140 ? `${normalized.slice(0, 140)}…` : normalized
 }
 
 const handleCreateNote = async () => {
@@ -129,7 +125,7 @@ const handleCreateNote = async () => {
     const payload: NoteSavePayload = {
       title: deriveTitle(summary, text),
       content: text,
-      description: deriveDescription(summary, text),
+      description: '',
       importance,
       aiEvaluation: evaluation ?? null,
       aiCompression: compression ?? null

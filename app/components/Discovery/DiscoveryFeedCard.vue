@@ -30,7 +30,7 @@ const isCompact = computed(() => variant.value === 'compact')
 
 <template>
   <UCard
-    class="feed-card h-full border border-gray-200/70 transition hover:border-primary/40 hover:shadow-lg dark:border-slate-700/40 dark:hover:border-primary/40"
+      class="feed-card h-full border border-transparent bg-slate-900/95 text-slate-200 transition hover:border-primary/40 hover:shadow-xl dark:bg-slate-900/80"
     :class="[
       highlight ? 'ring-2 ring-primary/40' : '',
       isCompact ? 'feed-card-compact' : 'feed-card-wide'
@@ -41,10 +41,10 @@ const isCompact = computed(() => variant.value === 'compact')
         <div class="space-y-1">
           <div class="flex flex-wrap items-center gap-2" :class="isCompact ? 'text-[11px]' : ''">
             <UBadge :label="primaryTag" color="primary" variant="soft" :size="isCompact ? 'xs' : 'sm'" />
-            <span class="text-xs text-gray-400 dark:text-slate-400">{{ props.item.source }}</span>
+            <span class="text-xs text-slate-300/80">{{ props.item.source }}</span>
           </div>
           <h3
-            class="font-semibold text-gray-900 transition-colors dark:text-white"
+            class="font-semibold text-white transition-colors"
             :class="isCompact ? 'text-base leading-snug line-clamp-2' : 'text-lg leading-snug'"
           >
             {{ props.item.title }}
@@ -61,23 +61,23 @@ const isCompact = computed(() => variant.value === 'compact')
 
       <p
         v-if="!isCompact"
-        class="text-sm leading-relaxed text-gray-600 dark:text-slate-300"
+        class="text-sm leading-relaxed text-slate-200/80"
       >
         {{ props.item.summary }}
       </p>
       <p
         v-else
-        class="text-xs leading-relaxed text-gray-500 line-clamp-3 dark:text-slate-300/80"
+        class="text-xs leading-relaxed text-slate-300/80 line-clamp-3"
       >
         {{ props.item.summary }}
       </p>
 
       <div
-        class="flex flex-wrap items-center gap-3 text-gray-400 dark:text-slate-400"
+        class="flex flex-wrap items-center gap-3 text-slate-400/80"
         :class="isCompact ? 'text-[11px]' : 'text-xs'"
       >
         <div class="flex items-center gap-1">
-          <UIcon name="i-lucide-calendar-days" class="text-primary" />
+          <UIcon name="i-lucide-calendar-days" class="text-sky-300" />
           <span>{{ publishedLabel }}</span>
         </div>
         <div class="flex flex-wrap gap-1">
@@ -93,8 +93,8 @@ const isCompact = computed(() => variant.value === 'compact')
       </div>
 
       <div class="flex flex-wrap items-center justify-between gap-3">
-        <div class="flex items-center gap-2 text-gray-400 dark:text-slate-400" :class="isCompact ? 'text-[11px]' : 'text-xs'">
-          <UIcon :name="isCompact ? 'i-lucide-notebook-pen' : 'i-lucide-lightbulb'" />
+        <div class="flex items-center gap-2 text-slate-400/70" :class="isCompact ? 'text-[11px]' : 'text-xs'">
+          <UIcon :name="isCompact ? 'i-lucide-notebook-pen' : 'i-lucide-lightbulb'" class="text-sky-300" />
           <span>{{ isCompact ? '快速收藏稍后整理。' : '快速整理这条资讯，生成结构化记忆。' }}</span>
         </div>
         <div class="flex items-center gap-2">
@@ -117,6 +117,9 @@ const isCompact = computed(() => variant.value === 'compact')
 .feed-card {
   border-radius: 1.5rem;
   overflow: hidden;
+  background: linear-gradient(140deg, rgba(15, 23, 42, 0.94), rgba(15, 118, 214, 0.12));
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.35);
+  backdrop-filter: blur(12px);
 }
 
 .feed-card-wide {
@@ -125,11 +128,7 @@ const isCompact = computed(() => variant.value === 'compact')
 
 .feed-card-compact {
   padding: 1.25rem;
-  background: linear-gradient(160deg, rgba(248, 250, 252, 0.9), rgba(226, 232, 240, 0.4));
-}
-
-:global(.dark) .feed-card-compact {
-  background: linear-gradient(160deg, rgba(15, 23, 42, 0.75), rgba(30, 41, 59, 0.6));
+  background: linear-gradient(150deg, rgba(15, 23, 42, 0.92), rgba(14, 116, 144, 0.2));
 }
 
 .line-clamp-2 {

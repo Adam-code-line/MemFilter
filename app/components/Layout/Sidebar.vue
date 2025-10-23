@@ -39,18 +39,6 @@ const aiItems = computed<NavigationMenuItem[]>(() => [
     icon: 'i-lucide-brain-circuit',
     active: route.path === '/ai-chat'
   },
-  {
-    label: '重要度评估',
-    to: '/home',
-    icon: 'i-lucide-star',
-    active: route.path === '/importance'
-  },
-  {
-    label: '遗忘策略',
-    to: '/home',
-    icon: 'i-lucide-settings-2',
-    active: route.path === '/strategy'
-  }
 ])
 
 // 设置和帮助

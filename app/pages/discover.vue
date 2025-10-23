@@ -72,7 +72,7 @@ onMounted(async () => {
 })
 
 useHead(() => ({
-  title: '灵感探索中心'
+  title: '探索中心'
 }))
 </script>
 

@@ -5,37 +5,35 @@ Keep this file short (20–50 lines) and actionable. Reference key files and exa
 
 # Copilot instructions (repo-specific)
 
-MemFilter is a Nuxt 4 + `@nuxt/ui` app that pairs a content-driven landing page with an authenticated workspace. Use the notes below to stay aligned with existing patterns.
+MemFilter is a Nuxt 4 + `@nuxt/ui` workspace that blends a content-driven landing page with an authenticated “memory” dashboard. Use the points below to stay aligned.
 
 - **Run & verify**
-  - Install with `pnpm install`; `postinstall` already runs `nuxt prepare`.
-  - `pnpm dev` serves the app with Nuxt DevTools; `pnpm build` → `pnpm preview` for production smoke checks.
+  - Install with `pnpm install` (runs `nuxt prepare` automatically). Use `pnpm dev` for local work, and `pnpm build` (via `scripts/build.mjs` to silence Node warnings) followed by `pnpm preview` for production smoke tests.
 
-- **Architecture**
-  - `app/layouts/default.vue` handles the marketing shell, while `app/layouts/app.vue` wires the dashboard header/sidebar; pick the right layout via `definePageMeta`.
-  - Page copy comes from `@nuxt/content` (`queryCollection('index'|'home'|'login')`); schemas live in `content.config.ts`, so keep YAML in `content/*.yml` within those constraints.
-  - `/login` and `/signup` redirect to `/auth/[mode]` through `nitro.routeRules` in `nuxt.config.ts`.
+- **Runtime config**
+  - `.env` must provide `MYSQL_*`, `AUTH_SESSION_*`, `TIAN_API_KEY`, and `AI_*` values (`nuxt.config.ts` maps them into `runtimeConfig`). Missing AI keys trigger a mock response in `server/api/chat/complete.post.ts`; keep it intact for offline demos.
 
-- **UI primitives**
-  - `@nuxt/ui` auto-imports all `U*` components; theme colors are configured in `app/app.config.ts`.
-  - Landing visuals rely on `app/components/Floating/**` and `CommonFloatingCard` for glassmorphism effects—reuse these wrappers instead of bespoke sections.
-  - Auth/dashboard screens pair `UCard`, `UModal`, `UForm`, and `UBadge`; see `app/pages/note.vue` and `NoteEditor.vue` for standard button groups and badge usage.
+- **Layouts & navigation**
+  - Marketing pages default to `app/layouts/default.vue`; authenticated routes declare `definePageMeta({ layout: 'app' })`. `app/middleware/auth.global.ts` restores the session (via the `plugins/auth.ts` bootstrap) and reroutes guests to `/auth/login` unless a page sets `meta.auth.public`.
+  - Route aliases for `/login` and `/signup` are handled by Nitro `routeRules`; don’t register duplicate routes.
 
-- **Auth flow**
-  - `app/pages/auth/[mode].vue` delegates to composables in `app/composables/auth/*` (`useAuthRoute`, `useAuthConfig`, `useAuthForm`, `useAuthValidation`); extend auth logic inside these composables, not inside the page.
-  - `useAuth` currently mocks network calls—swap in your API fetch here and keep router navigation within the composable.
+- **Content-first landing**
+  - Landing copy lives in YAML under `content/*.yml`. Every field is validated against `content.config.ts`; keep new enums in sync or the build fails. Pages fetch data with `queryCollection()` (see `app/pages/index.vue`) and pass it into floating hero/section components instead of hard-coding markup.
 
-- **Content rendering**
-  - Hero sections render markdown via `<MDC>` inside `FloatingHeroSection.vue`; use the same approach for new content-driven blocks.
-  - Button/link metadata from content must respect the Zod enums (`variant`, `color`, `size`, etc.) in `content.config.ts` to avoid validation failures.
+- **Auth & persistence**
+  - `stores/auth.ts` drives auth state; API calls go through `app/composables/auth/useAuthApi.ts`, and server handlers use `useAuthService` + MySQL (`server/utils/db.ts`) to hash passwords (`usePasswordHash`) and mint cookies. Rely on `useAuthStore().initialize()` rather than duplicating session reads.
 
-- **Notes & memory domain**
-  - `app/pages/note.vue` expects note objects with `importance`, `fadeLevel` (0–4), and `forgettingProgress`; normalize API payloads to that shape before rendering.
-  - Note surfaces reuse `MemoryCard.vue`, `MemoryItem.vue`, and `NoteEditor.vue`, which emit events such as `@restore`, `@accelerate-forgetting`, and `@save`—wire new features through those events.
+- **Notes domain**
+  - The Pinia `notes` store (`stores/notes.ts`) owns note hydration, fading math, and AI-derived metadata. Use `useNotesApi` for CRUD so data flows through `server/api/notes/**` and `useNotesService`, which enforces ownership and serializes JSON columns.
+  - UI surfaces (`app/components/Note/**`, `app/pages/note.vue`, `app/pages/memory/*.vue`) expect `NoteRecord` shapes with fields like `fadeLevel`, `forgettingProgress`, and `aiEvaluation`; use store helpers (`upsertNote`, `restoreNote`, etc.) to keep that logic consistent.
 
-- **Conventions**
-  - Components follow `<script setup lang="ts">`, `withDefaults(defineProps())`, and explicit `defineEmits`; match that structure when adding UI.
-  - Styling lives in scoped blocks or Tailwind utilities (`app/assets/css/main.css` contains any globals).
-  - Add shared logic inside `app/composables/**` so Nuxt auto-imports it across pages.
+- **AI chat surface**
+  - `app/pages/ai-chat.vue` combines `useAIChat` (streaming SSE client) with `useAIChatSessions` (localStorage persistence). Server streaming runs through `/api/chat/complete`, which proxies BigModel or emits mock chunks—maintain SSE formatting if you adjust either side.
 
-If you hit an unfamiliar pattern, inspect the nearest existing component/composable and mirror its structure before extending it—ping maintainers when something stays unclear.
+- **Ingestion pipeline**
+  - Memory sources and raw items live in MySQL via `useIngestionService`; TianAPI pulls require `TIAN_API_KEY`, otherwise fallback demo items fill the list. Promoting an item calls `useNotesService.create`, so ingestion must stay in sync with note schemas.
+
+- **UI conventions**
+  - Components follow `<script setup lang="ts">`, rely on auto-imported `U*` controls, and keep shared helpers in `app/composables/**`. Styling sticks to Tailwind utilities plus scoped CSS (global tweaks reside in `app/assets/css/main.css`). Floating glassmorphism blocks come from `app/components/Floating/**`—reuse them for new marketing sections.
+
+Cross-check nearby files before deviating from these patterns, and surface any missing context so we can expand this guide.

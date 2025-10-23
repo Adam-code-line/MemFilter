@@ -52,7 +52,7 @@ const handleSearchUpdate = (value: string) => {
             <span class="hidden sm:block text-slate-300">精选全球科技、效率工具与行业趋势资讯</span>
           </div>
           <h1 class="text-3xl font-semibold tracking-tight sm:text-4xl">
-            灵感探索中心
+            探索中心
           </h1>
           <p class="max-w-xl text-sm text-slate-300">
             从海量资讯中筛选真正值得记录的内容。通过主题、时间和关键词筛选，及时将焦点资讯转化为你的结构化记忆。
