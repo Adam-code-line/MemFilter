@@ -61,6 +61,10 @@ export interface MemoryRawItem {
 export const ingestionSourceTypes = ['tianapi-general'] as const
 export type IngestionSourceType = typeof ingestionSourceTypes[number]
 
+const DEFAULT_INGESTION_KEYWORDS = ['互联网', '前端', '后端', 'AI'] as const
+const DEFAULT_FETCH_LIMIT = 20
+const MAX_FETCH_LIMIT = 50
+
 type SessionUser = {
   id: string
   name: string
@@ -74,7 +78,10 @@ const sourceSchema = z.object({
   config: z.record(z.string(), z.unknown()).optional()
 })
 
-const updateSourceSchema = sourceSchema.partial({ name: true, config: true }).extend({
+const updateSourceSchema = z.object({
+  name: z.string().min(2).max(120).optional(),
+  type: z.enum(ingestionSourceTypes).optional(),
+  config: z.record(z.string(), z.unknown()).optional(),
   isActive: z.boolean().optional()
 })
 
@@ -224,7 +231,7 @@ const sanitizeApiName = (value: unknown): string => {
 
 const fetchTianApiNews = async (
   keywords: string[] | undefined,
-  options: { apiName?: unknown; allowFallback?: boolean } = {}
+  options: { apiName?: unknown; allowFallback?: boolean; limit?: number | null } = {}
 ) => {
   const runtimeConfig = useRuntimeConfig()
   const apiKey = runtimeConfig.ingestion.tianApiKey
@@ -236,7 +243,15 @@ const fetchTianApiNews = async (
 
   const apiName = sanitizeApiName(options.apiName)
   const allowFallback = options.allowFallback !== false
-  const body: Record<string, string> = { key: apiKey, num: '20' }
+  const body: Record<string, string> = { key: apiKey }
+
+  const limit = typeof options.limit === 'number' && Number.isFinite(options.limit)
+    ? Math.max(1, Math.min(MAX_FETCH_LIMIT, Math.floor(options.limit)))
+    : null
+
+  if (limit !== null) {
+    body.num = String(limit)
+  }
 
   if (apiName === 'internet' && keywords?.length) {
     body.word = keywords.join(',')
@@ -368,14 +383,17 @@ export const useIngestionService = async (event: H3Event) => {
     }
 
     const configValue = parsed.data.config ? JSON.stringify(parsed.data.config) : null
+    const typeValue = parsed.data.type ?? null
 
     await db.execute(
       `UPDATE memory_sources SET
+        type = COALESCE(?, type),
         name = COALESCE(?, name),
         config = COALESCE(?, config),
         is_active = COALESCE(?, is_active)
       WHERE id = ? AND user_id = ?`,
       [
+        typeValue,
         parsed.data.name ?? null,
         configValue,
         parsed.data.isActive !== undefined ? Number(parsed.data.isActive) : null,
@@ -408,7 +426,7 @@ export const useIngestionService = async (event: H3Event) => {
     return rows.map(mapRawItemRow)
   }
 
-  const syncSource = async (sourceId: string) => {
+  const syncSource = async (sourceId: string, options: { keywords?: string[] | null; limit?: number | null } = {}) => {
     const [sources] = await db.execute<MemorySourceRow[]>(
       'SELECT * FROM memory_sources WHERE id = ? AND user_id = ? LIMIT 1',
       [sourceId, user.id]
@@ -424,22 +442,53 @@ export const useIngestionService = async (event: H3Event) => {
     }
 
     const config = parseSourceConfig(source.config) ?? {}
+    const configRecord = config as Record<string, unknown>
+    const overrideKeywords = Array.isArray(options.keywords)
+      ? options.keywords.map(keyword => keyword.trim()).filter(Boolean)
+      : []
+    const overrideLimit = typeof options.limit === 'number' && Number.isFinite(options.limit)
+      ? Math.max(1, Math.min(MAX_FETCH_LIMIT, Math.floor(options.limit)))
+      : null
+
+    let configuredLimit: number | null = null
+    const configLimit = configRecord.limit
+    if (typeof configLimit === 'number' && Number.isFinite(configLimit)) {
+      configuredLimit = Math.max(1, Math.min(MAX_FETCH_LIMIT, Math.floor(configLimit)))
+    } else if (typeof configLimit === 'string') {
+      const parsed = Number.parseInt(configLimit, 10)
+      if (Number.isFinite(parsed)) {
+        configuredLimit = Math.max(1, Math.min(MAX_FETCH_LIMIT, parsed))
+      }
+    }
 
     let items: Array<{ externalId: string; title: string; content: string; url?: string; publishedAt?: string | undefined; source?: string | undefined }>
 
     switch (source.type as IngestionSourceType) {
       case 'tianapi-general': {
-        const configuredKeywords = Array.isArray(config.keywords)
-          ? (config.keywords.filter(item => typeof item === 'string') as string[])
-          : typeof config.keyword === 'string'
-            ? [config.keyword]
-            : undefined
+        let configuredKeywords: string[] | undefined
+        const rawKeywords = configRecord.keywords
 
-        const keywords = configuredKeywords && configuredKeywords.length
-          ? configuredKeywords
-          : ['互联网', '网易']
+        if (Array.isArray(rawKeywords)) {
+          configuredKeywords = rawKeywords
+            .map(keyword => (typeof keyword === 'string' ? keyword : String(keyword ?? '')).trim())
+            .filter(Boolean)
+        } else {
+          const legacyKeyword = configRecord.keyword
+          if (typeof legacyKeyword === 'string') {
+            const trimmed = legacyKeyword.trim()
+            configuredKeywords = trimmed.length ? [trimmed] : undefined
+          }
+        }
 
-        items = await fetchTianApiNews(keywords, { apiName: config.api })
+        const keywords = overrideKeywords.length
+          ? overrideKeywords
+          : configuredKeywords && configuredKeywords.length
+            ? configuredKeywords
+            : Array.from(DEFAULT_INGESTION_KEYWORDS)
+
+        const limit = overrideLimit ?? configuredLimit ?? DEFAULT_FETCH_LIMIT
+
+        items = await fetchTianApiNews(keywords, { apiName: configRecord.api, limit })
         break
       }
       default:

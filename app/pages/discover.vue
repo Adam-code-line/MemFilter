@@ -25,9 +25,12 @@ const lastSyncSummary = computed(() => {
   return `本次同步新增 ${result.inserted} 条 / 共 ${result.total} 条`
 })
 
-const handleFetch = async () => {
+const handleFetch = async (options?: { keywords?: string[] | null; limit?: number | null }) => {
   try {
-    await ingestion.syncAndFetch()
+    await ingestion.syncAndFetch({
+      keywords: options?.keywords ?? undefined,
+      limit: options?.limit ?? undefined
+    })
   } catch {
     // toast handled in manager
   }

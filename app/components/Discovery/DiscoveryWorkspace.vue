@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from '#imports'
+import { computed, ref } from '#imports'
 import type { MemoryRawItem } from '~/composables/services/useIngestionService'
 import { useDiscoveryFeed } from '~/composables/discovery/useDiscoveryFeed'
 import DiscoveryHero from '~/components/Discovery/DiscoveryHero.vue'
@@ -16,7 +16,7 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  (event: 'fetch'): void
+  (event: 'fetch', payload?: { keywords?: string[] | null; limit?: number | null }): void
   (event: 'refresh'): void
   (event: 'promote', item: MemoryRawItem): void
   (event: 'open-notes'): void
@@ -38,6 +38,9 @@ const {
   setTimeRange
 } = discovery
 
+const DEFAULT_FETCH_LIMIT = 20
+const fetchLimit = ref<number | null>(DEFAULT_FETCH_LIMIT)
+
 const displayItems = computed(() => {
   const items = filteredItems.value
   if (!highlightItem.value) {
@@ -48,8 +51,33 @@ const displayItems = computed(() => {
 
 const promotingKey = computed(() => (props.promotingId !== null ? String(props.promotingId) : null))
 
-const handleFetchLatest = () => emit('fetch')
+const extractKeywords = () => {
+  const raw = searchQuery.value.trim()
+  if (!raw.length) {
+    return null
+  }
+
+  const tokens = raw
+    .split(/[\s,，、；;]+/)
+    .map(token => token.trim())
+    .filter(Boolean)
+
+  return tokens.length ? tokens : null
+}
+
+const resolveLimit = () => fetchLimit.value
+
+const handleFetchLatest = () => emit('fetch', {
+  keywords: extractKeywords(),
+  limit: resolveLimit()
+})
 const handleRefresh = () => emit('refresh')
+const handleSearchQueryUpdate = (value: string) => {
+  searchQuery.value = value
+}
+const handleFetchLimitUpdate = (value: number | null) => {
+  fetchLimit.value = value
+}
 const handleOpenLink = (item: { link: string | null }) => {
   if (!item.link || typeof window === 'undefined') {
     return
@@ -67,9 +95,10 @@ const handleOpenLink = (item: { link: string | null }) => {
       :is-syncing="isSyncing"
       :last-sync-summary="lastSyncSummary"
       :highlight="highlightItem"
-      @update:search-query="value => (searchQuery.value = value)"
+      :fetch-limit="fetchLimit"
+      @update:search-query="handleSearchQueryUpdate"
+      @update:fetch-limit="handleFetchLimitUpdate"
       @fetch-latest="handleFetchLatest"
-      @open-history="emit('open-notes')"
     />
 
     <div class="grid flex-1 gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">

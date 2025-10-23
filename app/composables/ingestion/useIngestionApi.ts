@@ -38,8 +38,9 @@ export const useIngestionApi = () => {
     body: payload
   })
 
-  const syncSource = (id: string) => request<{ inserted: number; total: number }>(`/api/ingestion/sources/${id}/sync`, {
-    method: 'POST'
+  const syncSource = (id: string, payload?: { keywords?: string[]; limit?: number }) => request<{ inserted: number; total: number }>(`/api/ingestion/sources/${id}/sync`, {
+    method: 'POST',
+    body: payload
   })
 
   const listItems = (status?: 'pending' | 'processed' | 'failed') => request<MemoryRawItem[]>('/api/ingestion/items', {

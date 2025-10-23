@@ -12,14 +12,15 @@ const props = defineProps<{
   lastSyncSummary: string | null
   isSyncing: boolean
   highlight: DiscoveryFeedItem | null
+  fetchLimit: number | null
 }>()
 
-const { stats, searchQuery, highlight } = toRefs(props)
+const { stats, searchQuery, highlight, fetchLimit } = toRefs(props)
 
 const emit = defineEmits<{
   (event: 'update:searchQuery', value: string): void
+  (event: 'update:fetchLimit', value: number | null): void
   (event: 'fetch-latest'): void
-  (event: 'open-history'): void
 }>()
 
 const syncLabel = computed(() => props.lastSyncSummary ?? '尚未同步资讯')
@@ -27,12 +28,47 @@ const highlightTitle = computed(() => highlight.value?.title ?? '探索值得记
 const highlightSummary = computed(() => highlight.value?.summary ?? '同步资讯后，系统会推荐最值得关注的焦点话题，帮助你快速捕捉灵感。')
 const highlightSource = computed(() => highlight.value?.source ?? 'MemFilter 推荐')
 
-const handleSubmit = () => {
-  emit('fetch-latest')
+const limitOptions = [
+  { label: '自动·默认 20 条', value: null },
+  { label: '10 条', value: 10 },
+  { label: '20 条', value: 20 },
+  { label: '30 条', value: 30 },
+  { label: '40 条', value: 40 },
+  { label: '50 条', value: 50 }
+]
+
+const normalizeLimit = (value: unknown): number | null => {
+  if (value === null || value === undefined || value === '') {
+    return null
+  }
+
+  const numeric = Number(value)
+  if (!Number.isFinite(numeric) || numeric <= 0) {
+    return null
+  }
+
+  return Math.floor(numeric)
 }
 
-const handleSearchUpdate = (value: string) => {
-  emit('update:searchQuery', value)
+const searchModel = computed({
+  get: () => searchQuery.value,
+  set: value => emit('update:searchQuery', value)
+})
+
+const limitModel = computed({
+  get: () => fetchLimit.value ?? null,
+  set: value => {
+    if (value && typeof value === 'object' && 'value' in (value as Record<string, unknown>)) {
+      emit('update:fetchLimit', normalizeLimit((value as Record<string, unknown>).value))
+      return
+    }
+
+    emit('update:fetchLimit', normalizeLimit(value))
+  }
+})
+
+const handleSubmit = () => {
+  emit('fetch-latest')
 }
 </script>
 
@@ -66,36 +102,34 @@ const handleSearchUpdate = (value: string) => {
 
         <div class="flex flex-col gap-4">
           <label class="text-xs font-medium uppercase tracking-widest text-slate-300/80">搜索资讯或话题</label>
-          <div class="flex flex-col gap-3 lg:flex-row lg:items-center">
+          <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:gap-4">
             <UInput
-              :model-value="searchQuery"
+              v-model="searchModel"
               placeholder="输入关键词，例如 “AI 知识管理”"
               size="lg"
               icon="i-lucide-search"
               class="flex-1"
               color="white"
-              @update:model-value="handleSearchUpdate"
               @keyup.enter="handleSubmit"
             />
-            <div class="flex flex-wrap items-center gap-2">
+            <div class="flex items-stretch gap-2">
+              <USelect
+                v-model="limitModel"
+                :items="limitOptions"
+                option-attribute="label"
+                value-attribute="value"
+                placeholder="数量"
+                size="lg"
+              />
               <UButton
                 color="primary"
                 size="lg"
                 :loading="isSyncing"
                 icon="i-lucide-radar"
+                class="whitespace-nowrap"
                 @click="handleSubmit"
               >
                 获取最新资讯
-              </UButton>
-              <UButton
-                variant="soft"
-                size="lg"
-                color="white"
-                icon="i-lucide-inbox"
-                class="text-slate-900"
-                @click="emit('open-history')"
-              >
-                查看已生成记忆
               </UButton>
             </div>
           </div>

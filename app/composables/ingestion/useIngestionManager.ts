@@ -12,6 +12,7 @@ interface PromoteOptions {
 const DEFAULT_SOURCE_TYPE = 'tianapi-general'
 const DEFAULT_SOURCE_NAME = '中文资讯源'
 const DEFAULT_KEYWORDS = ['互联网', '前端', '后端', 'AI']
+const DEFAULT_LIMIT = 20
 
 export const useIngestionManager = () => {
   const ingestionApi = useIngestionApi()
@@ -49,7 +50,7 @@ export const useIngestionManager = () => {
           target = await ingestionApi.createSource({
             name: DEFAULT_SOURCE_NAME,
             type: DEFAULT_SOURCE_TYPE,
-            config: { keywords: DEFAULT_KEYWORDS }
+            config: { keywords: DEFAULT_KEYWORDS, limit: DEFAULT_LIMIT }
           })
           sourcesState.value = [...sourcesState.value, target]
         } else {
@@ -57,11 +58,19 @@ export const useIngestionManager = () => {
             ? target.config?.keywords.filter(item => typeof item === 'string')
             : []
 
-          const needsUpdate = existingKeywords.length === 0
+          const hasLimit = typeof target.config?.limit === 'number'
+
+          const needsUpdate = existingKeywords.length === 0 || !hasLimit
 
           if (needsUpdate) {
+            const nextConfig = {
+              ...(target.config ?? {}),
+              keywords: existingKeywords.length ? existingKeywords : DEFAULT_KEYWORDS,
+              limit: hasLimit ? target.config?.limit : DEFAULT_LIMIT
+            }
+
             const updatedTarget = await ingestionApi.updateSource(target.id, {
-              config: { keywords: DEFAULT_KEYWORDS }
+              config: nextConfig
             })
 
             target = updatedTarget
@@ -105,7 +114,7 @@ export const useIngestionManager = () => {
     }
   }
 
-  const syncAndFetch = async () => {
+  const syncAndFetch = async (options: { keywords?: string[] | null; limit?: number | null } = {}) => {
     const sourceId = await ensureDefaultSource()
     if (!sourceId) {
       return null
@@ -114,7 +123,28 @@ export const useIngestionManager = () => {
     isSyncing.value = true
 
     try {
-      const result = await ingestionApi.syncSource(sourceId)
+      const sanitizedKeywords = Array.isArray(options.keywords)
+        ? options.keywords.map(keyword => keyword.trim()).filter(Boolean)
+        : []
+
+      const sanitizedLimit = typeof options.limit === 'number' && Number.isFinite(options.limit)
+        ? Math.max(1, Math.min(50, Math.floor(options.limit)))
+        : null
+
+      const payload: { keywords?: string[]; limit?: number } = {}
+
+      if (sanitizedKeywords.length) {
+        payload.keywords = sanitizedKeywords
+      }
+
+      if (sanitizedLimit !== null) {
+        payload.limit = sanitizedLimit
+      }
+
+      const result = await ingestionApi.syncSource(
+        sourceId,
+        Object.keys(payload).length ? payload : undefined
+      )
       lastSyncResult.value = result
       await refreshPendingItems()
       if (result.inserted === 0) {
