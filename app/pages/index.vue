@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { link } from '#build/ui'
+import { useRouter } from '#imports'
+import { useAuthStore } from '~~/stores/auth'
 // SEO
 useHead({ 
   title: '忆滤 MemFilter - AI 遗忘引擎',
@@ -10,6 +11,9 @@ useHead({
 
 // fetch page data
 const { data: page } = await useAsyncData('index', () => queryCollection('index').first())
+
+const router = useRouter()
+const authStore = useAuthStore()
 
 // computed helpers and safe defaults
 const sections = computed(() => {
@@ -78,6 +82,11 @@ const ctaButton = computed(() => {
   const cta = page.value?.cta as any
   return cta?.button || null
 })
+
+const handleLandingCtaClick = () => {
+  const destination = authStore.isAuthenticated ? '/home' : '/auth/login'
+  router.push(destination)
+}
 </script>
 
 <template>
@@ -114,20 +123,17 @@ const ctaButton = computed(() => {
     
     <USeparator/>
 
-    <FloatingCTA
+    <div class="landing-cta" @click="handleLandingCtaClick">
+      <FloatingCTA
         :title="safeCTA.title"
         :description="safeCTA.description"
         :links="safeCTA.links"
         variant="naked"
-    >
-    <NuxtLink :link="heroPrimaryLink">
-
-    </NuxtLink>
-
-    </FloatingCTA>
+      />
+    </div>
     
     <!-- 浮动回到顶部按钮 -->
-    <CommonButton/>
+    <CommonButton icon = "rocket" />
   </div>
 </template>
 
@@ -153,5 +159,9 @@ const ctaButton = computed(() => {
 .hero-section-wrapper :deep(.hero-floating-section) {
   position: relative;
   z-index: 2;
+}
+
+.landing-cta {
+  cursor: pointer;
 }
 </style>
