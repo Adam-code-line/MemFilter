@@ -4,6 +4,9 @@ import { z } from 'zod'
 import { createError, getCookie, type H3Event } from 'h3'
 import { useRuntimeConfig } from '#imports'
 import { ensureAuthSchema, useMysql } from '~~/server/utils/db'
+import { fetchArticleContent } from '~~/server/utils/articleExtractor'
+import { storeArticleInVectorStore } from '~~/server/utils/qdrantStorage'
+import { summarizeArticleContent } from '~~/server/utils/articleSummarizer'
 import { useAuthService } from './useAuthService'
 import { useNotesService } from './useNotesService'
 
@@ -201,6 +204,26 @@ const mapRawItemRow = (row: MemoryRawItemRow): MemoryRawItem => ({
   errorMessage: row.error_message
 })
 
+const toStringOrNull = (value: unknown): string | null => {
+  if (typeof value === 'string') {
+    const trimmed = value.trim()
+    return trimmed.length ? trimmed : null
+  }
+  return null
+}
+
+const pickFirstNonEmpty = (...inputs: Array<string | null | undefined>): string | null => {
+  for (const entry of inputs) {
+    if (typeof entry === 'string') {
+      const trimmed = entry.trim()
+      if (trimmed.length) {
+        return trimmed
+      }
+    }
+  }
+  return null
+}
+
 const buildFallbackNews = () => [
   {
     externalId: randomUUID(),
@@ -208,7 +231,9 @@ const buildFallbackNews = () => [
     content: '由于外部资讯源暂不可用，这里展示了一条示例资讯，帮助你体验获取新记忆的流程。',
     url: 'https://example.com/memfilter-demo',
     publishedAt: new Date().toISOString(),
-    source: 'MemFilter Demo'
+    source: 'MemFilter Demo',
+    articleTitle: null,
+    articleContent: null
   },
   {
     externalId: randomUUID(),
@@ -216,7 +241,9 @@ const buildFallbackNews = () => [
     content: '请配置有效的天行数据 API Key 后即可拉取真实资讯，这条示例资讯用于占位。',
     url: 'https://example.com/productivity',
     publishedAt: new Date().toISOString(),
-    source: 'MemFilter Demo'
+    source: 'MemFilter Demo',
+    articleTitle: null,
+    articleContent: null
   }
 ]
 
@@ -304,14 +331,51 @@ const fetchTianApiNews = async (
       })
     }
 
-    return newslist.map(item => ({
-      externalId: item.id ?? item.url ?? randomUUID(),
-      title: item.title ?? '未命名资讯',
-      content: item.intro ?? '',
-      url: item.url,
-      publishedAt: item.ctime,
-      source: item.source
-    }))
+    const enriched = [] as Array<{
+      externalId: string
+      title: string
+      content: string
+      url?: string
+      publishedAt?: string
+      source?: string
+      articleTitle?: string | null
+      articleContent?: string | null
+      originalTitle?: string | null
+      originalSummary?: string | null
+    }>
+
+    for (const item of newslist) {
+      const url = typeof item.url === 'string' ? item.url : undefined
+      let articleTitle: string | null = null
+      let articleContent: string | null = null
+
+      if (url) {
+        try {
+          const article = await fetchArticleContent(url)
+          if (article) {
+            articleTitle = article.title ?? null
+            articleContent = article.content ?? null
+          }
+        } catch (error) {
+          console.warn('[ingestion] failed to extract article content', url, error)
+        }
+      }
+
+      enriched.push({
+        externalId: item.id ?? item.url ?? randomUUID(),
+        title: articleTitle ?? item.title ?? '未命名资讯',
+        content: articleContent ?? item.intro ?? '',
+        url,
+        publishedAt: item.ctime,
+        source: item.source,
+        articleTitle,
+        articleContent,
+        originalTitle: item.title ?? null,
+        originalSummary: item.intro ?? null
+      })
+    }
+
+    return enriched
   } catch (error) {
     console.error('[ingestion] Failed to fetch TianAPI news', error)
     if (error && typeof error === 'object' && 'statusCode' in error) {
@@ -461,7 +525,18 @@ export const useIngestionService = async (event: H3Event) => {
       }
     }
 
-    let items: Array<{ externalId: string; title: string; content: string; url?: string; publishedAt?: string | undefined; source?: string | undefined }>
+    let items: Array<{
+      externalId: string
+      title: string
+      content: string
+      url?: string
+      publishedAt?: string
+      source?: string
+      articleTitle?: string | null
+      articleContent?: string | null
+      originalTitle?: string | null
+      originalSummary?: string | null
+    }>
 
     switch (source.type as IngestionSourceType) {
       case 'tianapi-general': {
@@ -500,7 +575,11 @@ export const useIngestionService = async (event: H3Event) => {
       const payload = {
         url: item.url,
         publishedAt: item.publishedAt,
-        source: item.source
+        source: item.source,
+        articleTitle: item.articleTitle,
+        articleContent: item.articleContent,
+        originalTitle: item.originalTitle,
+        originalSummary: item.originalSummary
       }
 
       try {
@@ -518,6 +597,18 @@ export const useIngestionService = async (event: H3Event) => {
           ]
         )
         inserted += 1
+
+        if (item.articleContent) {
+          await storeArticleInVectorStore({
+            id: `${user.id}:${item.externalId}`,
+            title: item.articleTitle ?? item.title,
+            content: item.articleContent,
+            url: item.url,
+            source: item.source,
+            publishedAt: item.publishedAt ?? null,
+            userId: user.id
+          })
+        }
       } catch (error) {
         console.error('[ingestion] failed to upsert raw item', error)
       }
@@ -549,33 +640,51 @@ export const useIngestionService = async (event: H3Event) => {
     const rawRow = rows[0]
     const rawItem = mapRawItemRow(rawRow)
     const payloadRecord = rawItem.payload as Record<string, unknown> | null
-    const sourceLabel = payloadRecord && typeof payloadRecord.source === 'string'
-      ? (payloadRecord.source as string)
-      : undefined
-    const rawUrl = payloadRecord && typeof payloadRecord.url === 'string' ? String(payloadRecord.url) : null
+    const sourceLabel = toStringOrNull(payloadRecord?.['source']) ?? undefined
+    const rawUrl = toStringOrNull(payloadRecord?.['url'])
+    let articleContent = toStringOrNull(payloadRecord?.['articleContent'])
+    const originalSummary = toStringOrNull(payloadRecord?.['originalSummary'])
+    const originalTitle = toStringOrNull(payloadRecord?.['originalTitle'])
+    const requestedTitle = parsed.data.note.title ? parsed.data.note.title.trim() : ''
+    const baseTitle = pickFirstNonEmpty(rawItem.title, originalTitle, requestedTitle) ?? '自动生成记忆'
 
-    const resolveContent = () => {
-      const provided = (parsed.data.note.content ?? '').trim()
-      if (provided.length) {
-        return provided
+    if (!articleContent && rawUrl) {
+      try {
+        const fetched = await fetchArticleContent(rawUrl)
+        if (fetched?.content) {
+          articleContent = fetched.content.trim()
+        }
+      } catch (error) {
+        console.warn('[ingestion] retry fetch article during promotion failed', rawUrl, error)
       }
+    }
 
-      const rawContent = (rawItem.content ?? '').trim()
-      if (rawContent.length) {
-        return rawContent
-      }
+    const summarizerInput = pickFirstNonEmpty(articleContent, rawItem.content, originalSummary)
+    let rewrittenContent = summarizerInput
+      ? (await summarizeArticleContent({
+        title: baseTitle,
+        content: summarizerInput,
+        summary: originalSummary,
+        source: sourceLabel,
+        url: rawUrl ?? undefined
+      })).trim()
+      : ''
 
-      if (rawUrl) {
-        return `该资讯暂无摘要内容，请访问原文：${rawUrl}`
-      }
+    if (!rewrittenContent.length) {
+      const fallbackContent = pickFirstNonEmpty(parsed.data.note.content, rawItem.content, originalSummary)
+      rewrittenContent = fallbackContent ?? ''
+    }
 
-      return '该资讯暂无摘要内容，请查看原始来源。'
+    if (!rewrittenContent.length) {
+      rewrittenContent = rawUrl
+        ? `该资讯暂无摘要内容，请访问原文：${rawUrl}`
+        : '该资讯暂无摘要内容，请查看原始来源。'
     }
 
     const noteService = await useNotesService(event)
     const notePayload = {
-      title: parsed.data.note.title ?? rawItem.title ?? '自动生成记忆',
-      content: resolveContent(),
+      title: baseTitle,
+      content: rewrittenContent,
       description: sourceLabel,
       icon: '📰',
       importance: parsed.data.note.importance,

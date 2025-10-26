@@ -175,9 +175,18 @@ export const useIngestionManager = () => {
 
   const promoteRawItem = async (item: MemoryRawItem, options: PromoteOptions = {}) => {
     try {
-      const payload = item.payload ?? {}
-      const payloadUrl = typeof payload?.url === 'string' ? String(payload.url) : null
+      const payloadRecord = (item.payload ?? null) as Record<string, unknown> | null
+      const payloadUrl = typeof payloadRecord?.['url'] === 'string'
+        ? String(payloadRecord['url'])
+        : null
+      const payloadArticle = typeof payloadRecord?.['articleContent'] === 'string'
+        ? String(payloadRecord['articleContent'])
+        : null
       const resolvedContent = (() => {
+        const article = (payloadArticle ?? '').trim()
+        if (article.length) {
+          return article
+        }
         const trimmed = (item.content ?? '').trim()
         if (trimmed.length) {
           return trimmed
@@ -200,7 +209,7 @@ export const useIngestionManager = () => {
 
       toast.add({
         title: '记忆已生成',
-        description: '该资讯已加入你的记忆库',
+        description: 'AI 已整理原文并写入记忆正文。',
         color: 'success'
       })
 

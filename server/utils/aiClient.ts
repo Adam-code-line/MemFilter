@@ -23,7 +23,7 @@ export interface ChatCompletionResult {
   }
 }
 
-const DEFAULT_MODEL = 'glm-4.5-Flash'
+const DEFAULT_MODEL = 'glm-4.5-flash'
 const DEFAULT_TEMPERATURE = 0.3
 const DEFAULT_MAX_TOKENS = 800
 
