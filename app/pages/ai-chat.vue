@@ -52,10 +52,31 @@ const {
 } = useAIChatSessions()
 
 const modelOptions = computed(() => {
-  if (!availableModelNames.length) {
-    return [{ label: defaultModel.toUpperCase(), value: defaultModel }]
+  const ordered: string[] = []
+  const pushUnique = (value?: string | null) => {
+    const normalized = (value ?? '').trim()
+    if (!normalized) {
+      return
+    }
+    if (!ordered.includes(normalized)) {
+      ordered.push(normalized)
+    }
   }
-  return availableModelNames.map((value: string) => ({
+
+  pushUnique(defaultModel)
+  for (const name of availableModelNames) {
+    pushUnique(name)
+  }
+
+  // Ensure both flash and standard variants are always present for quick switching.
+  pushUnique('glm-4.5-flash')
+  pushUnique('glm-4.5')
+
+  if (!ordered.length) {
+    pushUnique('glm-4.5-flash')
+  }
+
+  return ordered.map(value => ({
     label: value.toUpperCase(),
     value
   }))
@@ -184,9 +205,14 @@ const handleSessionCreate = () => {
 }
 
 const handleSessionDelete = (id: string) => {
-  const fallback = deleteSession(id)
-  if (fallback) {
-    const session = setActiveSession(fallback.id)
+  const { deletedActive, nextActive } = deleteSession(id)
+
+  if (!deletedActive) {
+    return
+  }
+
+  if (nextActive) {
+    const session = setActiveSession(nextActive.id)
     loadSession(session)
   } else {
     const session = createSession({
@@ -196,6 +222,7 @@ const handleSessionDelete = (id: string) => {
     })
     loadSession(session)
   }
+
   scheduleSync()
 }
 

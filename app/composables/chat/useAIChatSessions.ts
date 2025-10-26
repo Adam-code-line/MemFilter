@@ -20,6 +20,11 @@ export interface UseAIChatSessionsOptions {
   storageKey?: string
 }
 
+export interface DeleteSessionResult {
+  deletedActive: boolean
+  nextActive: ChatSessionRecord | null
+}
+
 interface PersistedSessionPayload {
   id: string
   title: string
@@ -183,14 +188,23 @@ export const useAIChatSessions = (options: UseAIChatSessionsOptions = {}) => {
     persist()
   }
 
-  const deleteSession = (id: string) => {
+  const deleteSession = (id: string): DeleteSessionResult => {
     const filtered = sessions.value.filter(session => session.id !== id)
+    const removedActive = activeSessionId.value === id
+
     sessions.value = filtered
-    if (activeSessionId.value === id) {
-      activeSessionId.value = filtered[0]?.id ?? null
+
+    let nextActive: ChatSessionRecord | null = null
+    if (removedActive) {
+      nextActive = filtered[0] ?? null
+      activeSessionId.value = nextActive?.id ?? null
     }
+
     persist()
-    return filtered[0] ?? null
+    return {
+      deletedActive: removedActive,
+      nextActive
+    }
   }
 
   const syncActiveSession = (payload: {

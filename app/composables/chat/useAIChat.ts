@@ -52,71 +52,118 @@ const extractSseEvents = (buffer: string) => {
   return { events, buffer: remaining }
 }
 
+const unwrapStreamPayload = (raw: any) => {
+  let eventType: string | null = typeof raw?.event === 'string' ? raw.event.toLowerCase() : null
+  let current = raw
+
+  const drill = (node: any) => {
+    if (!node || typeof node !== 'object') {
+      return null
+    }
+    if (typeof node.event === 'string') {
+      eventType = node.event.toLowerCase()
+    }
+    if (node.data && typeof node.data === 'object') {
+      return node.data
+    }
+    return null
+  }
+
+  let nextNode = drill(current)
+  if (nextNode) {
+    current = nextNode
+  }
+
+  while (current && typeof current === 'object' && current.data && typeof current.data === 'object' && !Array.isArray(current.data)) {
+    const next = current.data
+    if (typeof next.event === 'string') {
+      eventType = next.event.toLowerCase()
+    }
+    if (next.choices || next.delta || next.content || next.answer) {
+      current = next
+      break
+    }
+    current = next
+  }
+
+  return { core: current, eventType }
+}
+
+const extractTextSegments = (source: any): string => {
+  if (!source) {
+    return ''
+  }
+  if (typeof source === 'string') {
+    return source
+  }
+  if (Array.isArray(source)) {
+    return source.map(item => extractTextSegments(item)).join('')
+  }
+  if (typeof source === 'object') {
+    if (typeof source.text === 'string') {
+      return source.text
+    }
+    if (typeof source.content === 'string') {
+      return source.content
+    }
+    if (typeof source.value === 'string') {
+      return source.value
+    }
+    if (Array.isArray(source.content)) {
+      return extractTextSegments(source.content)
+    }
+  }
+  return ''
+}
+
 const normalizeStreamDelta = (raw: string): StreamEventState | null => {
   if (!raw || raw === '[DONE]') {
     return { done: true }
   }
 
   try {
-    const parsed = JSON.parse(raw) as StreamEventState & {
-      choices?: Array<{
-        delta?: any
-        message?: any
-        finish_reason?: string | null
-      }>
-    }
+    const parsed = JSON.parse(raw)
 
-    if (parsed.error) {
+    if (parsed?.error || parsed?.code) {
       return {
-        error: parsed.error,
-        message: parsed.message ?? 'AI provider returned an error.'
+        error: parsed.error ?? parsed.code ?? 'upstream_error',
+        message: parsed.message ?? parsed.msg ?? 'AI provider returned an error.'
       }
     }
 
-    const choice = parsed.choices?.[0]
-    const delta = choice?.delta ?? {}
+    const { core, eventType } = unwrapStreamPayload(parsed)
 
-    const extractText = (source: any): string => {
-      if (!source) {
-        return ''
-      }
-      if (typeof source === 'string') {
-        return source
-      }
-      if (Array.isArray(source)) {
-        return source
-          .map(item => extractText(item))
-          .join('')
-      }
-      if (typeof source === 'object') {
-        if (typeof source.text === 'string') {
-          return source.text
-        }
-        if (typeof source.content === 'string') {
-          return source.content
-        }
-        if (Array.isArray(source.content)) {
-          return extractText(source.content)
-        }
-      }
-      return ''
+    if (!core || typeof core !== 'object') {
+      return null
     }
 
-    const text =
-      extractText(parsed.delta) ||
-      extractText(delta.content) ||
-      extractText(delta) ||
-      extractText(choice?.message?.content) ||
-      ''
+    if (core.error || core.code) {
+      return {
+        error: core.error ?? core.code ?? 'upstream_error',
+        message: core.message ?? core.msg ?? 'AI provider returned an error.'
+      }
+    }
 
-    const finishReason = choice?.finish_reason ?? (typeof parsed.finishReason === 'string' ? parsed.finishReason : null)
+    const choices = Array.isArray(core.choices) ? core.choices : []
+    const choice = choices[0]
+    const delta = choice?.delta ?? core.delta ?? {}
+    const deltaText = extractTextSegments(delta?.content)
+    const messageText =
+      extractTextSegments(choice?.message?.content) ||
+      extractTextSegments(core.content) ||
+      (typeof core.answer === 'string' ? core.answer : '')
+
+    const finishReason = choice?.finish_reason ?? core.finish_reason ?? null
+    const doneCandidate = core.done ?? delta?.done
+    const hasStopEvent = eventType ? ['stop', 'end', 'finish'].includes(eventType) : false
+    const isDone = Boolean((doneCandidate ?? false) || finishReason != null || hasStopEvent)
 
     return {
-      id: parsed.id ?? null,
-      delta: text,
-      done: Boolean(parsed.done ?? delta?.done ?? false),
+      id: core.id ?? parsed.id ?? null,
+      delta: typeof deltaText === 'string' && deltaText.length ? deltaText : undefined,
+      done: isDone,
       finishReason,
-      content: typeof parsed.content === 'string' ? parsed.content : undefined
+      content: messageText || undefined
     }
   } catch (error) {
     console.warn('[useAIChat] 无法解析 AI 流式片段', error, raw)
@@ -209,6 +256,7 @@ export const useAIChat = (options: UseAIChatOptions = {}) => {
     let aggregated = ''
     let responseId: string | null = null
     let finishReason: string | null = null
+    let latestContent: string | null = null
 
     while (true) {
       const { value, done } = await reader.read()
@@ -246,16 +294,30 @@ export const useAIChat = (options: UseAIChatOptions = {}) => {
           })
         }
 
+        if (typeof normalized.content === 'string' && normalized.content.length) {
+          latestContent = normalized.content
+        }
+
         if (normalized.done) {
           finishReason = normalized.finishReason ?? finishReason
-          if (typeof normalized.content === 'string' && normalized.content.length) {
-            aggregated = normalized.content
+          const finalContent = latestContent ?? aggregated
+          if (finalContent && finalContent.length) {
+            aggregated = finalContent
             updateMessage(placeholderId, {
-              content: aggregated
+              content: finalContent,
+              status: 'complete'
             })
           }
         }
       }
+    }
+
+    if (!aggregated.length && latestContent) {
+      aggregated = latestContent
+      updateMessage(placeholderId, {
+        content: latestContent,
+        status: 'complete'
+      })
     }
 
     return {

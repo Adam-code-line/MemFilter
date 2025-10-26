@@ -30,25 +30,87 @@ const extractTextFromDelta = (input: any): string => {
   if (Array.isArray(input)) {
     return input
       .map(item => {
+        if (!item) {
+          return ''
+        }
         if (typeof item === 'string') {
           return item
         }
-        if (item && typeof item === 'object') {
+        if (typeof item === 'object') {
           if (typeof item.text === 'string') {
             return item.text
           }
           if (typeof item.content === 'string') {
             return item.content
           }
+          if (typeof item.reasoning_content === 'string') {
+            return item.reasoning_content
+          }
+          if (typeof item.value === 'string') {
+            return item.value
+          }
         }
         return ''
       })
       .join('')
   }
-  if (typeof input === 'object' && typeof input.text === 'string') {
-    return input.text
+  if (typeof input === 'object') {
+    if (typeof input.text === 'string') {
+      return input.text
+    }
+    if (typeof input.content === 'string') {
+      return input.content
+    }
+    if (typeof input.reasoning_content === 'string') {
+      return input.reasoning_content
+    }
+    if (Array.isArray(input.content)) {
+      return extractTextFromDelta(input.content)
+    }
+    if (Array.isArray(input.reasoning_content)) {
+      return extractTextFromDelta(input.reasoning_content)
+    }
+    if (typeof input.value === 'string') {
+      return input.value
+    }
   }
   return ''
+}
+
+const unwrapStreamPayload = (raw: any) => {
+  let current = raw
+  let eventType: string | null = typeof raw?.event === 'string' ? raw.event.toLowerCase() : null
+
+  const dive = (node: any) => {
+    if (node && typeof node === 'object') {
+      if (typeof node.event === 'string') {
+        eventType = node.event.toLowerCase()
+      }
+      if (node.data && typeof node.data === 'object') {
+        return node.data
+      }
+    }
+    return null
+  }
+
+  let nextNode = dive(current)
+  if (nextNode) {
+    current = nextNode
+  }
+
+  while (current && typeof current === 'object' && current.data && typeof current.data === 'object' && !Array.isArray(current.data)) {
+    const next = current.data
+    if (typeof next.event === 'string') {
+      eventType = next.event.toLowerCase()
+    }
+    if (next.choices || next.delta || next.content || next.answer) {
+      current = next
+      break
+    }
+    current = next
+  }
+
+  return { core: current, eventType }
 }
 
 const transformUpstreamStream = (upstream: ReadableStream<Uint8Array>) =>
@@ -60,17 +122,19 @@ const transformUpstreamStream = (upstream: ReadableStream<Uint8Array>) =>
       let aggregated = ''
       let lastId: string | null = null
       let sentFinal = false
+      let latestAnswer = ''
 
       const sendFinal = (finishReason: string | null = null) => {
         if (sentFinal) {
           return
         }
         sentFinal = true
+        const finalContent = aggregated || latestAnswer
         emitSse(controller, {
           id: lastId ?? nanoid(),
           done: true,
           finishReason,
-          content: aggregated
+          content: finalContent
         })
         emitDone(controller)
       }
@@ -118,21 +182,42 @@ const transformUpstreamStream = (upstream: ReadableStream<Uint8Array>) =>
                 continue
               }
 
-              if (parsed.error) {
+              if (parsed?.error || parsed?.code) {
                 emitSse(controller, {
                   id: parsed.id ?? nanoid(),
-                  error: parsed.error,
-                  message: parsed.message ?? 'AI provider error'
+                  error: parsed.error ?? parsed.code ?? 'upstream_error',
+                  message: parsed.message ?? parsed.msg ?? 'AI provider error'
                 })
                 sendFinal('error')
                 return
               }
 
-              const choice = parsed.choices?.[0]
-              const delta = choice?.delta ?? {}
-              const text = extractTextFromDelta(delta.content ?? choice?.message?.content ?? '')
+              const { core, eventType } = unwrapStreamPayload(parsed)
 
-              const currentId = parsed.id ?? lastId ?? nanoid()
+              if (!core || typeof core !== 'object') {
+                continue
+              }
+
+              if (core.error || core.code) {
+                emitSse(controller, {
+                  id: core.id ?? parsed.id ?? nanoid(),
+                  error: core.error ?? core.code ?? 'upstream_error',
+                  message: core.message ?? core.msg ?? 'AI provider error'
+                })
+                sendFinal('error')
+                return
+              }
+
+              const choices = Array.isArray(core.choices) ? core.choices : []
+              const choice = choices[0]
+              const delta = choice?.delta ?? core.delta ?? {}
+              const chunkText = extractTextFromDelta(delta?.content)
+              const answerText = extractTextFromDelta(choice?.message?.content ?? core.content ?? core.answer ?? '')
+              if (answerText) {
+                latestAnswer = answerText
+              }
+              const text = chunkText
+              const currentId = core.id ?? parsed.id ?? lastId ?? nanoid()
 
               if (text) {
                 aggregated += text
@@ -142,11 +227,33 @@ const transformUpstreamStream = (upstream: ReadableStream<Uint8Array>) =>
                   delta: text,
                   done: false
                 })
+              } else if (typeof core.answer === 'string' && core.answer.length) {
+                aggregated += core.answer
+                lastId = currentId
+                emitSse(controller, {
+                  id: currentId,
+                  delta: core.answer,
+                  done: false
+                })
+              } else if (!aggregated && answerText) {
+                aggregated = answerText
+                lastId = currentId
+                emitSse(controller, {
+                  id: currentId,
+                  delta: answerText,
+                  done: false
+                })
               }
 
-              if (choice?.finish_reason) {
+              const finishReason = choice?.finish_reason ?? core.finish_reason ?? null
+              const isTerminalEvent = eventType === 'stop' || eventType === 'end' || eventType === 'finish'
+
+              if (finishReason || isTerminalEvent) {
+                if (!aggregated && latestAnswer) {
+                  aggregated = latestAnswer
+                }
                 lastId = currentId
-                sendFinal(choice.finish_reason)
+                sendFinal(finishReason ?? eventType ?? null)
                 return
               }
             }

@@ -41,10 +41,13 @@
           </div>
         </template>
         <div class="prose prose-invert max-w-none text-sm leading-relaxed">
-          <MDC
-            :value="markdownContent"
-            tag="div"
-          />
+          <div
+            v-if="markdownContent.length"
+            class="whitespace-pre-wrap break-words"
+          >
+            {{ markdownContent }}
+          </div>
+          <p v-else class="italic text-white/40">正在思考中...</p>
         </div>
         <template #footer>
           <div class="flex items-center justify-between text-[11px] uppercase tracking-wider text-white/40">

@@ -24,7 +24,7 @@
         <USelect
           v-if="modelOptions?.length"
           v-model="selectedModel"
-          :options="modelOptions"
+          :items="modelOptions"
           option-attribute="label"
           value-attribute="value"
           size="xs"
