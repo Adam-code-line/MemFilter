@@ -4,6 +4,7 @@ export interface AIChatMessage {
   content: string
   createdAt: string
   status?: 'streaming' | 'complete' | 'error'
+  streamingContent?: string | null
 }
 
 export interface SendAIChatPayload {

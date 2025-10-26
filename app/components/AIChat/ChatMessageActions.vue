@@ -4,7 +4,7 @@
       <UButton
         size="xs"
         variant="ghost"
-        color="gray"
+        color="primary"
         icon="i-lucide-copy"
         :disabled="!hasContent"
         @click="handleCopy"

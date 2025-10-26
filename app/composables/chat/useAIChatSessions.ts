@@ -43,7 +43,10 @@ const sanitizeMessages = (entries: AIChatMessage[]): AIChatMessage[] =>
   entries
     .filter(entry => entry && typeof entry.content === 'string')
     .map(entry => ({
-      ...entry,
+      ...(() => {
+        const { streamingContent: _streaming, ...rest } = entry
+        return rest
+      })(),
       id: entry.id ?? nanoid(),
       createdAt: entry.createdAt ?? new Date().toISOString()
     }))

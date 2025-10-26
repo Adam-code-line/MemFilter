@@ -44,7 +44,7 @@ const extractSseEvents = (buffer: string) => {
       .map(line => line.slice(5).trim())
       .join('\n')
 
-    if (payload) {
+    if (payload.length) {
       events.push(payload)
     }
   }
@@ -54,39 +54,46 @@ const extractSseEvents = (buffer: string) => {
 
 const unwrapStreamPayload = (raw: any) => {
   let eventType: string | null = typeof raw?.event === 'string' ? raw.event.toLowerCase() : null
-  let current = raw
+  let core = raw
 
-  const drill = (node: any) => {
+  const visit = (node: any): boolean => {
     if (!node || typeof node !== 'object') {
-      return null
+      return false
     }
-    if (typeof node.event === 'string') {
+
+    if (typeof node.event === 'string' && !eventType) {
       eventType = node.event.toLowerCase()
     }
-    if (node.data && typeof node.data === 'object') {
-      return node.data
+
+    if (node.choices || node.delta || node.content || node.answer) {
+      core = node
+      return true
     }
-    return null
+
+    if (node.data && visit(node.data)) {
+      return true
+    }
+
+    if (Array.isArray(node.result)) {
+      for (const item of node.result) {
+        if (visit(item)) {
+          return true
+        }
+      }
+    } else if (node.result && visit(node.result)) {
+      return true
+    }
+
+    if (node.message && visit(node.message)) {
+      return true
+    }
+
+    return false
   }
 
-  let nextNode = drill(current)
-  if (nextNode) {
-    current = nextNode
-  }
+  visit(raw)
 
-  while (current && typeof current === 'object' && current.data && typeof current.data === 'object' && !Array.isArray(current.data)) {
-    const next = current.data
-    if (typeof next.event === 'string') {
-      eventType = next.event.toLowerCase()
-    }
-    if (next.choices || next.delta || next.content || next.answer) {
-      current = next
-      break
-    }
-    current = next
-  }
-
-  return { core: current, eventType }
+  return { core, eventType }
 }
 
 const extractTextSegments = (source: any): string => {
@@ -146,8 +153,8 @@ const normalizeStreamDelta = (raw: string): StreamEventState | null => {
 
     const choices = Array.isArray(core.choices) ? core.choices : []
     const choice = choices[0]
-    const delta = choice?.delta ?? core.delta ?? {}
-    const deltaText = extractTextSegments(delta?.content)
+  const delta = choice?.delta ?? core.delta ?? {}
+  const deltaText = extractTextSegments(delta)
     const messageText =
       extractTextSegments(choice?.message?.content) ||
       extractTextSegments(core.content) ||
@@ -210,7 +217,7 @@ export const useAIChat = (options: UseAIChatOptions = {}) => {
   const formattedPayload = computed<SendAIChatPayload>(() => ({
     messages: messages.value
       .filter(message => message.role !== 'assistant' || message.content.trim().length)
-      .map(({ id: _id, ...entry }) => entry),
+      .map(({ id: _id, streamingContent: _streaming, ...entry }) => entry),
     model: activeModel.value ?? undefined,
     temperature
   }))
@@ -286,28 +293,40 @@ export const useAIChat = (options: UseAIChatOptions = {}) => {
           responseId = normalized.id
         }
 
+        let nextSnapshot: string | null = null
+
         if (typeof normalized.delta === 'string' && normalized.delta.length) {
           aggregated += normalized.delta
-          updateMessage(placeholderId, {
-            content: aggregated,
-            status: normalized.done ? 'complete' : 'streaming'
-          })
+          nextSnapshot = aggregated
         }
 
         if (typeof normalized.content === 'string' && normalized.content.length) {
           latestContent = normalized.content
+          if (!nextSnapshot || normalized.content.length >= nextSnapshot.length) {
+            aggregated = normalized.content
+            nextSnapshot = normalized.content
+          }
         }
 
         if (normalized.done) {
           finishReason = normalized.finishReason ?? finishReason
-          const finalContent = latestContent ?? aggregated
-          if (finalContent && finalContent.length) {
-            aggregated = finalContent
-            updateMessage(placeholderId, {
-              content: finalContent,
-              status: 'complete'
-            })
-          }
+        }
+
+        if (nextSnapshot && nextSnapshot.length) {
+          updateMessage(placeholderId, {
+            content: nextSnapshot,
+            streamingContent: normalized.done ? null : nextSnapshot,
+            status: normalized.done ? 'complete' : 'streaming'
+          })
+        }
+
+        if (normalized.done && !nextSnapshot && latestContent && latestContent.length) {
+          aggregated = latestContent
+          updateMessage(placeholderId, {
+            content: latestContent,
+            streamingContent: null,
+            status: 'complete'
+          })
         }
       }
     }
@@ -316,6 +335,7 @@ export const useAIChat = (options: UseAIChatOptions = {}) => {
       aggregated = latestContent
       updateMessage(placeholderId, {
         content: latestContent,
+        streamingContent: null,
         status: 'complete'
       })
     }
@@ -352,6 +372,7 @@ export const useAIChat = (options: UseAIChatOptions = {}) => {
       id: placeholderId,
       role: 'assistant',
       content: '',
+      streamingContent: '',
       createdAt: new Date().toISOString(),
       status: 'streaming'
     })
@@ -374,6 +395,7 @@ export const useAIChat = (options: UseAIChatOptions = {}) => {
       updateMessage(placeholderId, {
         id: responseId ?? placeholderId,
         content,
+          streamingContent: null,
         status: 'complete',
         createdAt: new Date().toISOString()
       })
@@ -382,6 +404,7 @@ export const useAIChat = (options: UseAIChatOptions = {}) => {
       if (err.name === 'AbortError') {
         updateMessage(placeholderId, {
           status: 'complete',
+           streamingContent: null,
           createdAt: new Date().toISOString()
         })
       } else {
@@ -389,6 +412,7 @@ export const useAIChat = (options: UseAIChatOptions = {}) => {
         errorMessage.value = err.message ?? 'AI 服务暂时不可用'
         updateMessage(placeholderId, {
           status: 'error',
+           streamingContent: null,
           content: '请求失败，请稍后再试。'
         })
       }

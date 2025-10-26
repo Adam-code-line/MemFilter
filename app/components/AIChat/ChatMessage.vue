@@ -40,13 +40,18 @@
             />
           </div>
         </template>
-        <div class="prose prose-invert max-w-none text-sm leading-relaxed">
+        <div class="text-sm leading-relaxed">
           <div
-            v-if="markdownContent.length"
-            class="whitespace-pre-wrap break-words"
+            v-if="isStreaming && streamingText.length"
+            class="whitespace-pre-wrap wrap-break-word text-white/90"
           >
-            {{ markdownContent }}
+            {{ streamingText }}
           </div>
+          <div
+            v-else-if="hasFinalContent"
+            class="prose prose-invert max-w-none wrap-break-word"
+            v-html="renderedMarkdown"
+          />
           <p v-else class="italic text-white/40">正在思考中...</p>
         </div>
         <template #footer>
@@ -63,6 +68,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { AIChatMessage } from '~/composables/chat/types'
+import { useMarkdownRenderer } from '~/composables/chat/useMarkdownRenderer'
 
 const props = defineProps<{
   message: AIChatMessage
@@ -84,7 +90,16 @@ const cardUi = {
   ring: 'ring-0'
 }
 
-const markdownContent = computed(() => props.message.content ?? '')
+const streamingText = computed(() => props.message.streamingContent ?? '')
+const finalContent = computed(() => props.message.content ?? '')
+const isStreaming = computed(() => props.message.status === 'streaming' && streamingText.value.length > 0)
+
+const { renderMarkdown } = useMarkdownRenderer()
+const renderedMarkdown = computed(() => (
+  isStreaming.value ? '' : renderMarkdown(finalContent.value)
+))
+
+const hasFinalContent = computed(() => !isStreaming.value && finalContent.value.trim().length > 0)
 
 const formattedTimestamp = computed(() => {
   const date = new Date(props.message.createdAt)
