@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { ChatSessionSummary } from '~/composables/chat/useAIChatSessions'
+import { useChatSessionMenu } from '~/composables/chat/useChatSessionMenu'
 
 const props = defineProps<{
   sessions: ChatSessionSummary[]
@@ -54,23 +55,10 @@ const handleRename = (session: ChatSessionSummary) => {
   emit('rename', { id: session.id, title: nextTitle })
 }
 
-const buildMenuItems = (session: ChatSessionSummary) => ([
-  [
-    {
-      label: '重命名',
-      icon: 'i-lucide-edit-3',
-      click: () => handleRename(session)
-    }
-  ],
-  [
-    {
-      label: '删除会话',
-      icon: 'i-lucide-trash-2',
-      color: 'red',
-      click: () => emit('delete', session.id)
-    }
-  ]
-])
+const { buildMenuItems } = useChatSessionMenu({
+  onRename: handleRename,
+  onDelete: (id) => emit('delete', id)
+})
 
 const rootClasses = computed(() => {
   const base = 'chat-session-sidebar h-full w-full max-w-xs flex-col gap-3'
@@ -124,7 +112,7 @@ const rootClasses = computed(() => {
         ]"
         @click="emit('select', session.id)"
       >
-        <div class="mt-1 h-2.5 w-2.5 flex-shrink-0 rounded-full" :class="session.id === activeId ? 'bg-primary' : 'bg-slate-300 dark:bg-slate-600'" />
+        <div class="mt-1 h-2.5 w-2.5 shrink-0 rounded-full" :class="session.id === activeId ? 'bg-primary' : 'bg-slate-300 dark:bg-slate-600'" />
         <div class="flex-1 space-y-1">
           <p class="line-clamp-2 text-sm font-medium text-slate-900/90 dark:text-slate-100">
             {{ session.title }}
