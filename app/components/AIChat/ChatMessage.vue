@@ -1,27 +1,30 @@
+<!-- eslint-disable vue/no-v-html -->
 <template>
   <div
     class="flex w-full flex-col gap-3"
     :class="isAssistant ? 'items-start' : 'items-end'"
   >
-    <div class="flex items-start gap-3" :class="isAssistant ? '' : 'flex-row-reverse'">
+    <div
+      class="flex items-start gap-3"
+      :class="isAssistant ? '' : 'flex-row-reverse'"
+    >
       <div
-        class="flex h-10 w-10 items-center justify-center rounded-xl border border-white/15 shadow-md"
-        :class="isAssistant ? 'bg-primary/10 text-primary dark:bg-primary/20' : 'bg-emerald-500 text-white dark:bg-emerald-400 dark:text-slate-900'"
+        class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/15 shadow-md"
+        :class="
+          isAssistant
+            ? 'bg-primary/10 text-primary dark:bg-primary/20'
+            : 'bg-emerald-500 text-white dark:bg-emerald-400 dark:text-slate-900'
+        "
       >
         <AppLogo v-if="isAssistant" variant="icon" class="h-6 w-auto" />
-        <UIcon
-          v-else
-          name="i-lucide-user"
-          class="h-5 w-5"
-        />
+        <UIcon v-else name="i-lucide-user" class="h-5 w-5" />
       </div>
-      <UCard
-        :class="cardClasses"
-        :ui="cardUi"
-      >
+      <UCard :class="cardClasses" :ui="cardUi">
         <template #header>
-          <div class="flex items-center justify-between text-xs uppercase tracking-wide text-white/70">
-            <span>{{ isAssistant ? 'MemFilter AI' : 'You' }}</span>
+          <div
+            class="flex items-center justify-between text-xs uppercase tracking-wide text-white/70"
+          >
+            <span>{{ isAssistant ? "MemFilter AI" : "You" }}</span>
             <UBadge
               v-if="message.status === 'streaming'"
               size="xs"
@@ -47,6 +50,7 @@
           >
             {{ streamingText }}
           </div>
+          <!-- eslint-disable-next-line vue/no-v-html -->
           <div
             v-else-if="hasFinalContent"
             class="prose prose-invert max-w-none wrap-break-word"
@@ -55,7 +59,9 @@
           <p v-else class="italic text-white/40">正在思考中...</p>
         </div>
         <template #footer>
-          <div class="flex items-center justify-between text-[11px] uppercase tracking-wider text-white/40">
+          <div
+            class="flex items-center justify-between text-[11px] uppercase tracking-wider text-white/40"
+          >
             <span>{{ formattedTimestamp }}</span>
             <slot name="actions" />
           </div>
@@ -66,48 +72,52 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
-import type { AIChatMessage } from '~/composables/chat/types'
-import { useMarkdownRenderer } from '~/composables/chat/useMarkdownRenderer'
+import { computed } from "vue";
+import type { AIChatMessage } from "~/composables/chat/types";
+import { useMarkdownRenderer } from "~/composables/chat/useMarkdownRenderer";
 
 const props = defineProps<{
-  message: AIChatMessage
-}>()
+  message: AIChatMessage;
+}>();
 
-const isAssistant = computed(() => props.message.role !== 'user')
+const isAssistant = computed(() => props.message.role !== "user");
 
-const cardClasses = computed(() => (
+const cardClasses = computed(() =>
   isAssistant.value
-    ? 'bg-gradient-to-br from-slate-900/85 via-slate-900/70 to-slate-900/65 border border-white/10 backdrop-blur'
-    : 'bg-gradient-to-br from-emerald-500/90 to-emerald-500/80 text-slate-900'
-))
+    ? "bg-gradient-to-br from-slate-900/85 via-slate-900/70 to-slate-900/65 border border-white/10 backdrop-blur"
+    : "bg-gradient-to-br from-emerald-500/90 to-emerald-500/80 text-slate-900"
+);
 
 const cardUi = {
-  base: 'w-full max-w-2xl',
-  header: 'pb-1',
-  body: 'text-sm space-y-3',
-  footer: 'pt-2',
-  ring: 'ring-0'
-}
+  base: "w-full max-w-2xl",
+  header: "pb-1",
+  body: "text-sm space-y-3",
+  footer: "pt-2",
+  ring: "ring-0",
+};
 
-const streamingText = computed(() => props.message.streamingContent ?? '')
-const finalContent = computed(() => props.message.content ?? '')
-const isStreaming = computed(() => props.message.status === 'streaming' && streamingText.value.length > 0)
+const streamingText = computed(() => props.message.streamingContent ?? "");
+const finalContent = computed(() => props.message.content ?? "");
+const isStreaming = computed(
+  () => props.message.status === "streaming" && streamingText.value.length > 0
+);
 
-const { renderMarkdown } = useMarkdownRenderer()
-const renderedMarkdown = computed(() => (
-  isStreaming.value ? '' : renderMarkdown(finalContent.value)
-))
+const { renderMarkdown } = useMarkdownRenderer();
+const renderedMarkdown = computed(() =>
+  isStreaming.value ? "" : renderMarkdown(finalContent.value)
+);
 
-const hasFinalContent = computed(() => !isStreaming.value && finalContent.value.trim().length > 0)
+const hasFinalContent = computed(
+  () => !isStreaming.value && finalContent.value.trim().length > 0
+);
 
 const formattedTimestamp = computed(() => {
-  const date = new Date(props.message.createdAt)
+  const date = new Date(props.message.createdAt);
   return date.toLocaleTimeString(undefined, {
-    hour: '2-digit',
-    minute: '2-digit'
-  })
-})
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+});
 </script>
 
 <style scoped>
@@ -119,7 +129,9 @@ const formattedTimestamp = computed(() => {
 }
 
 :deep(.prose code) {
-  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-family:
+    "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    "Liberation Mono", "Courier New", monospace;
   font-size: 0.85rem;
 }
 
