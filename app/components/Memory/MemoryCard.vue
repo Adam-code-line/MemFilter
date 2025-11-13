@@ -1,25 +1,25 @@
 <template>
-  <div 
-    class="memory-card-wrapper" 
+  <div
+    class="memory-card-wrapper"
     :class="[
       `importance-${importance}`,
       `fade-level-${fadeLevel}`,
-      { 'is-collapsed': isCollapsed, 'is-forgetting': isForgetting }
+      { 'is-collapsed': isCollapsed, 'is-forgetting': isForgetting },
     ]"
     :style="cardStyle"
   >
-    <UCard 
+    <UCard
       class="memory-card transition-all duration-700 ease-out flex flex-col h-full"
       :class="{
         'card-fading': fadeLevel > 0,
         'card-blurred': fadeLevel > 2,
-        'card-collapsed': isCollapsed
+        'card-collapsed': isCollapsed,
       }"
     >
       <!-- 遗忘进度条 -->
       <div v-if="forgettingProgress > 0" class="forgetting-progress">
-        <div 
-          class="forgetting-bar" 
+        <div
+          class="forgetting-bar"
           :style="{ width: `${forgettingProgress}%` }"
         ></div>
       </div>
@@ -27,14 +27,14 @@
       <template #header>
         <div class="flex items-center justify-between">
           <div class="flex items-center space-x-3">
-            <div 
+            <div
               class="memory-icon transition-all duration-500"
               :class="{ 'icon-fading': fadeLevel > 1 }"
             >
               {{ displayIcon }}
             </div>
             <div class="memory-meta">
-              <div 
+              <div
                 class="memory-title font-semibold transition-all duration-500"
                 :class="{ 'text-fading': fadeLevel > 0 }"
               >
@@ -42,26 +42,28 @@
               </div>
               <div class="text-xs text-gray-500 flex items-center space-x-2">
                 <span>{{ displayDate }}</span>
-                <span v-if="lastAccessed" class="text-xs">最后访问: {{ lastAccessed }}</span>
+                <span v-if="lastAccessed" class="text-xs"
+                  >最后访问: {{ lastAccessed }}</span
+                >
               </div>
             </div>
           </div>
-          
+
           <div class="flex items-center space-x-2">
             <!-- 重要度标签 -->
-            <UBadge 
-              :label="importanceLabel" 
-              :color="importanceColor" 
+            <UBadge
+              :label="importanceLabel"
+              :color="importanceColor"
               :variant="fadeLevel > 1 ? 'soft' : 'solid'"
               class="transition-all duration-500"
             />
-            
+
             <!-- 遗忘状态指示器 -->
             <div v-if="fadeLevel > 0" class="forgetting-indicator">
               <UTooltip :text="forgettingTooltip">
-                <UIcon 
-                  :name="forgettingIcon" 
-                  class="text-amber-500 animate-pulse" 
+                <UIcon
+                  :name="forgettingIcon"
+                  class="text-amber-500 animate-pulse"
                   size="sm"
                 />
               </UTooltip>
@@ -71,57 +73,57 @@
       </template>
 
       <!-- 笔记内容 -->
-      <div 
+      <div
         class="memory-content py-3 text-sm transition-all duration-700"
         :class="{
           'content-fading': fadeLevel > 0,
           'content-blurred': fadeLevel > 2,
-          'content-hidden': isCollapsed
+          'content-hidden': isCollapsed,
         }"
       >
-        <p
-          v-if="!isCollapsed"
-          class="memory-snippet whitespace-pre-line"
-        >
+        <p v-if="!isCollapsed" class="memory-snippet whitespace-pre-line">
           {{ cardDescription }}
         </p>
         <div v-else class="collapsed-hint text-xs text-gray-400 italic">
           内容已折叠...
         </div>
-        
+
         <!-- 遗忘提示 -->
-        <div v-if="isForgetting && !isCollapsed" class="forgetting-hint mt-2 p-2 bg-amber-50 dark:bg-amber-900/20 rounded text-xs text-amber-700 dark:text-amber-300">
+        <div
+          v-if="isForgetting && !isCollapsed"
+          class="forgetting-hint mt-2 p-2 bg-amber-50 dark:bg-amber-900/20 rounded text-xs text-amber-700 dark:text-amber-300"
+        >
           此笔记正在遗忘中，{{ daysUntilForgotten }}天后将被淡化
         </div>
       </div>
 
       <template #footer>
-  <div class="memory-footer flex justify-between items-center">
+        <div class="memory-footer flex justify-between items-center">
           <div class="flex space-x-2">
-            <UButton 
-              size="sm" 
-              variant="ghost" 
+            <UButton
+              size="sm"
+              variant="ghost"
               icon="i-lucide-eye"
               @click="handleOpen"
             >
               查看详情
             </UButton>
-            
-            <UButton 
-              v-if="fadeLevel > 0" 
-              size="sm" 
-              variant="ghost" 
+
+            <UButton
+              v-if="fadeLevel > 0"
+              size="sm"
+              variant="ghost"
               icon="i-lucide-refresh-cw"
               color="success"
               @click="handleRestore"
             >
               恢复记忆
             </UButton>
-            
-            <UButton 
-              v-if="!isForgetting" 
-              size="sm" 
-              variant="ghost" 
+
+            <UButton
+              v-if="!isForgetting"
+              size="sm"
+              variant="ghost"
               icon="i-lucide-brain"
               color="warning"
               @click="handleAccelerate"
@@ -140,7 +142,7 @@
               直接遗忘
             </UButton>
           </div>
-          
+
           <!-- 重要度评分 -->
           <div class="importance-score text-xs text-gray-500">
             重要度: {{ importanceScore }}%
@@ -152,43 +154,43 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, toRefs } from 'vue'
+import { computed, toRefs } from "vue";
 
 interface Props {
-  title: string
-  date: string
-  description?: string
-  icon?: string
-  importance?: MemoryImportance
-  fadeLevel?: MemoryFadeLevel
-  importanceScore?: number
-  forgettingProgress?: number
-  daysUntilForgotten?: number
-  lastAccessed?: string
-  isCollapsed?: boolean
+  title: string;
+  date: string;
+  description?: string;
+  icon?: string;
+  importance?: MemoryImportance;
+  fadeLevel?: MemoryFadeLevel;
+  importanceScore?: number;
+  forgettingProgress?: number;
+  daysUntilForgotten?: number;
+  lastAccessed?: string;
+  isCollapsed?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  description: '',
-  icon: '📝',
-  importance: 'medium',
+  description: "",
+  icon: "📝",
+  importance: "medium",
   fadeLevel: 0,
   importanceScore: 50,
   forgettingProgress: 0,
   daysUntilForgotten: 0,
-  isCollapsed: false
-})
+  isCollapsed: false,
+});
 
 const emit = defineEmits<{
-  open: []
-  restore: []
-  'accelerate-forgetting': []
-  forget: []
-}>()
+  open: [];
+  restore: [];
+  "accelerate-forgetting": [];
+  forget: [];
+}>();
 
-const note = toRefs(props)
+const note = toRefs(props);
 
-const descriptionRef = computed(() => note.description.value ?? '')
+const descriptionRef = computed(() => note.description.value ?? "");
 
 const {
   importanceLabel,
@@ -199,31 +201,37 @@ const {
   displayTitle,
   displaySnippet,
   displayIcon,
-  displayDate
-} = useMemoryMeta({
-  title: note.title,
-  snippet: descriptionRef,
-  date: note.date,
-  icon: note.icon,
-  importance: note.importance,
-  fadeLevel: note.fadeLevel,
-  forgettingProgress: note.forgettingProgress
-}, {
-  snippetLimit: 160,
-  blurredDateMessage: '时间模糊...'
-})
+  displayDate,
+} = useMemoryMeta(
+  {
+    title: note.title,
+    snippet: descriptionRef,
+    date: note.date,
+    icon: note.icon,
+    importance: note.importance,
+    fadeLevel: note.fadeLevel,
+    forgettingProgress: note.forgettingProgress,
+  },
+  {
+    snippetLimit: 160,
+    blurredDateMessage: "时间模糊...",
+  }
+);
 
-const { cardStyle } = useMemoryCardVisuals(note.fadeLevel, note.forgettingProgress)
+const { cardStyle } = useMemoryCardVisuals(
+  note.fadeLevel,
+  note.forgettingProgress
+);
 
 const cardDescription = computed(() => {
-  const value = displaySnippet.value?.trim()
-  return value ? value : '暂无描述，点击查看详情。'
-})
+  const value = displaySnippet.value?.trim();
+  return value ? value : "暂无描述，点击查看详情。";
+});
 
-const handleOpen = () => emit('open')
-const handleRestore = () => emit('restore')
-const handleAccelerate = () => emit('accelerate-forgetting')
-const handleForget = () => emit('forget')
+const handleOpen = () => emit("open");
+const handleRestore = () => emit("restore");
+const handleAccelerate = () => emit("accelerate-forgetting");
+const handleForget = () => emit("forget");
 </script>
 
 <style scoped>
@@ -310,7 +318,8 @@ const handleForget = () => emit('forget')
 
 .forgetting-bar {
   height: 100%;
-  background: linear-gradient(90deg, 
+  background: linear-gradient(
+    90deg,
     rgb(34, 197, 94) 0%,
     rgb(251, 191, 36) 50%,
     rgb(239, 68, 68) 100%
@@ -341,6 +350,9 @@ const handleForget = () => emit('forget')
   -webkit-box-orient: vertical;
   overflow: hidden;
   word-break: break-word;
+  text-overflow: ellipsis;
+  min-height: calc(2 * 1.4em);
+  line-height: 1.4;
 }
 
 /* 文字渐变效果 */
@@ -388,7 +400,7 @@ const handleForget = () => emit('forget')
 
 /* 重要度评分 */
 .importance-score {
-  font-family: 'Monaco', 'Consolas', monospace;
+  font-family: "Monaco", "Consolas", monospace;
   background: rgba(255, 255, 255, 0.1);
   padding: 2px 6px;
   border-radius: 4px;
@@ -406,8 +418,13 @@ const handleForget = () => emit('forget')
 }
 
 @keyframes glow {
-  0%, 100% { box-shadow: 0 0 5px rgba(251, 191, 36, 0.2); }
-  50% { box-shadow: 0 0 15px rgba(251, 191, 36, 0.4); }
+  0%,
+  100% {
+    box-shadow: 0 0 5px rgba(251, 191, 36, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 15px rgba(251, 191, 36, 0.4);
+  }
 }
 
 /* 折叠提示 */
@@ -434,12 +451,12 @@ const handleForget = () => emit('forget')
   .memory-card-wrapper {
     margin-bottom: 1rem;
   }
-  
+
   .memory-meta {
     min-width: 0;
     flex: 1;
   }
-  
+
   .memory-title {
     font-size: 0.9rem;
     white-space: nowrap;
@@ -454,7 +471,7 @@ const handleForget = () => emit('forget')
     background: rgba(251, 191, 36, 0.1);
     color: rgb(252, 211, 77);
   }
-  
+
   .collapsed-hint {
     background: rgba(255, 255, 255, 0.02);
     border-color: rgba(255, 255, 255, 0.1);
@@ -468,7 +485,7 @@ const handleForget = () => emit('forget')
   .memory-content {
     transition: none;
   }
-  
+
   .forgetting-indicator {
     animation: none;
   }
