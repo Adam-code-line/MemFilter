@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import type { NavigationMenuItem } from '@nuxt/ui'
 
-const route = useRoute()
-
 const items = computed<NavigationMenuItem[]>(() => [ {
   label: 'About',
   icon: 'i-lucide-box',
