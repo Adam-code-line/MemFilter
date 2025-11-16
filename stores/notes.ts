@@ -114,6 +114,13 @@ const clamp = (value: number, min: number, max: number) =>
   Math.min(max, Math.max(min, value));
 
 const computeNoteAgeInDays = (note: NoteRecord) => {
+  if (note.restoredAt) {
+    const restoredTimestamp = Date.parse(note.restoredAt);
+    if (!Number.isNaN(restoredTimestamp)) {
+      return Math.max(0, (Date.now() - restoredTimestamp) / DAY_IN_MS);
+    }
+  }
+
   if (note.createdAt) {
     const timestamp = Date.parse(note.createdAt);
     if (!Number.isNaN(timestamp)) {
@@ -318,6 +325,7 @@ const normalizeRecord = (
     aiEvaluation: cloneEvaluation(record.aiEvaluation ?? null),
     aiCompression: cloneCompression(record.aiCompression ?? null),
     createdAt,
+    restoredAt: record.restoredAt ?? null,
     updatedAt: record.updatedAt ?? createdAt,
   };
 };
@@ -554,6 +562,7 @@ const toPersistPayload = (note: NoteRecord) => {
     isCollapsed: note.isCollapsed,
     lastAccessed: normalizeTimestamp(note.lastAccessed),
     date: note.date,
+    restoredAt: note.restoredAt ?? null,
     aiEvaluation: note.aiEvaluation ?? null,
     aiCompression: note.aiCompression ?? null,
   };
@@ -746,6 +755,7 @@ export const useNotesStore = defineStore("notes", () => {
       forgettingProgress: 0,
       daysUntilForgotten: BASE_FORGET_WINDOW,
       isCollapsed: false,
+      restoredAt: now.toISOString(),
       aiEvaluation: cloneEvaluation(payload.aiEvaluation ?? null),
       aiCompression: cloneCompression(payload.aiCompression ?? null),
     });
@@ -781,6 +791,7 @@ export const useNotesStore = defineStore("notes", () => {
       forgettingProgress: 0,
       isCollapsed: false,
       lastAccessed: "刚刚",
+      restoredAt: new Date().toISOString(),
     };
 
     const evaluated = applyEvaluation(draft, dashboardOptions.value, {

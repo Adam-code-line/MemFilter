@@ -1,80 +1,85 @@
-import type { NoteBase, NoteFadeLevel, NoteImportanceLevel } from '../shared/noteTypes'
+import type {
+  NoteBase,
+  NoteFadeLevel,
+  NoteImportanceLevel,
+} from "../shared/noteTypes";
 
-export type ImportanceLevel = NoteImportanceLevel
+export type ImportanceLevel = NoteImportanceLevel;
 
-export type FadeLevel = NoteFadeLevel
+export type FadeLevel = NoteFadeLevel;
 
 export interface NoteAIUsageSummary {
-  promptTokens?: number
-  completionTokens?: number
-  totalTokens?: number
+  promptTokens?: number;
+  completionTokens?: number;
+  totalTokens?: number;
 }
 
-export type NoteAISuggestedAction = 'retain' | 'compress' | 'discard'
+export type NoteAISuggestedAction = "retain" | "compress" | "discard";
 
 export interface NoteAIEvaluation {
-  id: string
-  importance: ImportanceLevel
-  confidence: number
-  rationale: string
-  suggestedAction: NoteAISuggestedAction
-  usage?: NoteAIUsageSummary
-  generatedAt: string
+  id: string;
+  importance: ImportanceLevel;
+  confidence: number;
+  rationale: string;
+  suggestedAction: NoteAISuggestedAction;
+  usage?: NoteAIUsageSummary;
+  generatedAt: string;
 }
 
 export interface NoteAICompression {
-  id: string
-  summary: string
-  bullets: string[]
-  retentionScore: number
-  tokensSaved?: number
-  usage?: NoteAIUsageSummary
-  generatedAt: string
+  id: string;
+  summary: string;
+  bullets: string[];
+  retentionScore: number;
+  tokensSaved?: number;
+  usage?: NoteAIUsageSummary;
+  generatedAt: string;
 }
 
 export interface NoteRecord extends NoteBase {
-  id: number
-  content: string
-  description?: string
-  lastAccessed: string
-  icon: string
-  isCollapsed: boolean
-  aiEvaluation?: NoteAIEvaluation | null
-  aiCompression?: NoteAICompression | null
+  id: number;
+  content: string;
+  description?: string;
+  lastAccessed: string;
+  icon: string;
+  isCollapsed: boolean;
+  restoredAt?: string | null;
+  aiEvaluation?: NoteAIEvaluation | null;
+  aiCompression?: NoteAICompression | null;
 }
 
 export interface NoteEditorOptions {
-  initialTitle?: string
-  initialContent?: string
-  initialDescription?: string
-  initialImportance?: ImportanceLevel
-  fadeLevel?: number
+  initialTitle?: string;
+  initialContent?: string;
+  initialDescription?: string;
+  initialImportance?: ImportanceLevel;
+  fadeLevel?: number;
   placeholders?: {
-    default: string
-    fading?: string
-    strongFading?: string
-    description?: string
-  }
+    default: string;
+    fading?: string;
+    strongFading?: string;
+    description?: string;
+  };
   statusLabels?: {
-    saved?: string
-    unsaved?: string
-  }
+    saved?: string;
+    unsaved?: string;
+  };
 }
 
 export interface NoteDashboardOptions {
-  initialNotes?: NoteRecord[]
+  initialNotes?: NoteRecord[];
   evaluateNote?: (record: NoteRecord) => {
-    importanceScore: number
-    decayRate?: number
-    forgettingWindow?: number
-  }
+    importanceScore: number;
+    decayRate?: number;
+    forgettingWindow?: number;
+  };
 }
 
 export interface NoteSavePayload {
-  title: string
-  content: string
-  description?: string
-  importance: ImportanceLevel
-  aiEvaluation?: NoteAIEvaluation | null
-  aiCompression?: NoteAICompression | null
+  title: string;
+  content: string;
+  description?: string;
+  importance: ImportanceLevel;
+  aiEvaluation?: NoteAIEvaluation | null;
+  aiCompression?: NoteAICompression | null;
 }

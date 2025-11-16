@@ -1,15 +1,15 @@
-import type { Pool, PoolOptions } from 'mysql2/promise'
-import { createPool } from 'mysql2/promise'
-import { useRuntimeConfig } from '#imports'
+import type { Pool, PoolOptions } from "mysql2/promise";
+import { createPool } from "mysql2/promise";
+import { useRuntimeConfig } from "#imports";
 
-let pool: Pool | null = null
+let pool: Pool | null = null;
 
 const ensurePool = () => {
   if (pool) {
-    return pool
+    return pool;
   }
 
-  const config = useRuntimeConfig()
+  const config = useRuntimeConfig();
   const options: PoolOptions = {
     host: config.mysql.host,
     port: config.mysql.port,
@@ -18,21 +18,21 @@ const ensurePool = () => {
     database: config.mysql.database,
     waitForConnections: true,
     connectionLimit: 10,
-    queueLimit: 0
-  }
+    queueLimit: 0,
+  };
 
-  pool = createPool(options)
-  return pool
-}
+  pool = createPool(options);
+  return pool;
+};
 
-export const useMysql = () => ensurePool()
+export const useMysql = () => ensurePool();
 
-let schemaReady: Promise<void> | null = null
+let schemaReady: Promise<void> | null = null;
 
 export const ensureAuthSchema = async () => {
   if (!schemaReady) {
     schemaReady = (async () => {
-      const client = ensurePool()
+      const client = ensurePool();
       await client.query(
         `CREATE TABLE IF NOT EXISTS auth_users (
           id CHAR(36) NOT NULL,
@@ -43,7 +43,7 @@ export const ensureAuthSchema = async () => {
           PRIMARY KEY (id)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
         `
-      )
+      );
 
       await client.query(
         `CREATE TABLE IF NOT EXISTS auth_sessions (
@@ -55,7 +55,7 @@ export const ensureAuthSchema = async () => {
           KEY idx_auth_sessions_user_id (user_id),
           CONSTRAINT fk_auth_sessions_user FOREIGN KEY (user_id) REFERENCES auth_users(id) ON DELETE CASCADE
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;`
-      )
+      );
 
       await client.query(
         `CREATE TABLE IF NOT EXISTS notes (
@@ -73,6 +73,7 @@ export const ensureAuthSchema = async () => {
           decay_rate INT NULL,
           is_collapsed TINYINT(1) NOT NULL DEFAULT 0,
           last_accessed_at DATETIME NULL,
+          restored_at DATETIME NULL,
           date_label VARCHAR(20) NULL,
           created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
           updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -80,23 +81,32 @@ export const ensureAuthSchema = async () => {
           KEY idx_notes_user_id (user_id),
           CONSTRAINT fk_notes_user FOREIGN KEY (user_id) REFERENCES auth_users(id) ON DELETE CASCADE
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;`
-      )
+      );
 
       const hasColumn = async (name: string) => {
-        const [rows] = await client.query<Array<{ Field: string }>>('SHOW COLUMNS FROM notes LIKE ?', [name])
-        return Array.isArray(rows) && rows.length > 0
+        const [rows] = await client.query<Array<{ Field: string }>>(
+          "SHOW COLUMNS FROM notes LIKE ?",
+          [name]
+        );
+        return Array.isArray(rows) && rows.length > 0;
+      };
+
+      if (!(await hasColumn("ai_evaluation"))) {
+        await client.query(
+          "ALTER TABLE notes ADD COLUMN ai_evaluation JSON NULL AFTER decay_rate"
+        );
       }
 
-      if (!(await hasColumn('ai_evaluation'))) {
+      if (!(await hasColumn("ai_compression"))) {
         await client.query(
-          'ALTER TABLE notes ADD COLUMN ai_evaluation JSON NULL AFTER decay_rate'
-        )
+          "ALTER TABLE notes ADD COLUMN ai_compression JSON NULL AFTER ai_evaluation"
+        );
       }
 
-      if (!(await hasColumn('ai_compression'))) {
+      if (!(await hasColumn("restored_at"))) {
         await client.query(
-          'ALTER TABLE notes ADD COLUMN ai_compression JSON NULL AFTER ai_evaluation'
-        )
+          "ALTER TABLE notes ADD COLUMN restored_at DATETIME NULL AFTER last_accessed_at"
+        );
       }
 
       await client.query(
@@ -113,7 +123,7 @@ export const ensureAuthSchema = async () => {
           KEY idx_memory_sources_user_id (user_id),
           CONSTRAINT fk_memory_sources_user FOREIGN KEY (user_id) REFERENCES auth_users(id) ON DELETE CASCADE
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;`
-      )
+      );
 
       await client.query(
         `CREATE TABLE IF NOT EXISTS memory_raw_items (
@@ -134,9 +144,9 @@ export const ensureAuthSchema = async () => {
           CONSTRAINT fk_memory_raw_items_source FOREIGN KEY (source_id) REFERENCES memory_sources(id) ON DELETE CASCADE,
           CONSTRAINT fk_memory_raw_items_user FOREIGN KEY (user_id) REFERENCES auth_users(id) ON DELETE CASCADE
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;`
-      )
-    })()
+      );
+    })();
   }
 
-  return schemaReady
-}
+  return schemaReady;
+};
