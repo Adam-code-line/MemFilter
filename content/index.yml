@@ -5,7 +5,6 @@ hero:
   card:
     title: "忆滤"
     description: "AI 遗忘引擎，让重要信息浮现"
-    icon: "🧠"
   links:
     - label: "立即体验"
       to: "/signup"
@@ -18,19 +17,15 @@ sections:
     body: |
       信息爆炸：现代人每天处理大量学习资料、工作文件、社交信息。
       过度记忆导致笔记臃肿、任务冗余、心理负担加重。
-    icon: "📚"
     orientation: "horizontal"
     reverse: false
     features:
       - title: "信息过载现状"
         description: "每日处理海量信息，大脑负荷过重"
-        icon: "⚠️"
       - title: "传统记录弊端"
         description: "笔记冗余，重点难以突出"
-        icon: "📝"
       - title: "认知负担加重"
         description: "心理压力增加，效率下降"
-        icon: "🧠"
   - title: "核心创新"
     description: "基于AI的智能遗忘系统，重新定义信息管理"
     body: |
@@ -42,13 +37,10 @@ sections:
     features:
       - title: "智能评估算法"
         description: "多维度分析信息价值，精准识别重要内容"
-        icon: "🔍"
       - title: "遗忘曲线模拟"
         description: "科学的渐进式遗忘，优化记忆结构"
-        icon: "📈"
       - title: "自适应学习"
         description: "根据用户行为调整遗忘策略"
-        icon: "🤖"
   - title: "应用场景"
     description: "广泛适用于学习、工作、生活等多个领域"
     body: |
@@ -60,13 +52,10 @@ sections:
     features:
       - title: "学习场景"
         description: "课程笔记自动整理，重点知识智能保留"
-        icon: "🎓"
       - title: "工作场景"
         description: "会议记录精简，项目文档去冗"
-        icon: "💼"
       - title: "生活场景"
         description: "日常信息筛选，重要事项突出"
-        icon: "🏠"
 features:
   title: "为什么选择忆滤？"
   description: "告别信息过载，拥抱智能简化"

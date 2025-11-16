@@ -17,7 +17,6 @@ const items = computed<NavigationMenuItem[]>(() => [ {
     <UNavigationMenu :items="items" />
 
     <template #right>
-      <UColorModeButton />
 
       <UButton
           icon="i-lucide-log-in"

@@ -246,9 +246,6 @@ const handleGlobalSearch = (value: string) => {
         variant="ghost"
         class="hidden md:inline-flex"
       />
-      
-      <!-- 深色模式切换 -->
-      <UColorModeButton />
 
       <!-- 用户菜单 -->
       <UDropdownMenu :items="userMenuItems" :popper="{ placement: 'bottom-end' }">

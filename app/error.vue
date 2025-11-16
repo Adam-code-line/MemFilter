@@ -1,30 +1,43 @@
 <script setup lang="ts">
-import type {NuxtError} from '#app'
+import { clearError } from "#app";
+import { onBeforeRouteLeave } from "#imports";
+import type { NuxtError } from "#app";
 
 defineProps({
   error: {
     type: Object as PropType<NuxtError>,
-    required: true
-  }
-})
+    required: true,
+  },
+});
+
+const handleClear = () => {
+  clearError({ redirect: "/" });
+};
+
+onBeforeRouteLeave(() => {
+  clearError();
+});
 </script>
 
 <template>
   <div>
-    <LayoutHeader/>
+    <LayoutHeader />
     <UMain>
       <UContainer>
         <UPage>
-          <UError :error="error" :clear="{
-      size: 'xl',
-      icon: 'i-lucide-arrow-left',
-      class: 'rounded-full',
-      label: '回到首页'
-    }"/>
+          <UError
+            :error="error"
+            :clear="{
+              label: '回到首页',
+              icon: 'i-lucide-arrow-left',
+              class: 'rounded-full',
+              click: handleClear,
+            }"
+          />
         </UPage>
       </UContainer>
     </UMain>
-    <LayoutFooter/>
-    <UToaster/>
+    <LayoutFooter />
+    <UToaster />
   </div>
 </template>
