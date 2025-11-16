@@ -1,60 +1,62 @@
-import type { ComputedRef } from 'vue'
-import type { NoteRecord } from '../note/types'
+import type { ComputedRef } from "vue";
+import type { NoteRecord } from "../note/types";
 
-export type MemoryBucket = 'fresh' | 'fading' | 'archived'
+export type MemoryBucket = "fresh" | "fading" | "archived";
 
-type ActionVariant = 'solid' | 'soft' | 'subtle' | 'outline' | 'ghost'
+type ActionVariant = "solid" | "soft" | "subtle" | "outline" | "ghost";
 
 export interface DetailActionConfig {
-  label: string
-  icon?: string
-  color?: string
-  variant?: ActionVariant
-  tooltip?: string
+  label: string;
+  icon?: string;
+  color?: string;
+  variant?: ActionVariant;
+  tooltip?: string;
 }
 
 export type DetailActionMap = {
-  restore: DetailActionConfig
-  accelerate: DetailActionConfig
-  forget: DetailActionConfig
-}
+  restore: DetailActionConfig;
+  accelerate: DetailActionConfig;
+  forget: DetailActionConfig;
+};
 
 export interface MemorySectionConfig {
-  key: MemoryBucket
-  title?: string
-  accent?: string
+  key: MemoryBucket;
+  title?: string;
+  accent?: string;
 }
 
 export interface DetailStatus {
-  label: string
-  color: string
+  label: string;
+  color: string;
 }
 
 interface BuildActionsOptions {
-  includeOpenNote?: boolean
+  includeOpenNote?: boolean;
 }
 
-export const resolveMemoryBucket = (note: NoteRecord | null): MemoryBucket | null => {
+export const resolveMemoryBucket = (
+  note: NoteRecord | null
+): MemoryBucket | null => {
   if (!note) {
-    return null
+    return null;
   }
 
-  const fadeLevel = note.fadeLevel ?? 0
+  const fadeLevel = note.fadeLevel ?? 0;
 
   if (fadeLevel >= 4 || note.isCollapsed) {
-    return 'archived'
+    return "archived";
   }
 
   if (fadeLevel >= 1) {
-    return 'fading'
+    return "fading";
   }
 
-  if (note.importance !== 'high' && (note.forgettingProgress ?? 0) > 50) {
-    return 'fading'
+  if (note.importance !== "high" && (note.forgettingProgress ?? 0) > 50) {
+    return "fading";
   }
 
-  return 'fresh'
-}
+  return "fresh";
+};
 
 export const buildMemoryDetailStatus = (
   note: NoteRecord | null,
@@ -62,29 +64,22 @@ export const buildMemoryDetailStatus = (
   sectionDefaults: MemorySectionConfig[]
 ): DetailStatus | null => {
   if (!note) {
-    return null
+    return null;
   }
 
-  if ((note.fadeLevel ?? 0) >= 4) {
-    return {
-      label: '已彻底遗忘',
-      color: 'error'
-    }
-  }
-
-  const bucket = resolveMemoryBucket(note)
+  const bucket = resolveMemoryBucket(note);
   if (!bucket) {
-    return null
+    return null;
   }
 
-  const defaults = sectionDefaults.find(item => item.key === bucket)
-  const config = sectionSource.value.find(item => item.key === bucket)
+  const defaults = sectionDefaults.find((item) => item.key === bucket);
+  const config = sectionSource.value.find((item) => item.key === bucket);
 
   return {
-    label: config?.title ?? defaults?.title ?? '',
-    color: config?.accent ?? defaults?.accent ?? 'primary'
-  }
-}
+    label: config?.title ?? defaults?.title ?? "",
+    color: config?.accent ?? defaults?.accent ?? "primary",
+  };
+};
 
 export const buildMemoryDetailActions = (
   note: NoteRecord | null,
@@ -92,41 +87,41 @@ export const buildMemoryDetailActions = (
   options: BuildActionsOptions = {}
 ) => {
   if (!note) {
-    return [] as Array<{ key: string } & DetailActionConfig>
+    return [] as Array<{ key: string } & DetailActionConfig>;
   }
 
-  const actions: Array<{ key: string } & DetailActionConfig> = []
+  const actions: Array<{ key: string } & DetailActionConfig> = [];
 
   if ((note.fadeLevel ?? 0) > 0 || note.isCollapsed) {
     actions.push({
-      key: 'restore',
-      ...actionsConfig.restore
-    })
+      key: "restore",
+      ...actionsConfig.restore,
+    });
   }
 
   if ((note.forgettingProgress ?? 0) < 100 && (note.fadeLevel ?? 0) < 4) {
     actions.push({
-      key: 'accelerate',
-      ...actionsConfig.accelerate
-    })
+      key: "accelerate",
+      ...actionsConfig.accelerate,
+    });
   }
 
   if ((note.fadeLevel ?? 0) < 4) {
     actions.push({
-      key: 'forget',
-      ...actionsConfig.forget
-    })
+      key: "forget",
+      ...actionsConfig.forget,
+    });
   }
 
   if (options.includeOpenNote) {
     actions.push({
-      key: 'open-note',
-      label: '在笔记中编辑',
-      icon: 'i-lucide-square-pen',
-      color: 'primary',
-      variant: 'solid'
-    })
+      key: "open-note",
+      label: "在笔记中编辑",
+      icon: "i-lucide-square-pen",
+      color: "primary",
+      variant: "solid",
+    });
   }
 
-  return actions
-}
+  return actions;
+};

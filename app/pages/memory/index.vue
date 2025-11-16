@@ -2,6 +2,7 @@
 import { computed, onMounted, ref } from "vue";
 import { storeToRefs } from "pinia";
 import { useNotesStore } from "~~/stores/notes";
+import { getAIImportanceScore } from "~/composables/note/useAIImportanceScore";
 import type { NoteRecord } from "~~/composables/note/types";
 
 definePageMeta({
@@ -40,7 +41,8 @@ const sortByImportance = (collection: NoteRecord[]) =>
     if (importanceDelta !== 0) {
       return importanceDelta;
     }
-    const scoreDelta = (b.importanceScore ?? 0) - (a.importanceScore ?? 0);
+    const scoreDelta =
+      (getAIImportanceScore(b) ?? -1) - (getAIImportanceScore(a) ?? -1);
     if (scoreDelta !== 0) {
       return scoreDelta;
     }
@@ -324,7 +326,7 @@ const openDetailPage = (note: NoteRecord) => {
               :description="note.description || ''"
               :icon="note.icon"
               :importance="note.importance"
-              :importance-score="note.importanceScore"
+              :importance-score="getAIImportanceScore(note)"
               :fade-level="note.fadeLevel"
               :forgetting-progress="note.forgettingProgress"
               :days-until-forgotten="note.daysUntilForgotten"

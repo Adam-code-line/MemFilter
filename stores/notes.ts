@@ -1,6 +1,7 @@
 import { acceptHMRUpdate, defineStore } from "pinia";
 import { useNotificationCenter } from "~/composables/notifications/useNotificationCenter";
 import { useNotesApi } from "~/composables/note/useNotesApi";
+import { IMPORTANCE_METADATA } from "~/composables/note-memory/importanceMetadata";
 import type {
   FadeLevel,
   ImportanceLevel,
@@ -332,9 +333,8 @@ const computeEvaluation = (
     const evaluation = note.aiEvaluation;
     const importance = evaluation.importance ?? note.importance ?? "medium";
     const action = evaluation.suggestedAction;
-    const confidence = Number.isFinite(evaluation.confidence)
-      ? clamp(Math.round(evaluation.confidence * 100), 0, 100)
-      : 50;
+    const importanceScoreFromAI =
+      IMPORTANCE_METADATA[importance]?.defaultScore ?? 60;
 
     const baseWindow =
       importance === "high"
@@ -359,7 +359,7 @@ const computeEvaluation = (
     const decayRate = clamp(Math.round(baseDecay + decayAdjust), 0, 100);
 
     return {
-      importanceScore: confidence,
+      importanceScore: importanceScoreFromAI,
       decayRate,
       forgettingWindow,
     };

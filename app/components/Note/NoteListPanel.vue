@@ -1,74 +1,76 @@
 <script setup lang="ts">
-
 export interface NoteListItem {
-  id: number | string
-  record: NoteRecord
-  title: string
-  description: string
-  iconName?: string
-  iconFallback?: string
+  id: number | string;
+  record: NoteRecord;
+  title: string;
+  description: string;
+  iconName?: string;
+  iconFallback?: string;
   badge: {
-    label: string
-    color: string
-    variant: 'solid' | 'soft' | 'subtle' | 'outline'
-    icon?: string
-  }
-  score: number
+    label: string;
+    color: string;
+    variant: "solid" | "soft" | "subtle" | "outline";
+    icon?: string;
+  };
+  score?: number | null;
 }
 
-const props = withDefaults(defineProps<{
-  items: NoteListItem[]
-  activeId?: number | string | null
-  headerTitle?: string
-  totalLabel?: string
-  icon?: string
-  emptyState?: {
-    icon: string
-    title: string
-    description: string
-    actionLabel: string
-    actionIcon: string
+const props = withDefaults(
+  defineProps<{
+    items: NoteListItem[];
+    activeId?: number | string | null;
+    headerTitle?: string;
+    totalLabel?: string;
+    icon?: string;
+    emptyState?: {
+      icon: string;
+      title: string;
+      description: string;
+      actionLabel: string;
+      actionIcon: string;
+    };
+    detailLabel?: string;
+    layout?: "vertical" | "horizontal";
+  }>(),
+  {
+    items: () => [],
+    activeId: null,
+    headerTitle: "我的笔记",
+    totalLabel: "共",
+    icon: "i-lucide-notebook-pen",
+    emptyState: () => ({
+      icon: "i-lucide-notebook",
+      title: "暂无笔记",
+      description: "开始创建您的第一条笔记。",
+      actionLabel: "新建笔记",
+      actionIcon: "i-lucide-plus",
+    }),
+    detailLabel: "查看详情",
+    layout: "vertical",
   }
-  detailLabel?: string
-  layout?: 'vertical' | 'horizontal'
-}>(), {
-  items: () => [],
-  activeId: null,
-  headerTitle: '我的笔记',
-  totalLabel: '共',
-  icon: 'i-lucide-notebook-pen',
-  emptyState: () => ({
-    icon: 'i-lucide-notebook',
-    title: '暂无笔记',
-    description: '开始创建您的第一条笔记。',
-    actionLabel: '新建笔记',
-    actionIcon: 'i-lucide-plus'
-  }),
-  detailLabel: '查看详情',
-  layout: 'vertical'
-})
+);
 
 const emit = defineEmits<{
-  (event: 'select', record: NoteRecord): void
-  (event: 'create'): void
-  (event: 'detail', record: NoteRecord): void
-}>()
+  (event: "select", record: NoteRecord): void;
+  (event: "create"): void;
+  (event: "detail", record: NoteRecord): void;
+}>();
 
-const totalCount = computed(() => props.items.length)
-const detailLabel = computed(() => props.detailLabel)
-const isHorizontal = computed(() => props.layout === 'horizontal')
+const totalCount = computed(() => props.items.length);
+const detailLabel = computed(() => props.detailLabel);
+const isHorizontal = computed(() => props.layout === "horizontal");
 
 const handleSelect = (item: NoteListItem) => {
-  emit('select', item.record)
-}
+  emit("select", item.record);
+};
 
 const handleCreate = () => {
-  emit('create')
-}
+  emit("create");
+};
 
 const handleDetail = (item: NoteListItem) => {
-  emit('detail', item.record)
-}
+  emit("detail", item.record);
+};
 </script>
 
 <template>
@@ -85,10 +87,7 @@ const handleDetail = (item: NoteListItem) => {
       </div>
     </template>
 
-    <div
-      v-if="items.length"
-      :class="isHorizontal ? 'note-strip' : 'note-list'"
-    >
+    <div v-if="items.length" :class="isHorizontal ? 'note-strip' : 'note-list'">
       <div
         v-for="item in items"
         :key="item.id"
@@ -96,8 +95,10 @@ const handleDetail = (item: NoteListItem) => {
         tabindex="0"
         :class="[
           'note-list-item',
-          isHorizontal ? 'note-list-item--horizontal' : 'note-list-item--vertical',
-          item.id === activeId ? 'note-list-item--active' : ''
+          isHorizontal
+            ? 'note-list-item--horizontal'
+            : 'note-list-item--vertical',
+          item.id === activeId ? 'note-list-item--active' : '',
         ]"
         @click="handleSelect(item)"
         @keydown.enter.prevent="handleSelect(item)"
@@ -122,7 +123,12 @@ const handleDetail = (item: NoteListItem) => {
                 :variant="item.badge.variant"
                 :icon="item.badge.icon"
               />
-              <span class="note-list-score text-slate-500 dark:text-slate-400">价值 {{ item.score }}%</span>
+              <span class="note-list-score text-slate-500 dark:text-slate-400">
+                <template v-if="typeof item.score === 'number'">
+                  AI 价值 {{ Math.round(item.score) }}%
+                </template>
+                <template v-else> AI 评估中 </template>
+              </span>
               <UButton
                 variant="ghost"
                 color="primary"
@@ -144,8 +150,14 @@ const handleDetail = (item: NoteListItem) => {
       </div>
     </div>
 
-    <div v-else class="flex flex-col items-center justify-center gap-4 py-16 text-center">
-      <UIcon :name="emptyState.icon" class="text-4xl text-gray-300 dark:text-gray-600" />
+    <div
+      v-else
+      class="flex flex-col items-center justify-center gap-4 py-16 text-center"
+    >
+      <UIcon
+        :name="emptyState.icon"
+        class="text-4xl text-gray-300 dark:text-gray-600"
+      />
       <div class="space-y-2">
         <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
           {{ emptyState.title }}
@@ -195,7 +207,10 @@ const handleDetail = (item: NoteListItem) => {
   gap: 0.85rem;
   padding: 1rem 1.1rem;
   border-radius: 0.9rem;
-  transition: background-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    background-color 0.2s ease,
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
   outline: none;
 }
 

@@ -36,7 +36,7 @@ const emit = defineEmits<{
 
 const statusBadgeProps: Record<string, { label: string; color: string }> = {
   recoverable: { label: "等待决策", color: "warning" },
-  archived: { label: "已折叠", color: "neutral" },
+  archived: { label: "已归档", color: "neutral" },
   purged: { label: "已清理", color: "error" },
 };
 

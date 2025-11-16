@@ -145,7 +145,10 @@
 
           <!-- 重要度评分 -->
           <div class="importance-score text-xs text-gray-500">
-            重要度: {{ importanceScore }}%
+            <template v-if="typeof importanceScore === 'number'">
+              AI 重要度: {{ Math.round(importanceScore) }}%
+            </template>
+            <template v-else> AI 价值评估中 </template>
           </div>
         </div>
       </template>
@@ -163,7 +166,7 @@ interface Props {
   icon?: string;
   importance?: MemoryImportance;
   fadeLevel?: MemoryFadeLevel;
-  importanceScore?: number;
+  importanceScore?: number | null;
   forgettingProgress?: number;
   daysUntilForgotten?: number;
   lastAccessed?: string;
@@ -175,7 +178,7 @@ const props = withDefaults(defineProps<Props>(), {
   icon: "📝",
   importance: "medium",
   fadeLevel: 0,
-  importanceScore: 50,
+  importanceScore: null,
   forgettingProgress: 0,
   daysUntilForgotten: 0,
   isCollapsed: false,

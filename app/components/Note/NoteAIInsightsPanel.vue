@@ -60,10 +60,11 @@
               variant="soft"
             />
             <UBadge
-              v-if="evaluationConfidence !== null"
-              :label="`置信度 ${evaluationConfidence}%`"
-              color="emerald"
+              v-if="evaluationImportanceScore !== null"
+              :label="`重要度 ${evaluationImportanceScore}%`"
+              color="primary"
               variant="outline"
+              icon="i-lucide-gauge"
             />
           </div>
           <p class="text-sm leading-relaxed text-slate-600 dark:text-slate-200">
@@ -299,11 +300,16 @@ const suggestionMeta = computed(() =>
   evaluation.value ? suggestionMetaMap[evaluation.value.suggestedAction] : null
 );
 
-const evaluationConfidence = computed(() =>
-  evaluation.value
-    ? Math.round(Math.min(100, Math.max(0, evaluation.value.confidence * 100)))
-    : null
-);
+const evaluationImportanceScore = computed(() => {
+  if (!evaluation.value) {
+    return null;
+  }
+  const metadata = IMPORTANCE_METADATA[evaluation.value.importance];
+  if (!metadata) {
+    return null;
+  }
+  return Math.round(metadata.defaultScore);
+});
 
 const formatTimestamp = (value?: string | null) => {
   if (!value) return "";
