@@ -50,7 +50,6 @@
           >
             {{ streamingText }}
           </div>
-          <!-- eslint-disable-next-line vue/no-v-html -->
           <div
             v-else-if="hasFinalContent"
             class="prose prose-invert max-w-none wrap-break-word"
@@ -102,13 +101,13 @@ const isStreaming = computed(
   () => props.message.status === "streaming" && streamingText.value.length > 0
 );
 
-const { renderMarkdown } = useMarkdownRenderer();
-const renderedMarkdown = computed(() =>
-  isStreaming.value ? "" : renderMarkdown(finalContent.value)
-);
-
 const hasFinalContent = computed(
   () => !isStreaming.value && finalContent.value.trim().length > 0
+);
+
+const { renderMarkdown } = useMarkdownRenderer();
+const renderedMarkdown = computed(() =>
+  hasFinalContent.value ? renderMarkdown(finalContent.value) : ""
 );
 
 const formattedTimestamp = computed(() => {
@@ -133,6 +132,34 @@ const formattedTimestamp = computed(() => {
     "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
     "Liberation Mono", "Courier New", monospace;
   font-size: 0.85rem;
+}
+
+:deep(.prose h1),
+:deep(.prose h2),
+:deep(.prose h3),
+:deep(.prose h4) {
+  font-weight: 600;
+  color: #f8fafc;
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+:deep(.prose h1) {
+  font-size: 1.5rem;
+}
+
+:deep(.prose h2) {
+  font-size: 1.25rem;
+}
+
+:deep(.prose h3) {
+  font-size: 1.1rem;
+}
+
+:deep(.prose p),
+:deep(.prose li) {
+  font-size: 0.95rem;
+  color: rgba(248, 250, 252, 0.9);
 }
 
 :deep(.prose ul) {
