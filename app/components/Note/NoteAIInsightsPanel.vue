@@ -104,15 +104,6 @@
           <UButton
             v-if="evaluation"
             size="sm"
-            variant="soft"
-            color="emerald"
-            @click="handleUseImportance"
-          >
-            应用重要度
-          </UButton>
-          <UButton
-            v-if="evaluation"
-            size="sm"
             variant="ghost"
             color="neutral"
             @click="handleClearEvaluation"
@@ -377,6 +368,7 @@ const handleEvaluate = async () => {
       evaluation.value = result;
       evaluationStale.value = false;
       emit("evaluation-updated", result);
+      emit("apply-importance", result.importance);
     }
   } catch {
     // 错误信息已经通过 evaluationError 暴露
@@ -399,11 +391,6 @@ const handleCompress = async () => {
   } catch {
     // 错误信息已经通过 compressionError 暴露
   }
-};
-
-const handleUseImportance = () => {
-  if (!evaluation.value) return;
-  emit("apply-importance", evaluation.value.importance);
 };
 
 const handleUseSummary = () => {
