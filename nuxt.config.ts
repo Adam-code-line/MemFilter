@@ -44,11 +44,11 @@ export default defineNuxtConfig({
     },
     ingestion: {
       tianApiKey: process.env.TIAN_API_KEY,
-      // 前端页面轮询间隔（默认 1 分钟）
       // 可通过环境变量 INGESTION_POLL_INTERVAL 配置
       schedulerInterval: process.env.INGESTION_SCHEDULER_INTERVAL
         ? Number(process.env.INGESTION_SCHEDULER_INTERVAL)
-        : 10 * 60 * 1000,
+        : 12 * 60 * 60 * 1000, // 默认 12 小时
+      batchSize: process.env.INGESTION_BATCH_SIZE ? Number(process.env.INGESTION_BATCH_SIZE) : 500,
     },
     ai: {
       baseUrl: process.env.AI_API_BASE_URL,
@@ -64,11 +64,11 @@ export default defineNuxtConfig({
       aiDefaultModel: process.env.AI_DEFAULT_MODEL,
       aiTemperature: process.env.AI_TEMPERATURE ? Number(process.env.AI_TEMPERATURE) : undefined,
       ingestion: {
-        // 后端爬虫任务间隔（默认 10 分钟）
-        // 可通过环境变量 INGESTION_SCHEDULER_INTERVAL 配置
+        // 前端页面轮询间隔（默认 30 分钟），配合后端 12 小时的更新频率
+        // 可通过环境变量 INGESTION_POLL_INTERVAL 配置
         pollInterval: process.env.INGESTION_POLL_INTERVAL
           ? Number(process.env.INGESTION_POLL_INTERVAL)
-          : 60 * 1000,
+          : 30 * 60 * 1000,
       },
     },
   },

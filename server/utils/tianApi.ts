@@ -3,7 +3,7 @@ import { createError } from 'h3'
 import { useRuntimeConfig } from '#imports'
 import { fetchArticleContent } from '~~/server/utils/articleExtractor'
 
-export const MAX_FETCH_LIMIT = 50
+export const MAX_FETCH_LIMIT = 500
 
 const sanitizeApiName = (value: unknown): string => {
   if (typeof value !== 'string') {

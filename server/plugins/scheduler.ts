@@ -5,11 +5,12 @@ import { storeArticleInVectorStore } from '~~/server/utils/qdrantStorage'
 
 export default defineNitroPlugin((_nitroApp) => {
   const config = useRuntimeConfig()
-  // Run every 10 minutes by default, or use configured interval
-  const INTERVAL = config.ingestion.schedulerInterval || 10 * 60 * 1000
+  // Run every 12 hours by default to rotate news
+  const INTERVAL = config.ingestion.schedulerInterval || 12 * 60 * 60 * 1000
+  const BATCH_SIZE = config.ingestion.batchSize || 500
 
   const runIngestionTask = async () => {
-    console.log('[scheduler] Starting ingestion task...')
+    console.log('[scheduler] Starting 12-hour news rotation task...')
     const db = useMysql()
 
     try {
@@ -27,22 +28,34 @@ export default defineNitroPlugin((_nitroApp) => {
       // 2. Process each source
       for (const source of sources) {
         try {
-          const config =
+          const sourceConfig =
             typeof source.config === 'string' ? JSON.parse(source.config) : source.config || {}
 
           // Default keywords if not present
-          const keywords = Array.isArray(config.keywords) ? config.keywords : ['互联网', 'AI'] // Fallback
+          const keywords = Array.isArray(sourceConfig.keywords)
+            ? sourceConfig.keywords
+            : ['互联网', 'AI'] // Fallback
 
-          const limit = config.limit || 20
+          // Use source specific limit or global batch size
+          const limit = sourceConfig.limit || BATCH_SIZE
 
           // 3. Fetch news
           // We use a smaller limit for background tasks to avoid rate limits
           const fetchLimit = Math.min(limit, MAX_FETCH_LIMIT)
 
           const items = await fetchTianApiNews(keywords, {
-            apiName: config.api,
+            apiName: sourceConfig.api,
             limit: fetchLimit,
           })
+
+          // Only clear old items if we successfully fetched new ones
+          if (items.length > 0) {
+            await db.execute(
+              "DELETE FROM memory_raw_items WHERE source_id = ? AND status = 'pending'",
+              [source.id]
+            )
+            console.log(`[scheduler] Cleared old pending items for source ${source.id}`)
+          }
 
           // 4. Save items
           let insertedCount = 0
