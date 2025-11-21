@@ -44,6 +44,11 @@ export default defineNuxtConfig({
     },
     ingestion: {
       tianApiKey: process.env.TIAN_API_KEY,
+      // 前端页面轮询间隔（默认 1 分钟）
+      // 可通过环境变量 INGESTION_POLL_INTERVAL 配置
+      schedulerInterval: process.env.INGESTION_SCHEDULER_INTERVAL
+        ? Number(process.env.INGESTION_SCHEDULER_INTERVAL)
+        : 10 * 60 * 1000,
     },
     ai: {
       baseUrl: process.env.AI_API_BASE_URL,
@@ -58,6 +63,13 @@ export default defineNuxtConfig({
         .filter(Boolean),
       aiDefaultModel: process.env.AI_DEFAULT_MODEL,
       aiTemperature: process.env.AI_TEMPERATURE ? Number(process.env.AI_TEMPERATURE) : undefined,
+      ingestion: {
+        // 后端爬虫任务间隔（默认 10 分钟）
+        // 可通过环境变量 INGESTION_SCHEDULER_INTERVAL 配置
+        pollInterval: process.env.INGESTION_POLL_INTERVAL
+          ? Number(process.env.INGESTION_POLL_INTERVAL)
+          : 60 * 1000,
+      },
     },
   },
 

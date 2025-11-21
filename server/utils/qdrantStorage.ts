@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto'
 import { qdrant } from '../lib/qdrant'
 import { embedText } from './textEmbedding'
 
@@ -5,6 +6,17 @@ const COLLECTION_NAME = process.env.QDRANT_COLLECTION?.trim() || 'MemFilter'
 const VECTOR_DIMENSION = 512
 
 let ensureCollectionPromise: Promise<void> | null = null
+
+const toUUID = (str: string): string => {
+  const hash = createHash('md5').update(str).digest('hex')
+  return [
+    hash.substring(0, 8),
+    hash.substring(8, 12),
+    hash.substring(12, 16),
+    hash.substring(16, 20),
+    hash.substring(20, 32),
+  ].join('-')
+}
 
 const isNotFoundError = (error: unknown) => {
   if (!error || typeof error !== 'object') {
@@ -29,14 +41,13 @@ const ensureCollection = async () => {
 
   ensureCollectionPromise = (async () => {
     try {
-      await qdrant.getCollection({ collection_name: COLLECTION_NAME })
+      await qdrant.getCollection(COLLECTION_NAME)
     } catch (error) {
       if (!isNotFoundError(error)) {
         throw error
       }
 
-      await qdrant.createCollection({
-        collection_name: COLLECTION_NAME,
+      await qdrant.createCollection(COLLECTION_NAME, {
         vectors: {
           size: VECTOR_DIMENSION,
           distance: 'Cosine',
@@ -63,15 +74,16 @@ export const storeArticleInVectorStore = async (payload: ArticleVectorPayload) =
     await ensureCollection()
 
     const vector = embedText(`${payload.title}\n${payload.content}`)
+    const pointId = toUUID(payload.id)
 
-    await qdrant.upsert({
-      collection_name: COLLECTION_NAME,
+    await qdrant.upsert(COLLECTION_NAME, {
       wait: false,
       points: [
         {
-          id: payload.id,
+          id: pointId,
           vector,
           payload: {
+            originalId: payload.id,
             title: payload.title,
             content: payload.content,
             url: payload.url ?? null,

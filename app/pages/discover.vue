@@ -64,6 +64,10 @@
     router.push('/note')
   }
 
+  const config = useRuntimeConfig()
+  const POLL_INTERVAL = (config.public.ingestion?.pollInterval as number) || 60 * 1000
+  let pollTimer: NodeJS.Timeout | null = null
+
   onMounted(async () => {
     if (!items.value.length) {
       try {
@@ -71,6 +75,19 @@
       } catch {
         // toast handled in manager
       }
+    }
+
+    // Start polling for updates
+    pollTimer = setInterval(() => {
+      if (!isSyncing.value && !isLoading.value) {
+        handleRefresh()
+      }
+    }, POLL_INTERVAL)
+  })
+
+  onBeforeUnmount(() => {
+    if (pollTimer) {
+      clearInterval(pollTimer)
     }
   })
 
