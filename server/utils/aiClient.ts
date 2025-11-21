@@ -36,7 +36,7 @@ const buildPayload = (messages: ChatMessagePayload[], options: ChatCompletionOpt
   max_tokens: typeof options.maxTokens === 'number' ? options.maxTokens : DEFAULT_MAX_TOKENS,
   stream: false,
   messages,
-  ...(options.thinking ? { thinking: { type: 'enabled' as const } } : {})
+  ...(options.thinking ? { thinking: { type: 'enabled' as const } } : {}),
 })
 
 const parseUsage = (value: any) => {
@@ -45,7 +45,8 @@ const parseUsage = (value: any) => {
   }
 
   const promptTokens = typeof value.prompt_tokens === 'number' ? value.prompt_tokens : undefined
-  const completionTokens = typeof value.completion_tokens === 'number' ? value.completion_tokens : undefined
+  const completionTokens =
+    typeof value.completion_tokens === 'number' ? value.completion_tokens : undefined
   const totalTokens = typeof value.total_tokens === 'number' ? value.total_tokens : undefined
 
   if (promptTokens || completionTokens || totalTokens) {
@@ -77,16 +78,16 @@ export const callChatCompletion = async (
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${apiKey}`
+      Authorization: `Bearer ${apiKey}`,
     },
-    body: JSON.stringify(buildPayload(messages, options))
+    body: JSON.stringify(buildPayload(messages, options)),
   })
 
   if (!response.ok) {
     const text = await response.text().catch(() => '')
     throw createError({
       statusCode: response.status,
-      statusMessage: text || 'AI provider request failed'
+      statusMessage: text || 'AI provider request failed',
     })
   }
 
@@ -98,6 +99,6 @@ export const callChatCompletion = async (
     id: json?.id ?? nanoid(),
     content: typeof content === 'string' ? content : JSON.stringify(content),
     finishReason,
-    usage: parseUsage(json?.usage)
+    usage: parseUsage(json?.usage),
   }
 }

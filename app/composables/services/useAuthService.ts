@@ -12,12 +12,12 @@ type AuthUser = AuthSession['user']
 const signupSchema = z.object({
   name: z.string().min(2).max(120),
   email: z.string().email().max(190),
-  password: z.string().min(8).max(255)
+  password: z.string().min(8).max(255),
 })
 
 const loginSchema = z.object({
   identifier: z.string().min(1).max(190),
-  password: z.string().min(1).max(255)
+  password: z.string().min(1).max(255),
 })
 
 interface AuthUserRow extends RowDataPacket {
@@ -38,17 +38,18 @@ export const useAuthService = async () => {
     id: row.id,
     name: row.name,
     email: row.email,
-    createdAt: row.created_at.toISOString()
+    createdAt: row.created_at.toISOString(),
   })
 
   const createSessionRecord = async (userId: string) => {
     const token = randomBytes(32).toString('hex')
     const expiresAt = new Date(Date.now() + config.session.tokenExpiresInSeconds * 1000)
 
-    await db.execute(
-      'INSERT INTO auth_sessions (token, user_id, expires_at) VALUES (?, ?, ?)',
-      [token, userId, expiresAt]
-    )
+    await db.execute('INSERT INTO auth_sessions (token, user_id, expires_at) VALUES (?, ?, ?)', [
+      token,
+      userId,
+      expiresAt,
+    ])
 
     return { token, expiresAt }
   }
@@ -62,8 +63,8 @@ export const useAuthService = async () => {
         statusMessage: '注册信息无效',
         data: {
           code: 'VALIDATION_FAILED',
-          issues: parsed.error.flatten()
-        }
+          issues: parsed.error.flatten(),
+        },
       })
     }
 
@@ -78,7 +79,7 @@ export const useAuthService = async () => {
       throw createError({
         statusCode: 409,
         statusMessage: '邮箱已存在',
-        data: { code: 'EMAIL_ALREADY_EXISTS' }
+        data: { code: 'EMAIL_ALREADY_EXISTS' },
       })
     }
 
@@ -100,7 +101,7 @@ export const useAuthService = async () => {
 
     return {
       token: sessionRecord.token,
-      user: normalizeUser(userRow)
+      user: normalizeUser(userRow),
     }
   }
 
@@ -113,8 +114,8 @@ export const useAuthService = async () => {
         statusMessage: '登录信息无效',
         data: {
           code: 'VALIDATION_FAILED',
-          issues: parsed.error.flatten()
-        }
+          issues: parsed.error.flatten(),
+        },
       })
     }
 
@@ -129,7 +130,7 @@ export const useAuthService = async () => {
       throw createError({
         statusCode: 401,
         statusMessage: '账号或密码错误',
-        data: { code: 'INVALID_CREDENTIALS' }
+        data: { code: 'INVALID_CREDENTIALS' },
       })
     }
 
@@ -140,7 +141,7 @@ export const useAuthService = async () => {
       throw createError({
         statusCode: 401,
         statusMessage: '账号或密码错误',
-        data: { code: 'INVALID_CREDENTIALS' }
+        data: { code: 'INVALID_CREDENTIALS' },
       })
     }
 
@@ -149,7 +150,7 @@ export const useAuthService = async () => {
 
     return {
       token: sessionRecord.token,
-      user: normalizeUser(userRow)
+      user: normalizeUser(userRow),
     }
   }
 
@@ -162,15 +163,17 @@ export const useAuthService = async () => {
       return null
     }
 
-    const [rows] = await db.execute<(RowDataPacket & {
-      token: string
-      user_id: string
-      expires_at: Date | null
-      id: string
-      name: string
-      email: string
-      created_at: Date
-    })[]>(
+    const [rows] = await db.execute<
+      (RowDataPacket & {
+        token: string
+        user_id: string
+        expires_at: Date | null
+        id: string
+        name: string
+        email: string
+        created_at: Date
+      })[]
+    >(
       `SELECT s.token, s.user_id, s.expires_at, u.id, u.name, u.email, u.created_at
        FROM auth_sessions s
        INNER JOIN auth_users u ON u.id = s.user_id
@@ -195,8 +198,8 @@ export const useAuthService = async () => {
         id: row.id,
         name: row.name,
         email: row.email,
-        createdAt: (row.created_at as Date).toISOString()
-      }
+        createdAt: (row.created_at as Date).toISOString(),
+      },
     }
   }
 
@@ -204,6 +207,6 @@ export const useAuthService = async () => {
     signup,
     login,
     logout,
-    findSession
+    findSession,
   }
 }

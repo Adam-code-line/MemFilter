@@ -1,7 +1,7 @@
 import { createError, defineEventHandler, readBody } from 'h3'
 import { useIngestionService } from '~/composables/services/useIngestionService'
 
-export default defineEventHandler(async event => {
+export default defineEventHandler(async (event) => {
   const sourceId = event.context.params?.id
   if (!sourceId) {
     throw createError({ statusCode: 400, statusMessage: '缺少来源 ID' })
@@ -20,14 +20,14 @@ export default defineEventHandler(async event => {
 
     if (Array.isArray(raw)) {
       return raw
-        .map(keyword => (typeof keyword === 'string' ? keyword : String(keyword ?? '')).trim())
+        .map((keyword) => (typeof keyword === 'string' ? keyword : String(keyword ?? '')).trim())
         .filter(Boolean)
     }
 
     if (typeof raw === 'string') {
       return raw
         .split(/[\s,，、；;]+/)
-        .map(keyword => keyword.trim())
+        .map((keyword) => keyword.trim())
         .filter(Boolean)
     }
 
@@ -58,5 +58,8 @@ export default defineEventHandler(async event => {
   })()
 
   const ingestionService = await useIngestionService(event)
-  return ingestionService.syncSource(sourceId, { keywords: normalizedKeywords, limit: normalizedLimit })
+  return ingestionService.syncSource(sourceId, {
+    keywords: normalizedKeywords,
+    limit: normalizedLimit,
+  })
 })

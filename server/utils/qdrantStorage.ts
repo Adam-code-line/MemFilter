@@ -39,8 +39,8 @@ const ensureCollection = async () => {
         collection_name: COLLECTION_NAME,
         vectors: {
           size: VECTOR_DIMENSION,
-          distance: 'Cosine'
-        }
+          distance: 'Cosine',
+        },
       })
     }
   })()
@@ -77,10 +77,10 @@ export const storeArticleInVectorStore = async (payload: ArticleVectorPayload) =
             url: payload.url ?? null,
             source: payload.source ?? null,
             publishedAt: payload.publishedAt ?? null,
-            userId: payload.userId
-          }
-        }
-      ]
+            userId: payload.userId,
+          },
+        },
+      ],
     })
   } catch (error) {
     console.error('[qdrant] Failed to upsert article vector', payload.id, error)

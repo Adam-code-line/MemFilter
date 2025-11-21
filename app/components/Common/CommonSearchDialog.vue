@@ -1,77 +1,76 @@
 <script setup lang="ts">
+  export type SearchSuggestion = {
+    label: string
+    description?: string
+    icon?: string
+    to?: string
+    type?: string
+    noteId?: string | number
+    [key: string]: unknown
+  }
 
-export type SearchSuggestion = {
-  label: string
-  description?: string
-  icon?: string
-  to?: string
-  type?: string
-  noteId?: string | number
-  [key: string]: unknown
-}
+  type Emits = {
+    (event: 'update:open', value: boolean): void
+    (event: 'update:query', value: string): void
+    (event: 'search', value: string): void
+    (event: 'select', value: SearchSuggestion): void
+  }
 
-type Emits = {
-  (event: 'update:open', value: boolean): void
-  (event: 'update:query', value: string): void
-  (event: 'search', value: string): void
-  (event: 'select', value: SearchSuggestion): void
-}
+  type Props = {
+    open: boolean
+    query?: string
+    placeholder?: string
+    title?: string
+    subtitle?: string
+    suggestions?: SearchSuggestion[]
+  }
 
-type Props = {
-  open: boolean
-  query?: string
-  placeholder?: string
-  title?: string
-  subtitle?: string
-  suggestions?: SearchSuggestion[]
-}
+  const props = withDefaults(defineProps<Props>(), {
+    open: false,
+    query: '',
+    placeholder: '搜索页面、笔记或命令……',
+    title: '搜索 MemFilter',
+    subtitle: '快速跳转到页面或查找你的内容。',
+    suggestions: () => [],
+  })
 
-const props = withDefaults(defineProps<Props>(), {
-  open: false,
-  query: '',
-  placeholder: '搜索页面、笔记或命令……',
-  title: '搜索 MemFilter',
-  subtitle: '快速跳转到页面或查找你的内容。',
-  suggestions: () => []
-})
+  const emit = defineEmits<Emits>()
 
-const emit = defineEmits<Emits>()
+  const dialogOpen = computed({
+    get: () => props.open,
+    set: (value) => emit('update:open', value),
+  })
 
-const dialogOpen = computed({
-  get: () => props.open,
-  set: value => emit('update:open', value)
-})
+  const searchText = ref(props.query)
 
-const searchText = ref(props.query)
+  watch(
+    () => props.query,
+    (value) => {
+      if (value !== searchText.value) {
+        searchText.value = value
+      }
+    }
+  )
 
-watch(
-  () => props.query,
-  value => {
-    if (value !== searchText.value) {
-      searchText.value = value
+  watch(searchText, (value) => {
+    emit('update:query', value)
+  })
+
+  const handleSubmit = () => {
+    emit('search', searchText.value.trim())
+  }
+
+  const handleSuggestionSelect = (suggestion: SearchSuggestion) => {
+    emit('select', suggestion)
+    emit('update:open', false)
+  }
+
+  const handleKeydown = (event: KeyboardEvent) => {
+    if (event.key === 'Enter') {
+      event.preventDefault()
+      handleSubmit()
     }
   }
-)
-
-watch(searchText, value => {
-  emit('update:query', value)
-})
-
-const handleSubmit = () => {
-  emit('search', searchText.value.trim())
-}
-
-const handleSuggestionSelect = (suggestion: SearchSuggestion) => {
-  emit('select', suggestion)
-  emit('update:open', false)
-}
-
-const handleKeydown = (event: KeyboardEvent) => {
-  if (event.key === 'Enter') {
-    event.preventDefault()
-    handleSubmit()
-  }
-}
 </script>
 
 <template>
@@ -79,7 +78,7 @@ const handleKeydown = (event: KeyboardEvent) => {
     v-model:open="dialogOpen"
     :ui="{
       container: 'items-start justify-center sm:items-center px-4 py-6',
-      width: 'sm:max-w-2xl w-screen sm:w-auto'
+      width: 'sm:max-w-2xl w-screen sm:w-auto',
     }"
   >
     <template #content>
@@ -121,16 +120,15 @@ const handleKeydown = (event: KeyboardEvent) => {
               快捷入口
             </p>
             <ul class="flex flex-col divide-y divide-gray-200/70 dark:divide-white/5">
-              <li
-                v-for="suggestion in suggestions"
-                :key="suggestion.label"
-              >
+              <li v-for="suggestion in suggestions" :key="suggestion.label">
                 <button
                   type="button"
                   class="flex w-full items-center gap-3 px-3 py-2 text-left transition hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
                   @click="handleSuggestionSelect(suggestion)"
                 >
-                  <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                  <div
+                    class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary"
+                  >
                     <UIcon v-if="suggestion.icon" :name="suggestion.icon" class="text-lg" />
                     <span v-else class="text-sm font-semibold">Go</span>
                   </div>
@@ -138,11 +136,17 @@ const handleKeydown = (event: KeyboardEvent) => {
                     <p class="text-sm font-medium text-gray-900 dark:text-white line-clamp-1">
                       {{ suggestion.label }}
                     </p>
-                    <p v-if="suggestion.description" class="text-xs text-gray-500 dark:text-gray-400 line-clamp-1">
+                    <p
+                      v-if="suggestion.description"
+                      class="text-xs text-gray-500 dark:text-gray-400 line-clamp-1"
+                    >
                       {{ suggestion.description }}
                     </p>
                   </div>
-                  <UIcon name="i-lucide-corner-down-left" class="text-sm text-gray-400 dark:text-gray-500" />
+                  <UIcon
+                    name="i-lucide-corner-down-left"
+                    class="text-sm text-gray-400 dark:text-gray-500"
+                  />
                 </button>
               </li>
             </ul>
@@ -154,10 +158,10 @@ const handleKeydown = (event: KeyboardEvent) => {
 </template>
 
 <style scoped>
-.line-clamp-1 {
-  display: -webkit-box;
-  -webkit-line-clamp: 1;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
+  .line-clamp-1 {
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
 </style>

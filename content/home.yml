@@ -1,84 +1,84 @@
-title: "工作台"
-description: "您的智能记忆管理中心"
+title: '工作台'
+description: '您的智能记忆管理中心'
 
 welcome:
-  title: "欢迎回来"
-  subtitle: "开始今天的智能记忆整理"
+  title: '欢迎回来'
+  subtitle: '开始今天的智能记忆整理'
 
 quickActions:
-  title: "快速开始"
+  title: '快速开始'
   items:
-    - label: "新建笔记"
-      description: "记录新的想法或内容"
-      icon: "i-lucide-plus"
-      to: "/note"
-      color: "primary"
-    - label: "查看记忆"
-      description: "浏览您的记忆库"
-      icon: "i-lucide-brain"
-      to: "/memory" 
-      color: "primary"
-    - label: "遗忘日志"
-      description: "查看已遗忘的内容"
-      icon: "i-lucide-history"
-      to: "/history"
-      color: "warning"
+    - label: '新建笔记'
+      description: '记录新的想法或内容'
+      icon: 'i-lucide-plus'
+      to: '/note'
+      color: 'primary'
+    - label: '查看记忆'
+      description: '浏览您的记忆库'
+      icon: 'i-lucide-brain'
+      to: '/memory'
+      color: 'primary'
+    - label: '遗忘日志'
+      description: '查看已遗忘的内容'
+      icon: 'i-lucide-history'
+      to: '/history'
+      color: 'warning'
 
 recentActivity:
-  title: "最近活动"
-  viewAll: "查看全部"
+  title: '最近活动'
+  viewAll: '查看全部'
   empty:
-    title: "开始记录您的第一条内容"
-    subtitle: "AI 将智能分析并帮您管理重要信息"
-    action: "创建笔记"
+    title: '开始记录您的第一条内容'
+    subtitle: 'AI 将智能分析并帮您管理重要信息'
+    action: '创建笔记'
 
 stats:
-  title: "今日统计"
+  title: '今日统计'
   items:
-    - label: "新增笔记"
-      value: "0"
-      icon: "i-lucide-plus-circle"
-      key: "newNotes"
-    - label: "处理中"
-      value: "0"
-      icon: "i-lucide-brain"
-      key: "processing"
-    - label: "已保留"
-      value: "0"
-      icon: "i-lucide-bookmark"
-      key: "retained"
-    - label: "已遗忘"
-      value: "0"
-      icon: "i-lucide-trash-2"
-      key: "forgotten"
+    - label: '新增笔记'
+      value: '0'
+      icon: 'i-lucide-plus-circle'
+      key: 'newNotes'
+    - label: '处理中'
+      value: '0'
+      icon: 'i-lucide-brain'
+      key: 'processing'
+    - label: '已保留'
+      value: '0'
+      icon: 'i-lucide-bookmark'
+      key: 'retained'
+    - label: '已遗忘'
+      value: '0'
+      icon: 'i-lucide-trash-2'
+      key: 'forgotten'
 
 memoryOverview:
-  title: "记忆概览"
-  viewDetails: "查看详情"
+  title: '记忆概览'
+  viewDetails: '查看详情'
   categories:
-    - name: "核心记忆"
+    - name: '核心记忆'
       count: 0
-      color: "primary"
-      icon: "i-lucide-star"
-      key: "importance.high"
-    - name: "重点追踪"
+      color: 'primary'
+      icon: 'i-lucide-star'
+      key: 'importance.high'
+    - name: '重点追踪'
       count: 0
-      color: "amber"
-      icon: "i-lucide-target"
-      key: "importance.medium"
-    - name: "随手记录"
+      color: 'amber'
+      icon: 'i-lucide-target'
+      key: 'importance.medium'
+    - name: '随手记录'
       count: 0
-      color: "sky"
-      icon: "i-lucide-pen"
-      key: "importance.low"
-    - name: "噪声过滤"
+      color: 'sky'
+      icon: 'i-lucide-pen'
+      key: 'importance.low'
+    - name: '噪声过滤'
       count: 0
-      color: "gray"
-      icon: "i-lucide-sliders-horizontal"
-      key: "importance.noise"
+      color: 'gray'
+      icon: 'i-lucide-sliders-horizontal'
+      key: 'importance.noise'
 
 aiStatus:
-  title: "AI 引擎状态"
-  status: "运行中"
-  description: "正在智能分析您的内容..."
-  lastUpdate: "刚刚更新"
+  title: 'AI 引擎状态'
+  status: '运行中'
+  description: '正在智能分析您的内容...'
+  lastUpdate: '刚刚更新'

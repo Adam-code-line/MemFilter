@@ -1,28 +1,28 @@
 <script setup lang="ts">
-import type { NavigationMenuItem } from '@nuxt/ui'
+  import type { NavigationMenuItem } from '@nuxt/ui'
 
-// 底部导航链接
-const footerLinks: NavigationMenuItem[] = [
-  {
-    label: '关于忆滤',
-    to: '/about'
-  },
-  {
-    label: '隐私政策',
-    to: '/'
-  },
-  {
-    label: '使用条款',
-    to: '/'
-  },
-  {
-    label: '联系我们',
-    to: '/'
-  }
-]
+  // 底部导航链接
+  const footerLinks: NavigationMenuItem[] = [
+    {
+      label: '关于忆滤',
+      to: '/about',
+    },
+    {
+      label: '隐私政策',
+      to: '/',
+    },
+    {
+      label: '使用条款',
+      to: '/',
+    },
+    {
+      label: '联系我们',
+      to: '/',
+    },
+  ]
 
-// 获取当前年份
-const currentYear = new Date().getFullYear()
+  // 获取当前年份
+  const currentYear = new Date().getFullYear()
 </script>
 
 <template>
@@ -50,7 +50,7 @@ const currentYear = new Date().getFullYear()
           target="_blank"
           aria-label="GitHub"
         />
-        
+
         <!-- 版权信息 -->
         <p class="text-sm text-gray-600 dark:text-gray-400">
           © {{ currentYear }} 忆滤. 保留所有权利.

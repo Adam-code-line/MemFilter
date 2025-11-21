@@ -1,4 +1,3 @@
-
 import type { MemoryCardVisualsResult, MemoryFadeLevel } from './types'
 
 export const useMemoryCardVisuals = (
@@ -16,11 +15,11 @@ export const useMemoryCardVisuals = (
       '--fade-opacity': opacity,
       '--blur-amount': `${blur}px`,
       '--scale-amount': scale,
-      '--forgetting-progress': `${forgettingProgress.value}%`
+      '--forgetting-progress': `${forgettingProgress.value}%`,
     }
   })
 
   return {
-    cardStyle
+    cardStyle,
   }
 }

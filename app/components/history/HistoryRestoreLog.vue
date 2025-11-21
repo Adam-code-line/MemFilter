@@ -1,26 +1,26 @@
 <script setup lang="ts">
-const props = defineProps({
-  title: {
-    type: String,
-    default: '恢复记录'
-  },
-  description: {
-    type: String,
-    default: undefined
-  },
-  emptyTitle: {
-    type: String,
-    default: '暂无恢复记录'
-  },
-  emptyDescription: {
-    type: String,
-    default: undefined
-  },
-  items: {
-    type: Array as () => Array<{ id: number; title: string; restoredAt: Date; meta?: string }>,
-    default: () => []
-  }
-})
+  const props = defineProps({
+    title: {
+      type: String,
+      default: '恢复记录',
+    },
+    description: {
+      type: String,
+      default: undefined,
+    },
+    emptyTitle: {
+      type: String,
+      default: '暂无恢复记录',
+    },
+    emptyDescription: {
+      type: String,
+      default: undefined,
+    },
+    items: {
+      type: Array as () => Array<{ id: number; title: string; restoredAt: Date; meta?: string }>,
+      default: () => [],
+    },
+  })
 </script>
 
 <template>
@@ -53,7 +53,9 @@ const props = defineProps({
     <div v-else class="flex flex-col items-center gap-2 py-10 text-center">
       <UIcon name="i-lucide-book-open-check" class="text-2xl text-primary-400" />
       <p class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ emptyTitle }}</p>
-      <p v-if="emptyDescription" class="text-sm text-gray-500 dark:text-gray-400">{{ emptyDescription }}</p>
+      <p v-if="emptyDescription" class="text-sm text-gray-500 dark:text-gray-400">
+        {{ emptyDescription }}
+      </p>
     </div>
   </UCard>
 </template>

@@ -1,4 +1,3 @@
-
 export type KeyboardShortcutTarget = Window | Document | HTMLElement
 
 type ModifierState = {
@@ -29,7 +28,7 @@ export interface UseKeyboardShortcutOptions {
 }
 
 const defaultOptions: Required<Pick<UseKeyboardShortcutOptions, 'event'>> = {
-  event: 'keydown'
+  event: 'keydown',
 }
 
 const isInputLikeElement = (element: EventTarget | null): element is HTMLElement => {
@@ -49,12 +48,11 @@ const isInputLikeElement = (element: EventTarget | null): element is HTMLElement
 const modifiersMatch = (event: KeyboardEvent, modifiers: ModifierState) => {
   const { ctrl, alt, shift, meta, exact } = modifiers
 
-  const matches = (
+  const matches =
     (ctrl === undefined || event.ctrlKey === ctrl) &&
     (alt === undefined || event.altKey === alt) &&
     (shift === undefined || event.shiftKey === shift) &&
     (meta === undefined || event.metaKey === meta)
-  )
 
   if (!matches) {
     return false
@@ -65,7 +63,7 @@ const modifiersMatch = (event: KeyboardEvent, modifiers: ModifierState) => {
       ctrl: ctrl ?? false,
       alt: alt ?? false,
       shift: shift ?? false,
-      meta: meta ?? false
+      meta: meta ?? false,
     }
 
     return (
@@ -125,7 +123,9 @@ export const useKeyboardShortcut = (
       if (shortcut.match) {
         matched = shortcut.match(nativeEvent)
       } else {
-        const keyMatches = shortcut.key ? nativeEvent.key.toLowerCase() === shortcut.key.toLowerCase() : true
+        const keyMatches = shortcut.key
+          ? nativeEvent.key.toLowerCase() === shortcut.key.toLowerCase()
+          : true
         const codeMatches = shortcut.code ? nativeEvent.code === shortcut.code : true
 
         if (!keyMatches || !codeMatches) {

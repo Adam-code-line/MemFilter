@@ -29,20 +29,11 @@ interface DeliveryMap {
 const DELIVERY_LIMIT = 30
 
 export const useNotificationCenter = () => {
-  const notificationsState = useState<NotificationEntry[]>(
-    'notification-center:entries',
-    () => []
-  )
+  const notificationsState = useState<NotificationEntry[]>('notification-center:entries', () => [])
 
-  const deliveryState = useState<DeliveryMap>(
-    'notification-center:delivery',
-    () => ({})
-  )
+  const deliveryState = useState<DeliveryMap>('notification-center:delivery', () => ({}))
 
-  const modalOpenState = useState<boolean>(
-    'notification-center:modal-open',
-    () => false
-  )
+  const modalOpenState = useState<boolean>('notification-center:modal-open', () => false)
 
   const settingsStore = useSettingsStore()
   const notificationPreferences = settingsStore.notifications
@@ -50,7 +41,7 @@ export const useNotificationCenter = () => {
   const notifications = notificationsState
   const isModalOpen = modalOpenState
 
-  const unreadCount = computed(() => notifications.value.filter(entry => !entry.read).length)
+  const unreadCount = computed(() => notifications.value.filter((entry) => !entry.read).length)
 
   const ensureDeliveryState = (noteId: string): DeliveryState => {
     if (!deliveryState.value[noteId]) {
@@ -64,7 +55,7 @@ export const useNotificationCenter = () => {
       id: nanoid(12),
       createdAt: Date.now(),
       read: false,
-      ...entry
+      ...entry,
     }
 
     notifications.value = [next, ...notifications.value].slice(0, DELIVERY_LIMIT)
@@ -102,7 +93,7 @@ export const useNotificationCenter = () => {
       description: '该记忆已进入折叠状态，可在记忆库中恢复或彻底清理。',
       noteId,
       fadeLevel: note.fadeLevel,
-      daysRemaining: note.daysUntilForgotten ?? null
+      daysRemaining: note.daysUntilForgotten ?? null,
     })
   }
 
@@ -131,19 +122,19 @@ export const useNotificationCenter = () => {
 
     state.recoveryStage = currentStage
 
-    const remaining = typeof note.daysUntilForgotten === 'number'
-      ? Math.max(note.daysUntilForgotten, 0)
-      : null
+    const remaining =
+      typeof note.daysUntilForgotten === 'number' ? Math.max(note.daysUntilForgotten, 0) : null
 
     appendNotification({
       type: 'recovery',
       title: `笔记《${note.title || '未命名笔记'}》进入恢复窗口`,
-      description: remaining === null
-        ? '记忆即将折叠，如需保留请及时恢复或刷新内容。'
-        : `记忆将在约 ${remaining} 天后折叠，如需保留请及时恢复或刷新内容。`,
+      description:
+        remaining === null
+          ? '记忆即将折叠，如需保留请及时恢复或刷新内容。'
+          : `记忆将在约 ${remaining} 天后折叠，如需保留请及时恢复或刷新内容。`,
       noteId,
       fadeLevel: note.fadeLevel,
-      daysRemaining: remaining
+      daysRemaining: remaining,
     })
   }
 
@@ -169,17 +160,17 @@ export const useNotificationCenter = () => {
   }
 
   const markAsRead = (id: string) => {
-    notifications.value = notifications.value.map(entry =>
+    notifications.value = notifications.value.map((entry) =>
       entry.id === id ? { ...entry, read: true } : entry
     )
   }
 
   const markAllAsRead = () => {
-    notifications.value = notifications.value.map(entry => ({ ...entry, read: true }))
+    notifications.value = notifications.value.map((entry) => ({ ...entry, read: true }))
   }
 
   const removeNotification = (id: string) => {
-    notifications.value = notifications.value.filter(entry => entry.id !== id)
+    notifications.value = notifications.value.filter((entry) => entry.id !== id)
   }
 
   const resetNoteDeliveryState = (noteId: string) => {
@@ -194,7 +185,7 @@ export const useNotificationCenter = () => {
     isModalOpen.value = false
   }
 
-  watch(isModalOpen, value => {
+  watch(isModalOpen, (value) => {
     if (value) {
       markAllAsRead()
     }
@@ -212,6 +203,6 @@ export const useNotificationCenter = () => {
     resetNoteDeliveryState,
     handleNoteTransition,
     publishCollapseEvent,
-    publishRecoveryReminder
+    publishRecoveryReminder,
   }
 }

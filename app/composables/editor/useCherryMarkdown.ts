@@ -27,7 +27,7 @@ const waitForElement = async (id: string, attempts = 5) => {
   let element: HTMLElement | null = document.getElementById(id)
 
   while (!element && tries > 0) {
-    await new Promise(resolve => setTimeout(resolve, 16))
+    await new Promise((resolve) => setTimeout(resolve, 16))
     element = document.getElementById(id)
     tries -= 1
   }
@@ -61,8 +61,8 @@ const ensureEchartsReady = async () => {
     ;(window as any).echarts = {
       init: () => ({
         setOption: () => {},
-        dispose: () => {}
-      })
+        dispose: () => {},
+      }),
     }
     return false
   }
@@ -89,12 +89,12 @@ const toolbarLabels: Record<string, string> = {
   settings: '设置',
   undo: '撤销',
   redo: '重做',
-  save: '保存'
+  save: '保存',
 }
 
 const enhanceAccessibility = (root: HTMLElement) => {
   const buttonNodes = Array.from(root.querySelectorAll<HTMLButtonElement>('button'))
-  buttonNodes.forEach(button => {
+  buttonNodes.forEach((button) => {
     const hasText = button.textContent?.trim().length
     if (hasText) {
       return
@@ -105,7 +105,12 @@ const enhanceAccessibility = (root: HTMLElement) => {
       return
     }
 
-    const datasetKey = (button.dataset.name || button.dataset.type || button.getAttribute('name') || '').toLowerCase()
+    const datasetKey = (
+      button.dataset.name ||
+      button.dataset.type ||
+      button.getAttribute('name') ||
+      ''
+    ).toLowerCase()
     const mappedLabel = datasetKey ? toolbarLabels[datasetKey] : null
     const fallback = mappedLabel ?? '工具按钮'
 
@@ -114,8 +119,11 @@ const enhanceAccessibility = (root: HTMLElement) => {
   })
 
   const hiddenTextareas = Array.from(root.querySelectorAll<HTMLTextAreaElement>('textarea'))
-  hiddenTextareas.forEach(textarea => {
-    const isHidden = textarea.style.display === 'none' || textarea.getAttribute('aria-hidden') === 'true' || textarea.classList.contains('CodeMirror-hiddenTextarea')
+  hiddenTextareas.forEach((textarea) => {
+    const isHidden =
+      textarea.style.display === 'none' ||
+      textarea.getAttribute('aria-hidden') === 'true' ||
+      textarea.classList.contains('CodeMirror-hiddenTextarea')
     if (isHidden) {
       textarea.setAttribute('aria-hidden', 'true')
       textarea.setAttribute('tabindex', '-1')
@@ -181,7 +189,7 @@ export const useCherryMarkdown = (options: UseCherryMarkdownOptions) => {
 
     themeObserver.observe(document.documentElement, {
       attributes: true,
-      attributeFilter: ['class']
+      attributeFilter: ['class'],
     })
   }
 
@@ -210,9 +218,8 @@ export const useCherryMarkdown = (options: UseCherryMarkdownOptions) => {
     const { themeList, codeBlockTheme } = options.getThemeConfig()
     const theme = getCherryTheme()
     const editorHeightRaw = options.getEditorHeight?.()
-    const editorHeight = typeof editorHeightRaw === 'number'
-      ? `${editorHeightRaw}px`
-      : (editorHeightRaw || '520px')
+    const editorHeight =
+      typeof editorHeightRaw === 'number' ? `${editorHeightRaw}px` : editorHeightRaw || '520px'
 
     try {
       const instance = new Cherry({
@@ -222,21 +229,21 @@ export const useCherryMarkdown = (options: UseCherryMarkdownOptions) => {
         themeSettings: {
           themeList,
           mainTheme: theme,
-          codeBlockTheme
+          codeBlockTheme,
         },
         editor: {
           defaultModel: 'edit&preview',
-          height: editorHeight
+          height: editorHeight,
         },
         callback: {
           afterChange: (markdown: string) => {
             isSyncingFromCherry.value = true
             options.onContentChange(markdown)
-          }
+          },
         },
         toolbars: {
-            sidebar: ['mobilePreview', 'copy', 'theme'],
-  }
+          sidebar: ['mobilePreview', 'copy', 'theme'],
+        },
       })
 
       cherryInstance.value = instance
@@ -298,6 +305,6 @@ export const useCherryMarkdown = (options: UseCherryMarkdownOptions) => {
     destroy,
     applyReadOnlyState,
     syncExternalContent,
-    updateCherryTheme
+    updateCherryTheme,
   }
 }

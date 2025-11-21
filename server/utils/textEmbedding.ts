@@ -14,7 +14,7 @@ const normaliseVector = (vector: number[]): number[] => {
   if (length === 0) {
     return vector
   }
-  return vector.map(entry => entry / length)
+  return vector.map((entry) => entry / length)
 }
 
 export const embedText = (input: string, dimension = HASH_DIMENSION): number[] => {

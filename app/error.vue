@@ -1,22 +1,22 @@
 <script setup lang="ts">
-import { clearError } from "#app";
-import { onBeforeRouteLeave } from "#imports";
-import type { NuxtError } from "#app";
+  import { clearError } from '#app'
+  import { onBeforeRouteLeave } from '#imports'
+  import type { NuxtError } from '#app'
 
-defineProps({
-  error: {
-    type: Object as PropType<NuxtError>,
-    required: true,
-  },
-});
+  defineProps({
+    error: {
+      type: Object as PropType<NuxtError>,
+      required: true,
+    },
+  })
 
-const handleClear = () => {
-  clearError({ redirect: "/" });
-};
+  const handleClear = () => {
+    clearError({ redirect: '/' })
+  }
 
-onBeforeRouteLeave(() => {
-  clearError();
-});
+  onBeforeRouteLeave(() => {
+    clearError()
+  })
 </script>
 
 <template>

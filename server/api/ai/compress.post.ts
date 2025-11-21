@@ -1,5 +1,9 @@
 import { readBody } from 'h3'
-import { callChatCompletion, MissingAIConfigurationError, type ChatMessagePayload } from '~~/server/utils/aiClient'
+import {
+  callChatCompletion,
+  MissingAIConfigurationError,
+  type ChatMessagePayload,
+} from '~~/server/utils/aiClient'
 
 interface CompressMeta {
   noteId?: string | number
@@ -46,7 +50,7 @@ const DEFAULT_COMPRESS_RESPONSE: CompressResponseEntry = {
   id: 'offline-compress',
   summary: 'AI 配置缺失，暂未生成摘要。',
   bullets: [],
-  retentionScore: 40
+  retentionScore: 40,
 }
 
 const ensureItems = (body: CompressRequestBody): CompressItem[] => {
@@ -54,27 +58,30 @@ const ensureItems = (body: CompressRequestBody): CompressItem[] => {
     return body.items
   }
   if (body.text && typeof body.text === 'string') {
-    return [{
-      id: body.meta?.noteId,
-      text: body.text,
-      meta: body.meta,
-      options: body.options
-    }]
+    return [
+      {
+        id: body.meta?.noteId,
+        text: body.text,
+        meta: body.meta,
+        options: body.options,
+      },
+    ]
   }
   return []
 }
 
 const checkContentSafety = (text: string) =>
-  FORBIDDEN_KEYWORDS.some(keyword => text.includes(keyword))
+  FORBIDDEN_KEYWORDS.some((keyword) => text.includes(keyword))
 
 const buildMessages = (item: CompressItem): ChatMessagePayload[] => {
   const meta = item.meta ?? {}
-  const targetLength = typeof item.options?.targetLength === 'number' && item.options?.targetLength > 0
-    ? item.options?.targetLength
-    : 120
+  const targetLength =
+    typeof item.options?.targetLength === 'number' && item.options?.targetLength > 0
+      ? item.options?.targetLength
+      : 120
 
-  const systemPrompt = `你是忆滤 (MemFilter) 的记忆压缩助手。请提炼文本的核心要点，输出 JSON，总结需兼顾完整性与可读性。`.
-    trim()
+  const systemPrompt =
+    `你是忆滤 (MemFilter) 的记忆压缩助手。请提炼文本的核心要点，输出 JSON，总结需兼顾完整性与可读性。`.trim()
 
   const userPayload = {
     text: item.text,
@@ -83,26 +90,31 @@ const buildMessages = (item: CompressItem): ChatMessagePayload[] => {
       title: meta.title ?? null,
       importance: meta.importance ?? null,
       created_at: meta.createdAt ?? null,
-      tags: meta.tags ?? []
+      tags: meta.tags ?? [],
     },
     instructions: {
       target_length: targetLength,
       bullets: 3,
-      retention_score_definition: '0-100 分，越高表示越应被保留。'
-    }
+      retention_score_definition: '0-100 分，越高表示越应被保留。',
+    },
   }
 
   return [
     { role: 'system', content: systemPrompt },
     {
       role: 'user',
-      content: `请压缩以下内容，仅输出 JSON，字段包含 summary, bullets (数组), retentionScore (0-100 数字), tokensSaved (可选整数)。\n${JSON.stringify(userPayload, null, 2)}`
-    }
+      content: `请压缩以下内容，仅输出 JSON，字段包含 summary, bullets (数组), retentionScore (0-100 数字), tokensSaved (可选整数)。\n${JSON.stringify(userPayload, null, 2)}`,
+    },
   ]
 }
 
 const extractJson = (raw: string) => {
-  const cleaned = raw.trim().replace(/^```json\s*/i, '').replace(/```$/i, '').replace(/^```\s*/i, '').replace(/```$/i, '')
+  const cleaned = raw
+    .trim()
+    .replace(/^```json\s*/i, '')
+    .replace(/```$/i, '')
+    .replace(/^```\s*/i, '')
+    .replace(/```$/i, '')
   try {
     return JSON.parse(cleaned)
   } catch {
@@ -123,26 +135,33 @@ const normalizeResponse = (payload: any, fallbackId: string): CompressResponseEn
     return { ...DEFAULT_COMPRESS_RESPONSE, id: fallbackId }
   }
 
-  const summary = typeof payload.summary === 'string' && payload.summary.trim().length
-    ? payload.summary.trim()
-    : DEFAULT_COMPRESS_RESPONSE.summary
+  const summary =
+    typeof payload.summary === 'string' && payload.summary.trim().length
+      ? payload.summary.trim()
+      : DEFAULT_COMPRESS_RESPONSE.summary
 
   const bullets = Array.isArray(payload.bullets)
-    ? payload.bullets.filter((entry: unknown) => typeof entry === 'string' && entry.trim().length).map((entry: string) => entry.trim())
+    ? payload.bullets
+        .filter((entry: unknown) => typeof entry === 'string' && entry.trim().length)
+        .map((entry: string) => entry.trim())
     : []
 
   const retentionScore = Number(payload.retentionScore)
-  const safeScore = Number.isFinite(retentionScore) ? Math.min(Math.max(retentionScore, 0), 100) : 50
+  const safeScore = Number.isFinite(retentionScore)
+    ? Math.min(Math.max(retentionScore, 0), 100)
+    : 50
 
   const tokensSaved = Number(payload.tokensSaved)
-  const safeTokensSaved = Number.isFinite(tokensSaved) ? Math.max(Math.floor(tokensSaved), 0) : undefined
+  const safeTokensSaved = Number.isFinite(tokensSaved)
+    ? Math.max(Math.floor(tokensSaved), 0)
+    : undefined
 
   return {
     id: typeof payload.id === 'string' && payload.id ? payload.id : fallbackId,
     summary,
     bullets,
     retentionScore: safeScore,
-    tokensSaved: safeTokensSaved
+    tokensSaved: safeTokensSaved,
   }
 }
 
@@ -152,25 +171,28 @@ const compressItem = async (item: CompressItem): Promise<CompressResponseEntry> 
   }
 
   if (checkContentSafety(item.text)) {
-    throw createError({ statusCode: 422, statusMessage: '输入内容包含受限敏感信息，无法进行压缩。' })
+    throw createError({
+      statusCode: 422,
+      statusMessage: '输入内容包含受限敏感信息，无法进行压缩。',
+    })
   }
 
   try {
     const result = await callChatCompletion(buildMessages(item), {
       temperature: item.options?.temperature,
-      thinking: item.options?.thinking ?? false
+      thinking: item.options?.thinking ?? false,
     })
     const parsed = extractJson(result.content)
     const normalized = normalizeResponse(parsed, result.id)
     return {
       ...normalized,
-      usage: result.usage
+      usage: result.usage,
     }
   } catch (error) {
     if (error instanceof MissingAIConfigurationError) {
       return {
         ...DEFAULT_COMPRESS_RESPONSE,
-        id: String(item.id ?? 'offline-compress')
+        id: String(item.id ?? 'offline-compress'),
       }
     }
     console.error('[ai/compress] failed to compress item', error)
@@ -194,6 +216,6 @@ export default defineEventHandler(async (event) => {
 
   return {
     items: results,
-    total: results.length
+    total: results.length,
   }
 })

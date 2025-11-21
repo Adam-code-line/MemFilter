@@ -1,100 +1,103 @@
 <script setup lang="ts">
-import { computed, ref } from '#imports'
-import type { MemoryRawItem } from '~/composables/services/useIngestionService'
-import { useDiscoveryFeed } from '~/composables/discovery/useDiscoveryFeed'
-import DiscoveryHero from '~/components/Discovery/DiscoveryHero.vue'
-import DiscoveryTopicRail from '~/components/Discovery/DiscoveryTopicRail.vue'
-import DiscoveryFeedList from '~/components/Discovery/DiscoveryFeedList.vue'
-import DiscoverySidebar from '~/components/Discovery/DiscoverySidebar.vue'
+  import { computed, ref } from '#imports'
+  import type { MemoryRawItem } from '~/composables/services/useIngestionService'
+  import { useDiscoveryFeed } from '~/composables/discovery/useDiscoveryFeed'
+  import DiscoveryHero from '~/components/Discovery/DiscoveryHero.vue'
+  import DiscoveryTopicRail from '~/components/Discovery/DiscoveryTopicRail.vue'
+  import DiscoveryFeedList from '~/components/Discovery/DiscoveryFeedList.vue'
+  import DiscoverySidebar from '~/components/Discovery/DiscoverySidebar.vue'
 
-const props = defineProps<{
-  items: MemoryRawItem[]
-  isLoading: boolean
-  isSyncing: boolean
-  lastSyncSummary: string | null
-  promotingId: number | null
-}>()
+  const props = defineProps<{
+    items: MemoryRawItem[]
+    isLoading: boolean
+    isSyncing: boolean
+    lastSyncSummary: string | null
+    promotingId: number | null
+  }>()
 
-const emit = defineEmits<{
-  (event: 'fetch', payload?: { keywords?: string[] | null; limit?: number | null }): void
-  (event: 'refresh'): void
-  (event: 'promote', item: MemoryRawItem): void
-  (event: 'open-notes'): void
-}>()
+  const emit = defineEmits<{
+    (event: 'fetch', payload?: { keywords?: string[] | null; limit?: number | null }): void
+    (event: 'refresh'): void
+    (event: 'promote', item: MemoryRawItem): void
+    (event: 'open-notes'): void
+  }>()
 
-const discovery = useDiscoveryFeed({ items: computed(() => props.items) })
+  const discovery = useDiscoveryFeed({ items: computed(() => props.items) })
 
-const {
-  searchQuery,
-  selectedTopic,
-  selectedTimeRange,
-  categories,
-  trendingTopics,
-  curatedCollections,
-  stats,
-  filteredItems,
-  highlightItem,
-  setTopic,
-  setTimeRange
-} = discovery
+  const {
+    searchQuery,
+    selectedTopic,
+    selectedTimeRange,
+    categories,
+    trendingTopics,
+    curatedCollections,
+    stats,
+    filteredItems,
+    highlightItem,
+    setTopic,
+    setTimeRange,
+  } = discovery
 
-const DEFAULT_FETCH_LIMIT = 20
-const fetchLimit = ref<number | null>(DEFAULT_FETCH_LIMIT)
-const searchWasActive = ref(false)
+  const DEFAULT_FETCH_LIMIT = 20
+  const fetchLimit = ref<number | null>(DEFAULT_FETCH_LIMIT)
+  const searchWasActive = ref(false)
 
-const displayItems = computed(() => {
-  const items = filteredItems.value
-  if (!highlightItem.value) {
-    return items
-  }
-  return items.slice(1)
-})
+  const displayItems = computed(() => {
+    const items = filteredItems.value
+    if (!highlightItem.value) {
+      return items
+    }
+    return items.slice(1)
+  })
 
-const promotingKey = computed(() => (props.promotingId !== null ? String(props.promotingId) : null))
+  const promotingKey = computed(() =>
+    props.promotingId !== null ? String(props.promotingId) : null
+  )
 
-const extractKeywords = () => {
-  const raw = searchQuery.value.trim()
-  if (!raw.length) {
-    return null
-  }
+  const extractKeywords = () => {
+    const raw = searchQuery.value.trim()
+    if (!raw.length) {
+      return null
+    }
 
-  const tokens = raw
-    .split(/[\s,，、；;]+/)
-    .map(token => token.trim())
-    .filter(Boolean)
+    const tokens = raw
+      .split(/[\s,，、；;]+/)
+      .map((token) => token.trim())
+      .filter(Boolean)
 
-  return tokens.length ? tokens : null
-}
-
-const resolveLimit = () => fetchLimit.value
-
-const handleFetchLatest = () => emit('fetch', {
-  keywords: extractKeywords(),
-  limit: resolveLimit()
-})
-const handleRefresh = () => emit('refresh')
-const handleSearchQueryUpdate = (value: string | null | undefined) => {
-  const normalized = typeof value === 'string' ? value : ''
-  searchQuery.value = normalized
-
-  const trimmed = normalized.trim()
-  const previouslyActive = searchWasActive.value
-  searchWasActive.value = trimmed.length > 0
-
-  if (previouslyActive && trimmed.length === 0) {
-    emit('refresh')
-  }
-}
-const handleFetchLimitUpdate = (value: number | null) => {
-  fetchLimit.value = value
-}
-const handleOpenLink = (item: { link: string | null }) => {
-  if (!item.link || typeof window === 'undefined') {
-    return
+    return tokens.length ? tokens : null
   }
 
-  window.open(item.link, '_blank', 'noopener')
-}
+  const resolveLimit = () => fetchLimit.value
+
+  const handleFetchLatest = () =>
+    emit('fetch', {
+      keywords: extractKeywords(),
+      limit: resolveLimit(),
+    })
+  const handleRefresh = () => emit('refresh')
+  const handleSearchQueryUpdate = (value: string | null | undefined) => {
+    const normalized = typeof value === 'string' ? value : ''
+    searchQuery.value = normalized
+
+    const trimmed = normalized.trim()
+    const previouslyActive = searchWasActive.value
+    searchWasActive.value = trimmed.length > 0
+
+    if (previouslyActive && trimmed.length === 0) {
+      emit('refresh')
+    }
+  }
+  const handleFetchLimitUpdate = (value: number | null) => {
+    fetchLimit.value = value
+  }
+  const handleOpenLink = (item: { link: string | null }) => {
+    if (!item.link || typeof window === 'undefined') {
+      return
+    }
+
+    window.open(item.link, '_blank', 'noopener')
+  }
 </script>
 
 <template>
@@ -135,7 +138,7 @@ const handleOpenLink = (item: { link: string | null }) => {
           :items="displayItems"
           :is-loading="isLoading"
           :promoting-id="promotingKey"
-          @promote="item => emit('promote', item.raw)"
+          @promote="(item) => emit('promote', item.raw)"
           @open-link="handleOpenLink"
         />
       </div>

@@ -6,13 +6,9 @@
         <div class="space-y-2">
           <div class="flex flex-wrap items-center gap-2">
             <h2 class="text-2xl font-semibold text-gray-900 dark:text-white">
-              {{ detail.title || "未命名记忆" }}
+              {{ detail.title || '未命名记忆' }}
             </h2>
-            <UBadge
-              :label="importanceLabel"
-              :color="importanceColor"
-              variant="solid"
-            />
+            <UBadge :label="importanceLabel" :color="importanceColor" variant="solid" />
             <UBadge
               v-if="statusLabel"
               :label="statusLabel"
@@ -20,9 +16,7 @@
               variant="soft"
             />
           </div>
-          <div
-            class="flex flex-wrap gap-4 text-xs text-gray-500 dark:text-gray-400"
-          >
+          <div class="flex flex-wrap gap-4 text-xs text-gray-500 dark:text-gray-400">
             <span v-if="detail.date" class="flex items-center gap-1">
               <UIcon name="i-lucide-calendar" />
               创建 {{ detail.date }}
@@ -33,7 +27,7 @@
             </span>
             <span class="flex items-center gap-1">
               <UIcon :name="forgettingIcon" />
-              {{ forgettingStatus || "清晰" }}
+              {{ forgettingStatus || '清晰' }}
             </span>
           </div>
         </div>
@@ -42,10 +36,9 @@
         <div class="text-sm text-gray-500 dark:text-gray-300">淡化进度</div>
         <div class="flex items-center gap-2">
           <UProgress :value="progressValue" :max="100" size="xs" class="w-28" />
-          <span
-            class="text-sm font-medium text-amber-600 dark:text-amber-300"
-            >{{ progressLabel }}</span
-          >
+          <span class="text-sm font-medium text-amber-600 dark:text-amber-300">{{
+            progressLabel
+          }}</span>
         </div>
         <span
           v-if="detail.daysUntilForgotten !== undefined"
@@ -61,9 +54,7 @@
         class="border border-gray-200/70 dark:border-white/10 bg-white/60 dark:bg-slate-900/40"
       >
         <template #header>
-          <div
-            class="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-200"
-          >
+          <div class="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-200">
             <UIcon name="i-lucide-gauge" />
             AI 重要度评分
           </div>
@@ -75,17 +66,13 @@
             <template v-if="hasAIImportanceScore">
               {{ Math.round(aiImportanceScore ?? 0) }}%
             </template>
-            <span v-else class="text-base text-gray-400 dark:text-gray-500"
-              >等待 AI 评估</span
-            >
+            <span v-else class="text-base text-gray-400 dark:text-gray-500">等待 AI 评估</span>
           </div>
           <p class="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
             <template v-if="hasAIImportanceScore">
               AI 根据记忆的重要度标签给出的价值评分，帮助快速判断是否值得恢复。
             </template>
-            <template v-else>
-              AI 尚未完成重要度评估，生成后该评分会自动更新。
-            </template>
+            <template v-else> AI 尚未完成重要度评估，生成后该评分会自动更新。 </template>
           </p>
         </div>
       </UCard>
@@ -94,15 +81,13 @@
         class="border border-gray-200/70 dark:border-white/10 bg-white/60 dark:bg-slate-900/40"
       >
         <template #header>
-          <div
-            class="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-200"
-          >
+          <div class="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-200">
             <UIcon name="i-lucide-info" />
             当前状态
           </div>
         </template>
         <div class="space-y-2 text-sm text-gray-600 dark:text-gray-200">
-          <p>{{ forgettingTooltip || "尚未进入淡化阶段。" }}</p>
+          <p>{{ forgettingTooltip || '尚未进入淡化阶段。' }}</p>
           <p
             v-if="detail.daysUntilForgotten !== undefined"
             class="text-xs text-gray-500 dark:text-gray-400"
@@ -110,23 +95,16 @@
             若不做处理，该记忆将在
             {{ detail.daysUntilForgotten }} 天后折叠归档。
           </p>
-          <p
-            v-if="detail.isCollapsed"
-            class="text-xs text-amber-600 dark:text-amber-300"
-          >
+          <p v-if="detail.isCollapsed" class="text-xs text-amber-600 dark:text-amber-300">
             当前已折叠，仍可在归档区恢复。
           </p>
         </div>
       </UCard>
     </div>
 
-    <UCard
-      class="border border-gray-200/70 dark:border-white/10 bg-white/65 dark:bg-slate-900/40"
-    >
+    <UCard class="border border-gray-200/70 dark:border-white/10 bg-white/65 dark:bg-slate-900/40">
       <template #header>
-        <div
-          class="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-200"
-        >
+        <div class="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-200">
           <UIcon name="i-lucide-quote" />
           个人描述
         </div>
@@ -142,21 +120,15 @@
       </p>
     </UCard>
 
-    <UCard
-      class="border border-gray-200/70 dark:border-white/10 bg-white/60 dark:bg-slate-900/40"
-    >
+    <UCard class="border border-gray-200/70 dark:border-white/10 bg-white/60 dark:bg-slate-900/40">
       <template #header>
-        <div
-          class="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-200"
-        >
+        <div class="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-200">
           <UIcon name="i-lucide-starry" />
           AI 内容摘要
         </div>
       </template>
       <div class="space-y-4">
-        <div
-          class="flex flex-wrap items-center gap-2 text-xs text-gray-500 dark:text-gray-300"
-        >
+        <div class="flex flex-wrap items-center gap-2 text-xs text-gray-500 dark:text-gray-300">
           <UBadge
             v-if="aiImportanceMeta"
             :label="aiImportanceMeta.label"
@@ -215,9 +187,7 @@
 
     <UCard class="border border-gray-200/70 dark:border-white/10">
       <template #header>
-        <div
-          class="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-200"
-        >
+        <div class="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-200">
           <UIcon name="i-lucide-align-left" />
           正文内容
         </div>
@@ -247,18 +217,11 @@
     >
       <template v-for="action in actions" :key="action.key">
         <UTooltip v-if="action.tooltip" :text="action.tooltip">
-          <UButton
-            v-bind="resolveActionProps(action)"
-            @click="emit('action', action.key)"
-          >
+          <UButton v-bind="resolveActionProps(action)" @click="emit('action', action.key)">
             {{ action.label }}
           </UButton>
         </UTooltip>
-        <UButton
-          v-else
-          v-bind="resolveActionProps(action)"
-          @click="emit('action', action.key)"
-        >
+        <UButton v-else v-bind="resolveActionProps(action)" @click="emit('action', action.key)">
           {{ action.label }}
         </UButton>
       </template>
@@ -271,316 +234,288 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, watch } from "vue";
-import { IMPORTANCE_METADATA } from "~/composables/note-memory/importanceMetadata";
-import type {
-  NoteAIEvaluation,
-  NoteAICompression,
-  ImportanceLevel,
-} from "~/composables/note/types";
-import { useAIImportanceScore } from "~/composables/note/useAIImportanceScore";
+  import { computed, onBeforeUnmount, onMounted, watch } from 'vue'
+  import { IMPORTANCE_METADATA } from '~/composables/note-memory/importanceMetadata'
+  import type {
+    NoteAIEvaluation,
+    NoteAICompression,
+    ImportanceLevel,
+  } from '~/composables/note/types'
+  import { useAIImportanceScore } from '~/composables/note/useAIImportanceScore'
 
-interface MemoryDetailRecord {
-  id?: number | string;
-  title?: string;
-  content?: string;
-  description?: string;
-  date?: string;
-  lastAccessed?: string;
-  icon?: string;
-  importance?: MemoryImportance;
-  fadeLevel?: MemoryFadeLevel;
-  importanceScore?: number;
-  forgettingProgress?: number;
-  daysUntilForgotten?: number;
-  isCollapsed?: boolean;
-  aiEvaluation?: NoteAIEvaluation | null;
-  aiCompression?: NoteAICompression | null;
-}
-
-interface MemoryDetailAction {
-  key: string;
-  label: string;
-  icon?: string;
-  color?: string;
-  variant?: "solid" | "soft" | "subtle" | "outline" | "ghost";
-  disabled?: boolean;
-  tooltip?: string;
-}
-
-const props = withDefaults(
-  defineProps<{
-    note: MemoryDetailRecord | null;
-    actions?: MemoryDetailAction[];
-    statusLabel?: string;
-    statusColor?: string;
-  }>(),
-  {
-    note: null,
-    actions: () => [],
-  }
-);
-
-const emit = defineEmits<{ action: [string] }>();
-
-const detail = computed(() => props.note ?? {});
-const hasNote = computed(() => !!props.note);
-const derivedImportance = computed<MemoryImportance>(
-  () => detail.value.importance ?? "medium"
-);
-const derivedFadeLevel = computed<MemoryFadeLevel>(
-  () => detail.value.fadeLevel ?? 0
-);
-const derivedProgress = computed<number>(
-  () => detail.value.forgettingProgress ?? 0
-);
-const aiEvaluation = computed<NoteAIEvaluation | null>(
-  () => detail.value.aiEvaluation ?? null
-);
-const aiCompression = computed<NoteAICompression | null>(
-  () => detail.value.aiCompression ?? null
-);
-const aiImportanceScore = useAIImportanceScore(detail);
-const hasAIImportanceScore = computed(
-  () => typeof aiImportanceScore.value === "number"
-);
-const aiSummary = computed(() => {
-  const summary = aiCompression.value?.summary ?? "";
-  return typeof summary === "string" ? summary.trim() : "";
-});
-const aiBullets = computed(() => {
-  const bullets = aiCompression.value?.bullets;
-  if (!Array.isArray(bullets)) return [];
-  return bullets
-    .map((bullet) => (typeof bullet === "string" ? bullet.trim() : ""))
-    .filter((bullet) => bullet.length > 0);
-});
-const aiImportanceMeta = computed(() => {
-  const importance = aiEvaluation.value?.importance;
-  return importance ? IMPORTANCE_METADATA[importance as ImportanceLevel] : null;
-});
-const aiImportanceScoreLabel = computed(() => {
-  if (!hasAIImportanceScore.value) return null;
-  return `${Math.round(aiImportanceScore.value ?? 0)}%`;
-});
-const formatGeneratedAt = (value?: string | null) => {
-  if (!value) return null;
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return null;
-  return date.toLocaleString(undefined, {
-    month: "numeric",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-};
-const aiEvaluationTimestamp = computed(() =>
-  formatGeneratedAt(aiEvaluation.value?.generatedAt)
-);
-const aiCompressionTimestamp = computed(() =>
-  formatGeneratedAt(aiCompression.value?.generatedAt)
-);
-const aiTokensSaved = computed(() => {
-  const value = aiCompression.value?.tokensSaved;
-  return typeof value === "number" && value > 0 ? value : null;
-});
-const aiEvaluationUsage = computed(() => aiEvaluation.value?.usage ?? null);
-const aiCompressionUsage = computed(() => aiCompression.value?.usage ?? null);
-const aiEvaluationMetaEntries = computed(() => {
-  const usage = aiEvaluationUsage.value;
-  if (!usage) return [] as Array<{ label: string; value: number }>;
-
-  const entries: Array<{ label: string; value: number }> = [];
-  if (typeof usage.promptTokens === "number") {
-    entries.push({ label: "评估 Prompt", value: usage.promptTokens });
-  }
-  if (typeof usage.completionTokens === "number") {
-    entries.push({ label: "评估 Completion", value: usage.completionTokens });
-  }
-  if (typeof usage.totalTokens === "number") {
-    entries.push({ label: "评估总计", value: usage.totalTokens });
+  interface MemoryDetailRecord {
+    id?: number | string
+    title?: string
+    content?: string
+    description?: string
+    date?: string
+    lastAccessed?: string
+    icon?: string
+    importance?: MemoryImportance
+    fadeLevel?: MemoryFadeLevel
+    importanceScore?: number
+    forgettingProgress?: number
+    daysUntilForgotten?: number
+    isCollapsed?: boolean
+    aiEvaluation?: NoteAIEvaluation | null
+    aiCompression?: NoteAICompression | null
   }
 
-  return entries;
-});
-
-const previewContainerId = "memory-detail-preview";
-const hasContent = computed(() => {
-  const value = detail.value.content ?? "";
-  return typeof value === "string" && value.trim().length > 0;
-});
-const hasDescription = computed(() => {
-  const value = detail.value.description ?? "";
-  return typeof value === "string" && value.trim().length > 0;
-});
-
-// Cherry Markdown preview mirrors the editor styling but stays read-only here.
-const {
-  initialize: initializePreview,
-  destroy: destroyPreview,
-  updateContent: updatePreviewContent,
-} = useCherryPreview({
-  containerId: previewContainerId,
-  getValue: () => detail.value.content ?? "",
-  getThemeConfig: () => ({
-    themeList: [
-      { className: "light", label: "亮" },
-      { className: "dark", label: "暗" },
-      { className: "violet", label: "淡雅" },
-      { className: "blue", label: "清幽" },
-      { className: "red", label: "粉" },
-    ],
-    codeBlockTheme: "default",
-  }),
-});
-
-onMounted(async () => {
-  if (import.meta.client) {
-    await initializePreview();
+  interface MemoryDetailAction {
+    key: string
+    label: string
+    icon?: string
+    color?: string
+    variant?: 'solid' | 'soft' | 'subtle' | 'outline' | 'ghost'
+    disabled?: boolean
+    tooltip?: string
   }
-});
 
-watch(
-  () => detail.value.content ?? "",
-  (value) => {
-    updatePreviewContent(value);
-  },
-  { immediate: true }
-);
+  const props = withDefaults(
+    defineProps<{
+      note: MemoryDetailRecord | null
+      actions?: MemoryDetailAction[]
+      statusLabel?: string
+      statusColor?: string
+    }>(),
+    {
+      note: null,
+      actions: () => [],
+    }
+  )
 
-onBeforeUnmount(() => {
-  destroyPreview();
-});
+  const emit = defineEmits<{ action: [string] }>()
 
-const {
-  importanceLabel,
-  importanceColor,
-  forgettingTooltip,
-  forgettingIcon,
-  forgettingStatus,
-  displayIcon,
-} = useMemoryMeta(
-  {
-    title: computed(() => detail.value.title ?? ""),
-    snippet: computed(() => detail.value.content ?? ""),
-    date: computed(() => detail.value.date ?? ""),
-    icon: computed(() => detail.value.icon ?? "📝"),
-    importance: derivedImportance,
-    fadeLevel: derivedFadeLevel,
-    forgettingProgress: derivedProgress,
-  },
-  {
-    snippetLimit: 0,
-    blurredSnippetMessage: "内容暂不可见",
+  const detail = computed(() => props.note ?? {})
+  const hasNote = computed(() => !!props.note)
+  const derivedImportance = computed<MemoryImportance>(() => detail.value.importance ?? 'medium')
+  const derivedFadeLevel = computed<MemoryFadeLevel>(() => detail.value.fadeLevel ?? 0)
+  const derivedProgress = computed<number>(() => detail.value.forgettingProgress ?? 0)
+  const aiEvaluation = computed<NoteAIEvaluation | null>(() => detail.value.aiEvaluation ?? null)
+  const aiCompression = computed<NoteAICompression | null>(() => detail.value.aiCompression ?? null)
+  const aiImportanceScore = useAIImportanceScore(detail)
+  const hasAIImportanceScore = computed(() => typeof aiImportanceScore.value === 'number')
+  const aiSummary = computed(() => {
+    const summary = aiCompression.value?.summary ?? ''
+    return typeof summary === 'string' ? summary.trim() : ''
+  })
+  const aiBullets = computed(() => {
+    const bullets = aiCompression.value?.bullets
+    if (!Array.isArray(bullets)) return []
+    return bullets
+      .map((bullet) => (typeof bullet === 'string' ? bullet.trim() : ''))
+      .filter((bullet) => bullet.length > 0)
+  })
+  const aiImportanceMeta = computed(() => {
+    const importance = aiEvaluation.value?.importance
+    return importance ? IMPORTANCE_METADATA[importance as ImportanceLevel] : null
+  })
+  const aiImportanceScoreLabel = computed(() => {
+    if (!hasAIImportanceScore.value) return null
+    return `${Math.round(aiImportanceScore.value ?? 0)}%`
+  })
+  const formatGeneratedAt = (value?: string | null) => {
+    if (!value) return null
+    const date = new Date(value)
+    if (Number.isNaN(date.getTime())) return null
+    return date.toLocaleString(undefined, {
+      month: 'numeric',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    })
   }
-);
+  const aiEvaluationTimestamp = computed(() => formatGeneratedAt(aiEvaluation.value?.generatedAt))
+  const aiCompressionTimestamp = computed(() => formatGeneratedAt(aiCompression.value?.generatedAt))
+  const aiTokensSaved = computed(() => {
+    const value = aiCompression.value?.tokensSaved
+    return typeof value === 'number' && value > 0 ? value : null
+  })
+  const aiEvaluationUsage = computed(() => aiEvaluation.value?.usage ?? null)
+  const aiCompressionUsage = computed(() => aiCompression.value?.usage ?? null)
+  const aiEvaluationMetaEntries = computed(() => {
+    const usage = aiEvaluationUsage.value
+    if (!usage) return [] as Array<{ label: string; value: number }>
 
-const progressValue = computed(() =>
-  Math.min(100, Math.max(0, derivedProgress.value))
-);
-const progressLabel = computed(() => `${progressValue.value.toFixed(0)}%`);
+    const entries: Array<{ label: string; value: number }> = []
+    if (typeof usage.promptTokens === 'number') {
+      entries.push({ label: '评估 Prompt', value: usage.promptTokens })
+    }
+    if (typeof usage.completionTokens === 'number') {
+      entries.push({ label: '评估 Completion', value: usage.completionTokens })
+    }
+    if (typeof usage.totalTokens === 'number') {
+      entries.push({ label: '评估总计', value: usage.totalTokens })
+    }
 
-const actions = computed(() => props.actions ?? []);
+    return entries
+  })
 
-const resolveActionProps = (action: MemoryDetailAction) => ({
-  color: action.color ?? "neutral",
-  variant: action.variant ?? "ghost",
-  size: "sm",
-  icon: action.icon,
-  disabled: action.disabled,
-});
+  const previewContainerId = 'memory-detail-preview'
+  const hasContent = computed(() => {
+    const value = detail.value.content ?? ''
+    return typeof value === 'string' && value.trim().length > 0
+  })
+  const hasDescription = computed(() => {
+    const value = detail.value.description ?? ''
+    return typeof value === 'string' && value.trim().length > 0
+  })
+
+  // Cherry Markdown preview mirrors the editor styling but stays read-only here.
+  const {
+    initialize: initializePreview,
+    destroy: destroyPreview,
+    updateContent: updatePreviewContent,
+  } = useCherryPreview({
+    containerId: previewContainerId,
+    getValue: () => detail.value.content ?? '',
+    getThemeConfig: () => ({
+      themeList: [
+        { className: 'light', label: '亮' },
+        { className: 'dark', label: '暗' },
+        { className: 'violet', label: '淡雅' },
+        { className: 'blue', label: '清幽' },
+        { className: 'red', label: '粉' },
+      ],
+      codeBlockTheme: 'default',
+    }),
+  })
+
+  onMounted(async () => {
+    if (import.meta.client) {
+      await initializePreview()
+    }
+  })
+
+  watch(
+    () => detail.value.content ?? '',
+    (value) => {
+      updatePreviewContent(value)
+    },
+    { immediate: true }
+  )
+
+  onBeforeUnmount(() => {
+    destroyPreview()
+  })
+
+  const {
+    importanceLabel,
+    importanceColor,
+    forgettingTooltip,
+    forgettingIcon,
+    forgettingStatus,
+    displayIcon,
+  } = useMemoryMeta(
+    {
+      title: computed(() => detail.value.title ?? ''),
+      snippet: computed(() => detail.value.content ?? ''),
+      date: computed(() => detail.value.date ?? ''),
+      icon: computed(() => detail.value.icon ?? '📝'),
+      importance: derivedImportance,
+      fadeLevel: derivedFadeLevel,
+      forgettingProgress: derivedProgress,
+    },
+    {
+      snippetLimit: 0,
+      blurredSnippetMessage: '内容暂不可见',
+    }
+  )
+
+  const progressValue = computed(() => Math.min(100, Math.max(0, derivedProgress.value)))
+  const progressLabel = computed(() => `${progressValue.value.toFixed(0)}%`)
+
+  const actions = computed(() => props.actions ?? [])
+
+  const resolveActionProps = (action: MemoryDetailAction) => ({
+    color: action.color ?? 'neutral',
+    variant: action.variant ?? 'ghost',
+    size: 'sm',
+    icon: action.icon,
+    disabled: action.disabled,
+  })
 </script>
 
 <style scoped>
-.cherry-preview-shell {
-  min-height: 20rem;
-  border-radius: 0.75rem;
-  overflow: hidden;
-}
-
-.cherry-preview-container {
-  width: 100%;
-  height: 100%;
-}
-
-@media (min-width: 768px) {
   .cherry-preview-shell {
-    min-height: 24rem;
+    min-height: 20rem;
+    border-radius: 0.75rem;
+    overflow: hidden;
   }
-}
 
-:deep(#memory-detail-preview .cherry) {
-  background-color: transparent !important;
-  border-radius: 0.75rem !important;
-  border: none !important;
-  box-shadow: none !important;
-}
+  .cherry-preview-container {
+    width: 100%;
+    height: 100%;
+  }
 
-:deep(#memory-detail-preview .cherry-previewer) {
-  background-color: transparent !important;
-  color: inherit !important;
-  padding: 0 !important;
-  border: none !important;
-  box-shadow: none !important;
-  border-left: none !important;
-  background-clip: padding-box !important;
-}
+  @media (min-width: 768px) {
+    .cherry-preview-shell {
+      min-height: 24rem;
+    }
+  }
 
-:deep(#memory-detail-preview .cherry-theme-light .cherry-previewer),
-:deep(#memory-detail-preview .cherry-theme-violet .cherry-previewer),
-:deep(#memory-detail-preview .cherry-theme-blue .cherry-previewer),
-:deep(#memory-detail-preview .cherry-theme-red .cherry-previewer) {
-  background-color: rgba(255, 255, 255, 0.9) !important;
-  color: rgb(30 41 59) !important;
-}
+  :deep(#memory-detail-preview .cherry) {
+    background-color: transparent !important;
+    border-radius: 0.75rem !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
 
-:deep(
-  #memory-detail-preview .cherry-theme-light .cherry-previewer .cherry-markdown
-),
-:deep(
-  #memory-detail-preview .cherry-theme-violet .cherry-previewer .cherry-markdown
-),
-:deep(
-  #memory-detail-preview .cherry-theme-blue .cherry-previewer .cherry-markdown
-),
-:deep(
-  #memory-detail-preview .cherry-theme-red .cherry-previewer .cherry-markdown
-) {
-  color: inherit !important;
-}
+  :deep(#memory-detail-preview .cherry-previewer) {
+    background-color: transparent !important;
+    color: inherit !important;
+    padding: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    border-left: none !important;
+    background-clip: padding-box !important;
+  }
 
-:deep(#memory-detail-preview .cherry-theme-dark .cherry-previewer) {
-  background-color: rgba(15, 23, 42, 0.75) !important;
-  color: rgb(226 232 240) !important;
-}
+  :deep(#memory-detail-preview .cherry-theme-light .cherry-previewer),
+  :deep(#memory-detail-preview .cherry-theme-violet .cherry-previewer),
+  :deep(#memory-detail-preview .cherry-theme-blue .cherry-previewer),
+  :deep(#memory-detail-preview .cherry-theme-red .cherry-previewer) {
+    background-color: rgba(255, 255, 255, 0.9) !important;
+    color: rgb(30 41 59) !important;
+  }
 
-:deep(
-  #memory-detail-preview .cherry-theme-dark .cherry-previewer .cherry-markdown
-) {
-  color: inherit !important;
-}
+  :deep(#memory-detail-preview .cherry-theme-light .cherry-previewer .cherry-markdown),
+  :deep(#memory-detail-preview .cherry-theme-violet .cherry-previewer .cherry-markdown),
+  :deep(#memory-detail-preview .cherry-theme-blue .cherry-previewer .cherry-markdown),
+  :deep(#memory-detail-preview .cherry-theme-red .cherry-previewer .cherry-markdown) {
+    color: inherit !important;
+  }
 
-:deep(#memory-detail-preview .cherry-previewer pre),
-:deep(#memory-detail-preview .cherry-previewer code) {
-  background-color: rgba(15, 23, 42, 0.08) !important;
-  border-radius: 0.5rem !important;
-  color: inherit !important;
-}
+  :deep(#memory-detail-preview .cherry-theme-dark .cherry-previewer) {
+    background-color: rgba(15, 23, 42, 0.75) !important;
+    color: rgb(226 232 240) !important;
+  }
 
-:deep(.dark #memory-detail-preview .cherry-previewer pre),
-:deep(.dark #memory-detail-preview .cherry-previewer code) {
-  background-color: rgba(148, 163, 184, 0.08) !important;
-}
+  :deep(#memory-detail-preview .cherry-theme-dark .cherry-previewer .cherry-markdown) {
+    color: inherit !important;
+  }
 
-:deep(#memory-detail-preview .cherry-previewer blockquote) {
-  background-color: rgba(96, 165, 250, 0.08) !important;
-  border-left: 3px solid rgba(59, 130, 246, 0.45) !important;
-  border-radius: 0.75rem !important;
-  padding: 0.75rem 1rem !important;
-}
+  :deep(#memory-detail-preview .cherry-previewer pre),
+  :deep(#memory-detail-preview .cherry-previewer code) {
+    background-color: rgba(15, 23, 42, 0.08) !important;
+    border-radius: 0.5rem !important;
+    color: inherit !important;
+  }
 
-:deep(.dark #memory-detail-preview .cherry-previewer blockquote) {
-  background-color: rgba(56, 189, 248, 0.08) !important;
-  border-left-color: rgba(125, 211, 252, 0.55) !important;
-}
+  :deep(.dark #memory-detail-preview .cherry-previewer pre),
+  :deep(.dark #memory-detail-preview .cherry-previewer code) {
+    background-color: rgba(148, 163, 184, 0.08) !important;
+  }
+
+  :deep(#memory-detail-preview .cherry-previewer blockquote) {
+    background-color: rgba(96, 165, 250, 0.08) !important;
+    border-left: 3px solid rgba(59, 130, 246, 0.45) !important;
+    border-radius: 0.75rem !important;
+    padding: 0.75rem 1rem !important;
+  }
+
+  :deep(.dark #memory-detail-preview .cherry-previewer blockquote) {
+    background-color: rgba(56, 189, 248, 0.08) !important;
+    border-left-color: rgba(125, 211, 252, 0.55) !important;
+  }
 </style>

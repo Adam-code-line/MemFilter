@@ -5,5 +5,5 @@ const apiKey = process.env.QDRANT_API_KEY
 
 export const qdrant = new QdrantClient({
   url,
-  apiKey: apiKey || undefined
+  apiKey: apiKey || undefined,
 })

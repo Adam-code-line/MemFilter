@@ -16,7 +16,7 @@ const waitForElement = async (id: string, attempts = 5) => {
   let element: HTMLElement | null = document.getElementById(id)
 
   while (!element && tries > 0) {
-    await new Promise(resolve => setTimeout(resolve, 16))
+    await new Promise((resolve) => setTimeout(resolve, 16))
     element = document.getElementById(id)
     tries -= 1
   }
@@ -51,8 +51,8 @@ const ensureEchartsReady = async () => {
     ;(window as any).echarts = {
       init: () => ({
         setOption: () => {},
-        dispose: () => {}
-      })
+        dispose: () => {},
+      }),
     }
     return false
   }
@@ -99,7 +99,7 @@ export const useCherryPreview = (options: UseCherryPreviewOptions) => {
 
     themeObserver.observe(document.documentElement, {
       attributes: true,
-      attributeFilter: ['class']
+      attributeFilter: ['class'],
     })
   }
 
@@ -133,13 +133,14 @@ export const useCherryPreview = (options: UseCherryPreviewOptions) => {
       const rawThemeConfig = options.getThemeConfig()
       const theme = getCherryTheme()
       const themeConfig = {
-        themeList: rawThemeConfig.themeList && rawThemeConfig.themeList.length
-          ? rawThemeConfig.themeList
-          : [
-              { className: 'light', label: '亮' },
-              { className: 'dark', label: '暗' }
-            ],
-        codeBlockTheme: rawThemeConfig.codeBlockTheme ?? 'default'
+        themeList:
+          rawThemeConfig.themeList && rawThemeConfig.themeList.length
+            ? rawThemeConfig.themeList
+            : [
+                { className: 'light', label: '亮' },
+                { className: 'dark', label: '暗' },
+              ],
+        codeBlockTheme: rawThemeConfig.codeBlockTheme ?? 'default',
       }
 
       const instance = new Cherry({
@@ -150,17 +151,17 @@ export const useCherryPreview = (options: UseCherryPreviewOptions) => {
           themeList: themeConfig.themeList,
           mainTheme: theme,
           codeBlockTheme: themeConfig.codeBlockTheme,
-          inlineCodeTheme: 'red'
+          inlineCodeTheme: 'red',
         },
         editor: {
           defaultModel: 'previewOnly',
-          height: 'auto'
+          height: 'auto',
         },
         toolbars: {
           toolbar: false,
           suspended: false,
-          sidebar: []
-        }
+          sidebar: [],
+        },
       })
 
       cherryInstance.value = instance
@@ -209,6 +210,6 @@ export const useCherryPreview = (options: UseCherryPreviewOptions) => {
   return {
     initialize,
     destroy,
-    updateContent
+    updateContent,
   }
 }

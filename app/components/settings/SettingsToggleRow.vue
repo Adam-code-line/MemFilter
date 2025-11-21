@@ -1,32 +1,31 @@
 <script setup lang="ts">
+  const props = defineProps({
+    label: {
+      type: String,
+      required: true,
+    },
+    description: {
+      type: String,
+      default: undefined,
+    },
+    icon: {
+      type: String,
+      default: undefined,
+    },
+    modelValue: {
+      type: Boolean,
+      default: false,
+    },
+  })
 
-const props = defineProps({
-  label: {
-    type: String,
-    required: true
-  },
-  description: {
-    type: String,
-    default: undefined
-  },
-  icon: {
-    type: String,
-    default: undefined
-  },
-  modelValue: {
-    type: Boolean,
-    default: false
-  }
-})
+  const emit = defineEmits<{
+    (event: 'update:modelValue', value: boolean): void
+  }>()
 
-const emit = defineEmits<{
-  (event: 'update:modelValue', value: boolean): void
-}>()
-
-const value = computed({
-  get: () => props.modelValue,
-  set: newValue => emit('update:modelValue', newValue)
-})
+  const value = computed({
+    get: () => props.modelValue,
+    set: (newValue) => emit('update:modelValue', newValue),
+  })
 </script>
 
 <template>

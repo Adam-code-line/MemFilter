@@ -1,7 +1,7 @@
 import { createError, defineEventHandler, readBody } from 'h3'
 import { useIngestionService } from '~/composables/services/useIngestionService'
 
-export default defineEventHandler(async event => {
+export default defineEventHandler(async (event) => {
   const idParam = event.context.params?.id
   if (!idParam) {
     throw createError({ statusCode: 400, statusMessage: '缺少原始记忆 ID' })

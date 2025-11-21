@@ -1,36 +1,35 @@
 <script setup lang="ts">
+  const props = defineProps({
+    label: {
+      type: String,
+      required: true,
+    },
+    helper: {
+      type: String,
+      default: undefined,
+    },
+    placeholder: {
+      type: String,
+      default: undefined,
+    },
+    type: {
+      type: String as () => 'text' | 'email' | 'password' | 'textarea',
+      default: 'text',
+    },
+    modelValue: {
+      type: String,
+      default: '',
+    },
+  })
 
-const props = defineProps({
-  label: {
-    type: String,
-    required: true
-  },
-  helper: {
-    type: String,
-    default: undefined
-  },
-  placeholder: {
-    type: String,
-    default: undefined
-  },
-  type: {
-    type: String as () => 'text' | 'email' | 'password' | 'textarea',
-    default: 'text'
-  },
-  modelValue: {
-    type: String,
-    default: ''
-  }
-})
+  const emit = defineEmits<{
+    (event: 'update:modelValue', value: string): void
+  }>()
 
-const emit = defineEmits<{
-  (event: 'update:modelValue', value: string): void
-}>()
-
-const value = computed({
-  get: () => props.modelValue,
-  set: newValue => emit('update:modelValue', newValue)
-})
+  const value = computed({
+    get: () => props.modelValue,
+    set: (newValue) => emit('update:modelValue', newValue),
+  })
 </script>
 
 <template>

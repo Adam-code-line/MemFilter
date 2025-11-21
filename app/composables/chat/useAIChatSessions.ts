@@ -41,14 +41,14 @@ const DEFAULT_STORAGE_KEY = 'memfilter.aiChat.sessions'
 
 const sanitizeMessages = (entries: AIChatMessage[]): AIChatMessage[] =>
   entries
-    .filter(entry => entry && typeof entry.content === 'string')
-    .map(entry => ({
+    .filter((entry) => entry && typeof entry.content === 'string')
+    .map((entry) => ({
       ...(() => {
         const { streamingContent: _streaming, ...rest } = entry
         return rest
       })(),
       id: entry.id ?? nanoid(),
-      createdAt: entry.createdAt ?? new Date().toISOString()
+      createdAt: entry.createdAt ?? new Date().toISOString(),
     }))
 
 const deriveTitleFromMessages = (messages: AIChatMessage[]): string => {
@@ -56,10 +56,10 @@ const deriveTitleFromMessages = (messages: AIChatMessage[]): string => {
     month: '2-digit',
     day: '2-digit',
     hour: '2-digit',
-    minute: '2-digit'
+    minute: '2-digit',
   }).format(new Date())}`
 
-  const firstUserMessage = messages.find(message => message.role === 'user')
+  const firstUserMessage = messages.find((message) => message.role === 'user')
   if (!firstUserMessage) {
     return fallback
   }
@@ -73,7 +73,7 @@ const deriveTitleFromMessages = (messages: AIChatMessage[]): string => {
 }
 
 const messageCountWithoutSystem = (messages: AIChatMessage[]) =>
-  messages.filter(message => message.role !== 'system').length
+  messages.filter((message) => message.role !== 'system').length
 
 export const useAIChatSessions = (options: UseAIChatSessionsOptions = {}) => {
   const storageKey = options.storageKey ?? DEFAULT_STORAGE_KEY
@@ -81,8 +81,8 @@ export const useAIChatSessions = (options: UseAIChatSessionsOptions = {}) => {
   const activeSessionId = ref<string | null>(null)
   const isReady = ref(false)
 
-  const currentSession = computed(() =>
-    sessions.value.find(session => session.id === activeSessionId.value) ?? null
+  const currentSession = computed(
+    () => sessions.value.find((session) => session.id === activeSessionId.value) ?? null
   )
 
   const persist = () => {
@@ -90,7 +90,7 @@ export const useAIChatSessions = (options: UseAIChatSessionsOptions = {}) => {
       return
     }
 
-    const payload: PersistedSessionPayload[] = sessions.value.map(session => ({
+    const payload: PersistedSessionPayload[] = sessions.value.map((session) => ({
       id: session.id,
       title: session.title,
       createdAt: session.createdAt,
@@ -99,7 +99,7 @@ export const useAIChatSessions = (options: UseAIChatSessionsOptions = {}) => {
       temperature: session.temperature,
       messageCount: session.messageCount,
       messages: session.messages,
-      isRenamed: session.isRenamed
+      isRenamed: session.isRenamed,
     }))
 
     try {
@@ -122,7 +122,7 @@ export const useAIChatSessions = (options: UseAIChatSessionsOptions = {}) => {
       }
 
       const parsed = JSON.parse(source) as PersistedSessionPayload[]
-      sessions.value = parsed.map(entry => ({
+      sessions.value = parsed.map((entry) => ({
         id: entry.id ?? nanoid(),
         title: entry.title || deriveTitleFromMessages(entry.messages ?? []),
         createdAt: entry.createdAt ?? new Date().toISOString(),
@@ -131,7 +131,7 @@ export const useAIChatSessions = (options: UseAIChatSessionsOptions = {}) => {
         temperature: entry.temperature ?? null,
         messageCount: entry.messageCount ?? messageCountWithoutSystem(entry.messages ?? []),
         messages: sanitizeMessages(entry.messages ?? []),
-        isRenamed: Boolean(entry.isRenamed)
+        isRenamed: Boolean(entry.isRenamed),
       }))
     } catch (error) {
       console.warn('[useAIChatSessions] Failed to parse stored sessions', error)
@@ -143,7 +143,7 @@ export const useAIChatSessions = (options: UseAIChatSessionsOptions = {}) => {
 
   const setActiveSession = (id: string) => {
     activeSessionId.value = id
-    return sessions.value.find(session => session.id === id) ?? null
+    return sessions.value.find((session) => session.id === id) ?? null
   }
 
   const createSession = (payload?: {
@@ -163,7 +163,7 @@ export const useAIChatSessions = (options: UseAIChatSessionsOptions = {}) => {
       temperature: payload?.temperature ?? null,
       messageCount: messageCountWithoutSystem(messages),
       messages,
-      isRenamed: Boolean(payload?.title)
+      isRenamed: Boolean(payload?.title),
     }
 
     sessions.value = [session, ...sessions.value]
@@ -178,21 +178,21 @@ export const useAIChatSessions = (options: UseAIChatSessionsOptions = {}) => {
       return
     }
 
-    sessions.value = sessions.value.map(session => (
+    sessions.value = sessions.value.map((session) =>
       session.id === id
         ? {
             ...session,
             title: cleaned,
             isRenamed: true,
-            updatedAt: new Date().toISOString()
+            updatedAt: new Date().toISOString(),
           }
         : session
-    ))
+    )
     persist()
   }
 
   const deleteSession = (id: string): DeleteSessionResult => {
-    const filtered = sessions.value.filter(session => session.id !== id)
+    const filtered = sessions.value.filter((session) => session.id !== id)
     const removedActive = activeSessionId.value === id
 
     sessions.value = filtered
@@ -206,7 +206,7 @@ export const useAIChatSessions = (options: UseAIChatSessionsOptions = {}) => {
     persist()
     return {
       deletedActive: removedActive,
-      nextActive
+      nextActive,
     }
   }
 
@@ -220,7 +220,7 @@ export const useAIChatSessions = (options: UseAIChatSessionsOptions = {}) => {
       return
     }
 
-    const index = sessions.value.findIndex(session => session.id === id)
+    const index = sessions.value.findIndex((session) => session.id === id)
     if (index === -1) {
       return
     }
@@ -229,9 +229,7 @@ export const useAIChatSessions = (options: UseAIChatSessionsOptions = {}) => {
     const existing = sessions.value[index]
     const updatedAt = new Date().toISOString()
     const shouldAutoTitle = !existing.isRenamed
-    const nextTitle = shouldAutoTitle
-      ? deriveTitleFromMessages(nextMessages)
-      : existing.title
+    const nextTitle = shouldAutoTitle ? deriveTitleFromMessages(nextMessages) : existing.title
 
     const nextRecord: ChatSessionRecord = {
       ...existing,
@@ -240,7 +238,7 @@ export const useAIChatSessions = (options: UseAIChatSessionsOptions = {}) => {
       model: payload.model ?? existing.model,
       temperature: payload.temperature ?? existing.temperature,
       messageCount: messageCountWithoutSystem(nextMessages),
-      messages: nextMessages
+      messages: nextMessages,
     }
 
     sessions.value.splice(index, 1, nextRecord)
@@ -268,6 +266,6 @@ export const useAIChatSessions = (options: UseAIChatSessionsOptions = {}) => {
     renameSession,
     deleteSession,
     syncActiveSession,
-    deriveTitleFromMessages
+    deriveTitleFromMessages,
   }
 }

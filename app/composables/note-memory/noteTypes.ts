@@ -1,26 +1,26 @@
-export type NoteImportanceLevel = "high" | "medium" | "low" | "noise";
+export type NoteImportanceLevel = 'high' | 'medium' | 'low' | 'noise'
 
-export type NoteFadeLevel = 0 | 1 | 2 | 3 | 4;
+export type NoteFadeLevel = 0 | 1 | 2 | 3 | 4
 
 export interface NoteLifecycleMeta {
-  importance: NoteImportanceLevel;
-  fadeLevel: NoteFadeLevel;
-  forgettingProgress: number;
-  daysUntilForgotten?: number;
-  importanceScore?: number;
-  decayRate?: number;
+  importance: NoteImportanceLevel
+  fadeLevel: NoteFadeLevel
+  forgettingProgress: number
+  daysUntilForgotten?: number
+  importanceScore?: number
+  decayRate?: number
 }
 
 export interface NoteIdentity {
-  id: string | number;
-  title: string;
-  date: string;
-  icon?: string;
-  lastAccessed?: string;
-  isCollapsed?: boolean;
-  restoredAt?: string | null;
-  createdAt?: string;
-  updatedAt?: string;
+  id: string | number
+  title: string
+  date: string
+  icon?: string
+  lastAccessed?: string
+  isCollapsed?: boolean
+  restoredAt?: string | null
+  createdAt?: string
+  updatedAt?: string
 }
 
-export type NoteBase = NoteIdentity & NoteLifecycleMeta;
+export type NoteBase = NoteIdentity & NoteLifecycleMeta

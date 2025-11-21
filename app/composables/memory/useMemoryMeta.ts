@@ -1,4 +1,3 @@
-
 import type { MemoryFadeLevel, MemoryImportance, MemoryMetaResult } from './types'
 import { IMPORTANCE_METADATA } from '../note-memory/importanceMetadata'
 
@@ -68,7 +67,7 @@ export const useMemoryMeta = (
       1: 'i-lucide-clock',
       2: 'i-lucide-eye-off',
       3: 'i-lucide-zap-off',
-      4: 'i-lucide-ghost'
+      4: 'i-lucide-ghost',
     }
     return icons[source.fadeLevel.value] ?? 'i-lucide-brain'
   })
@@ -127,6 +126,6 @@ export const useMemoryMeta = (
     displaySnippet,
     displayIcon,
     displayDate,
-    trimmedSnippet
+    trimmedSnippet,
   }
 }

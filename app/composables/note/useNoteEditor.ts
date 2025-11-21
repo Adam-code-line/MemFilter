@@ -1,16 +1,15 @@
-
 import type { FadeLevel, ImportanceLevel, NoteEditorOptions, NoteSavePayload } from './types'
 
 const defaultStatusLabels = {
   saved: '已保存',
-  unsaved: '未保存'
+  unsaved: '未保存',
 }
 
 const defaultPlaceholders = {
   default: '在这里记录您的想法与灵感……',
   fading: '输入笔记内容，此笔记可能会被遗忘……',
   strongFading: '内容正在淡化中……',
-  description: '写一段个人备注，帮助未来的自己快速回忆'
+  description: '写一段个人备注，帮助未来的自己快速回忆',
 }
 
 export const useNoteEditor = (options: NoteEditorOptions = {}) => {
@@ -36,7 +35,9 @@ export const useNoteEditor = (options: NoteEditorOptions = {}) => {
     return placeholders.default
   })
 
-  const descriptionPlaceholder = computed(() => placeholders.description ?? defaultPlaceholders.description)
+  const descriptionPlaceholder = computed(
+    () => placeholders.description ?? defaultPlaceholders.description
+  )
 
   const touchContent = () => {
     saveStatus.value = statusLabels.unsaved
@@ -77,7 +78,7 @@ export const useNoteEditor = (options: NoteEditorOptions = {}) => {
     title: noteTitle.value.trim(),
     content: noteContent.value.trim(),
     description: noteDescription.value.trim(),
-    importance: importanceLevel.value
+    importance: importanceLevel.value,
   })
 
   if (noteContent.value || noteDescription.value) {
@@ -113,6 +114,6 @@ export const useNoteEditor = (options: NoteEditorOptions = {}) => {
     buildSavePayload,
 
     // config
-    statusLabels
+    statusLabels,
   }
 }

@@ -1,82 +1,82 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, useHead, useRouter } from '#imports'
-import type { MemoryRawItem } from '~/composables/services/useIngestionService'
-import { useIngestionManager } from '~/composables/ingestion/useIngestionManager'
-import DiscoveryWorkspace from '~/components/Discovery/DiscoveryWorkspace.vue'
-import { useNotesStore } from '~~/stores/notes'
+  import { computed, onMounted, ref, useHead, useRouter } from '#imports'
+  import type { MemoryRawItem } from '~/composables/services/useIngestionService'
+  import { useIngestionManager } from '~/composables/ingestion/useIngestionManager'
+  import DiscoveryWorkspace from '~/components/Discovery/DiscoveryWorkspace.vue'
+  import { useNotesStore } from '~~/stores/notes'
 
-definePageMeta({
-  layout: 'app'
-})
+  definePageMeta({
+    layout: 'app',
+  })
 
-const router = useRouter()
-const ingestion = useIngestionManager()
-const promotingId = ref<number | null>(null)
-const notesStore = useNotesStore()
+  const router = useRouter()
+  const ingestion = useIngestionManager()
+  const promotingId = ref<number | null>(null)
+  const notesStore = useNotesStore()
 
-const items = computed(() => ingestion.pendingItems.value)
-const isLoading = computed(() => ingestion.isLoadingItems.value)
-const isSyncing = computed(() => ingestion.isSyncing.value)
-const lastSyncSummary = computed(() => {
-  const result = ingestion.lastSyncResult.value
-  if (!result) {
-    return null
-  }
-  return `本次同步新增 ${result.inserted} 条 / 共 ${result.total} 条`
-})
-
-const handleFetch = async (options?: { keywords?: string[] | null; limit?: number | null }) => {
-  try {
-    await ingestion.syncAndFetch({
-      keywords: options?.keywords ?? undefined,
-      limit: options?.limit ?? undefined
-    })
-  } catch {
-    // toast handled in manager
-  }
-}
-
-const handleRefresh = async () => {
-  try {
-    await ingestion.refreshPendingItems()
-  } catch {
-    // toast handled in manager
-  }
-}
-
-const handlePromote = async (item: MemoryRawItem) => {
-  promotingId.value = item.id
-  try {
-    await ingestion.promoteRawItem(item, { title: item.title ?? undefined })
-    try {
-      await notesStore.refreshFromServer()
-    } catch {
-      // ignore refresh errors, toast handled elsewhere
+  const items = computed(() => ingestion.pendingItems.value)
+  const isLoading = computed(() => ingestion.isLoadingItems.value)
+  const isSyncing = computed(() => ingestion.isSyncing.value)
+  const lastSyncSummary = computed(() => {
+    const result = ingestion.lastSyncResult.value
+    if (!result) {
+      return null
     }
-  } catch {
-    // toast handled in manager
-  } finally {
-    promotingId.value = null
+    return `本次同步新增 ${result.inserted} 条 / 共 ${result.total} 条`
+  })
+
+  const handleFetch = async (options?: { keywords?: string[] | null; limit?: number | null }) => {
+    try {
+      await ingestion.syncAndFetch({
+        keywords: options?.keywords ?? undefined,
+        limit: options?.limit ?? undefined,
+      })
+    } catch {
+      // toast handled in manager
+    }
   }
-}
 
-const handleOpenNotes = () => {
-  router.push('/note')
-}
-
-onMounted(async () => {
-  if (!items.value.length) {
+  const handleRefresh = async () => {
     try {
       await ingestion.refreshPendingItems()
     } catch {
       // toast handled in manager
     }
   }
-})
 
-useHead(() => ({
-  title: '探索中心'
-}))
+  const handlePromote = async (item: MemoryRawItem) => {
+    promotingId.value = item.id
+    try {
+      await ingestion.promoteRawItem(item, { title: item.title ?? undefined })
+      try {
+        await notesStore.refreshFromServer()
+      } catch {
+        // ignore refresh errors, toast handled elsewhere
+      }
+    } catch {
+      // toast handled in manager
+    } finally {
+      promotingId.value = null
+    }
+  }
+
+  const handleOpenNotes = () => {
+    router.push('/note')
+  }
+
+  onMounted(async () => {
+    if (!items.value.length) {
+      try {
+        await ingestion.refreshPendingItems()
+      } catch {
+        // toast handled in manager
+      }
+    }
+  })
+
+  useHead(() => ({
+    title: '探索中心',
+  }))
 </script>
 
 <template>

@@ -16,27 +16,27 @@ export const IMPORTANCE_METADATA: Record<NoteImportanceLevel, ImportanceMetadata
     color: 'primary',
     icon: 'i-lucide-flame',
     badgeVariant: 'solid',
-    defaultScore: 85
+    defaultScore: 85,
   },
   medium: {
     label: '重点追踪',
     color: 'amber',
     icon: 'i-lucide-target',
     badgeVariant: 'soft',
-    defaultScore: 65
+    defaultScore: 65,
   },
   low: {
     label: '随手记录',
     color: 'gray',
     icon: 'i-lucide-pen-line',
     badgeVariant: 'subtle',
-    defaultScore: 35
+    defaultScore: 35,
   },
   noise: {
     label: '噪声过滤',
     color: 'neutral',
     icon: 'i-lucide-waves',
     badgeVariant: 'outline',
-    defaultScore: 15
-  }
+    defaultScore: 15,
+  },
 }

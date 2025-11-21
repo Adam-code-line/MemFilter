@@ -1,5 +1,3 @@
-
-
 export interface PageMetaSource<TBadge = unknown> {
   title: ComputedRef<string | undefined | null>
   subtitle?: ComputedRef<string | undefined | null>
@@ -29,6 +27,6 @@ export const usePageMeta = <TBadge = unknown>(
   return {
     headerTitle,
     headerSubtitle,
-    headerBadge
+    headerBadge,
   }
 }

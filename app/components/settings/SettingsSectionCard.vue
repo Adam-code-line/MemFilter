@@ -1,36 +1,35 @@
 <script setup lang="ts">
+  const props = defineProps({
+    title: {
+      type: String,
+      required: true,
+    },
+    description: {
+      type: String,
+      default: undefined,
+    },
+    icon: {
+      type: String,
+      default: undefined,
+    },
+    accent: {
+      type: String,
+      default: 'neutral',
+    },
+  })
 
-const props = defineProps({
-  title: {
-    type: String,
-    required: true
-  },
-  description: {
-    type: String,
-    default: undefined
-  },
-  icon: {
-    type: String,
-    default: undefined
-  },
-  accent: {
-    type: String,
-    default: 'neutral'
-  }
-})
-
-const accentClass = computed(() => {
-  switch (props.accent) {
-    case 'primary':
-      return 'border-primary-200 dark:border-primary-500/40'
-    case 'warning':
-      return 'border-amber-200 dark:border-amber-500/40'
-    case 'success':
-      return 'border-emerald-200 dark:border-emerald-500/40'
-    default:
-      return 'border-gray-200/70 dark:border-white/10'
-  }
-})
+  const accentClass = computed(() => {
+    switch (props.accent) {
+      case 'primary':
+        return 'border-primary-200 dark:border-primary-500/40'
+      case 'warning':
+        return 'border-amber-200 dark:border-amber-500/40'
+      case 'success':
+        return 'border-emerald-200 dark:border-emerald-500/40'
+      default:
+        return 'border-gray-200/70 dark:border-white/10'
+    }
+  })
 </script>
 
 <template>

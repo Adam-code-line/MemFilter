@@ -1,5 +1,3 @@
-
-
 export type SettingsContentToggle = {
   key: string
   label: string
@@ -58,9 +56,9 @@ const fallbackContent: SettingsContent = {
   badge: {
     label: '设置中心',
     color: 'primary',
-    icon: 'i-lucide-settings'
+    icon: 'i-lucide-settings',
   },
-  sections: []
+  sections: [],
 }
 
 export const useSettingsContent = async () => {
@@ -76,11 +74,11 @@ export const useSettingsContent = async () => {
       title: raw.title ?? fallbackContent.title,
       subtitle: raw.subtitle ?? fallbackContent.subtitle,
       badge: raw.badge ?? fallbackContent.badge,
-      sections: Array.isArray(raw.sections) ? raw.sections : []
+      sections: Array.isArray(raw.sections) ? raw.sections : [],
     }
   })
 
   return {
-    content
+    content,
   }
 }

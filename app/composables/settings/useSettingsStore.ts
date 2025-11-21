@@ -35,20 +35,20 @@ export const useSettingsStore = () => {
 
   const profile = useState<SettingsProfile>('settings-profile', () => ({
     displayName: authUser.value?.name ?? '忆滤用户',
-    email: authUser.value?.email ?? 'user@example.com'
+    email: authUser.value?.email ?? 'user@example.com',
   }))
 
   const security = useState<SettingsSecurity>('settings-security', () => ({
     twoFactor: true,
-    deviceAlerts: true
+    deviceAlerts: true,
   }))
 
   const preferences = useState<SettingsPreferences>('settings-preferences', () => ({
     memoryEngine: 'balanced',
     aiAssist: {
       autoSummaries: true,
-      relevanceScan: false
-    }
+      relevanceScan: false,
+    },
   }))
 
   const notifications = useState<SettingsNotifications>('settings-notifications', () => ({
@@ -56,8 +56,8 @@ export const useSettingsStore = () => {
     alerts: {
       collapseAlerts: true,
       recoveryAlerts: true,
-      experimentAlerts: false
-    }
+      experimentAlerts: false,
+    },
   }))
 
   function updateProfileField<K extends keyof SettingsProfile>(key: K, value: SettingsProfile[K]) {
@@ -84,7 +84,9 @@ export const useSettingsStore = () => {
     notifications.value.alerts[key] = value
   }
 
-  const syncProfileWithAuth = (auth: { name: string | null | undefined; email: string | null | undefined } | null) => {
+  const syncProfileWithAuth = (
+    auth: { name: string | null | undefined; email: string | null | undefined } | null
+  ) => {
     profile.value.displayName = auth?.name || '忆滤用户'
     profile.value.email = auth?.email || 'user@example.com'
   }
@@ -92,9 +94,13 @@ export const useSettingsStore = () => {
   const hasRegisteredProfileSync = useState('settings-profile-sync-initialized', () => false)
 
   if (!hasRegisteredProfileSync.value) {
-    watch(authUser, value => {
-      syncProfileWithAuth(value)
-    }, { immediate: true })
+    watch(
+      authUser,
+      (value) => {
+        syncProfileWithAuth(value)
+      },
+      { immediate: true }
+    )
 
     hasRegisteredProfileSync.value = true
   }
@@ -109,6 +115,6 @@ export const useSettingsStore = () => {
     setMemoryEngine,
     toggleAiAssist,
     setDigestWindow,
-    toggleAlert
+    toggleAlert,
   }
 }

@@ -14,7 +14,7 @@ export default defineEventHandler(async (event) => {
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
     path: '/',
-    maxAge: config.session.tokenExpiresInSeconds
+    maxAge: config.session.tokenExpiresInSeconds,
   })
 
   return session

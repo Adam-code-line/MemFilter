@@ -1,4 +1,3 @@
-
 export type HistoryContentStatKey = 'recoverable' | 'archived' | 'purged' | 'restored'
 export type HistorySectionKey = 'recoverable' | 'archived' | 'purged'
 
@@ -71,9 +70,9 @@ const fallbackContent: HistoryContent = {
   badge: {
     label: '遗忘档案',
     color: 'neutral',
-    icon: 'i-lucide-archive-restore'
+    icon: 'i-lucide-archive-restore',
   },
-  sections: []
+  sections: [],
 }
 
 export const useHistoryContent = async () => {
@@ -93,11 +92,11 @@ export const useHistoryContent = async () => {
       overview: raw.overview,
       timeline: raw.timeline,
       sections: raw.sections ?? [],
-      restoreLog: raw.restoreLog
+      restoreLog: raw.restoreLog,
     }
   })
 
   return {
-    content
+    content,
   }
 }

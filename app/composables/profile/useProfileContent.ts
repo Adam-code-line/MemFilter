@@ -1,5 +1,3 @@
-
-
 export type ProfileContentAction = {
   key?: string
   label: string
@@ -122,7 +120,7 @@ const createEmptyProfileContent = (): ProfileContent => ({
   badge: {
     label: '个人资料',
     color: 'primary',
-    icon: 'i-lucide-user-round'
+    icon: 'i-lucide-user-round',
   },
   summary: {
     name: '未命名用户',
@@ -133,27 +131,27 @@ const createEmptyProfileContent = (): ProfileContent => ({
     status: undefined,
     tags: [],
     actions: [],
-    stats: []
+    stats: [],
   },
   insights: {
     title: '记忆画像亮点',
     subtitle: '即将展示你的 AI 分析洞察。',
-    items: []
+    items: [],
   },
   timeline: {
     title: '最近活动',
     description: 'AI 记录的关键操作会展示在这里。',
     empty: {
       title: '暂无活动记录',
-      description: '完成一次遗忘操作或恢复笔记即可看到时间线。'
+      description: '完成一次遗忘操作或恢复笔记即可看到时间线。',
     },
-    items: []
+    items: [],
   },
   resources: {
     title: '协作与支持',
     description: '接入后端后将在这里呈现常用入口。',
-    links: []
-  }
+    links: [],
+  },
 })
 
 const mergeProfileContent = (
@@ -175,14 +173,14 @@ const mergeProfileContent = (
           status: patch.summary.status ?? base.summary?.status,
           tags: patch.summary.tags ?? base.summary?.tags ?? [],
           actions: patch.summary.actions ?? base.summary?.actions ?? [],
-          stats: patch.summary.stats ?? base.summary?.stats ?? []
+          stats: patch.summary.stats ?? base.summary?.stats ?? [],
         }
       : base.summary,
     insights: patch.insights
       ? {
           ...base.insights,
           ...patch.insights,
-          items: patch.insights.items ?? base.insights?.items ?? []
+          items: patch.insights.items ?? base.insights?.items ?? [],
         }
       : base.insights,
     timeline: patch.timeline
@@ -190,16 +188,16 @@ const mergeProfileContent = (
           ...base.timeline,
           ...patch.timeline,
           empty: patch.timeline.empty ?? base.timeline?.empty,
-          items: patch.timeline.items ?? base.timeline?.items ?? []
+          items: patch.timeline.items ?? base.timeline?.items ?? [],
         }
       : base.timeline,
     resources: patch.resources
       ? {
           ...base.resources,
           ...patch.resources,
-          links: patch.resources.links ?? base.resources?.links ?? []
+          links: patch.resources.links ?? base.resources?.links ?? [],
         }
-      : base.resources
+      : base.resources,
   }
 
   return result
@@ -221,6 +219,6 @@ export const useProfileContent = () => {
   return {
     content,
     setProfileContent,
-    resetProfileContent
+    resetProfileContent,
   }
 }

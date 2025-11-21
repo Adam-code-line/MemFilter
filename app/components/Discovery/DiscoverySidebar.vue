@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import type { DiscoveryCollection } from '~/composables/discovery/useDiscoveryFeed'
+  import type { DiscoveryCollection } from '~/composables/discovery/useDiscoveryFeed'
 
-const props = defineProps<{
-  collections: DiscoveryCollection[]
-}>()
+  const props = defineProps<{
+    collections: DiscoveryCollection[]
+  }>()
 </script>
 
 <template>
@@ -27,7 +27,9 @@ const props = defineProps<{
         class="border border-gray-200/60 transition hover:border-primary/40 dark:border-slate-700/40 dark:hover:border-primary/40"
       >
         <div class="flex items-start gap-3">
-          <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary dark:bg-primary/20">
+          <div
+            class="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary dark:bg-primary/20"
+          >
             <UIcon :name="collection.icon" class="text-lg" />
           </div>
           <div class="space-y-2">

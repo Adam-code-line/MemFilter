@@ -12,7 +12,7 @@ export default defineEventHandler(async (event) => {
   }
 
   deleteCookie(event, config.session.cookieName, {
-    path: '/'
+    path: '/',
   })
 
   return { success: true }

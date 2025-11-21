@@ -7,11 +7,11 @@ import type { FormData, AuthMode } from './types'
 export const useAuthForm = (initialMode: AuthMode = 'login') => {
   // 当前激活的标签页
   const activeTab = ref<AuthMode>(initialMode)
-  
+
   // 登录表单数据
   const loginModel = reactive<FormData>({
     identifier: '',
-    password: ''
+    password: '',
   })
 
   // 注册表单数据
@@ -19,7 +19,7 @@ export const useAuthForm = (initialMode: AuthMode = 'login') => {
     name: '',
     email: '',
     password: '',
-    confirmPassword: ''
+    confirmPassword: '',
   })
 
   // 密码显示状态
@@ -61,15 +61,15 @@ export const useAuthForm = (initialMode: AuthMode = 'login') => {
    */
   const resetForms = () => {
     // 重置登录表单
-    Object.keys(loginModel).forEach(key => {
+    Object.keys(loginModel).forEach((key) => {
       loginModel[key] = ''
     })
-    
+
     // 重置注册表单
-    Object.keys(signupModel).forEach(key => {
+    Object.keys(signupModel).forEach((key) => {
       signupModel[key] = ''
     })
-    
+
     // 重置密码可见性
     passwordVisibility.value = {}
   }
@@ -94,6 +94,6 @@ export const useAuthForm = (initialMode: AuthMode = 'login') => {
     updateSignupModel,
     togglePasswordVisibility,
     getFieldType,
-    resetForms
+    resetForms,
   }
 }

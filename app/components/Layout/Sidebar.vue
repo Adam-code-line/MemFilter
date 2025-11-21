@@ -1,91 +1,91 @@
 <script setup lang="ts">
-import type { NavigationMenuItem } from '@nuxt/ui'
+  import type { NavigationMenuItem } from '@nuxt/ui'
 
-const route = useRoute()
+  const route = useRoute()
 
-// 主要功能导航
-const mainItems = computed<NavigationMenuItem[]>(() => [
-  {
-    label: '笔记管理',
-    to: '/note',
-    icon: 'i-lucide-sticky-note',
-    active: route.path === '/note'
-  },
-  {
-    label: '探索资讯',
-    to: '/discover',
-    icon: 'i-lucide-compass',
-    active: route.path === '/discover'
-  },
-  {
-    label: '记忆回溯',
-    to: '/memory',
-    icon: 'i-lucide-brain',
-    active: route.path === '/memory'
-  },
-  {
-    label: '遗忘日志',
-    to: '/history',
-    icon: 'i-lucide-history',
-    active: route.path === '/history'
-  }
-])
+  // 主要功能导航
+  const mainItems = computed<NavigationMenuItem[]>(() => [
+    {
+      label: '笔记管理',
+      to: '/note',
+      icon: 'i-lucide-sticky-note',
+      active: route.path === '/note',
+    },
+    {
+      label: '探索资讯',
+      to: '/discover',
+      icon: 'i-lucide-compass',
+      active: route.path === '/discover',
+    },
+    {
+      label: '记忆回溯',
+      to: '/memory',
+      icon: 'i-lucide-brain',
+      active: route.path === '/memory',
+    },
+    {
+      label: '遗忘日志',
+      to: '/history',
+      icon: 'i-lucide-history',
+      active: route.path === '/history',
+    },
+  ])
 
-// 智能功能
-const aiItems = computed<NavigationMenuItem[]>(() => [
-  {
-    label: 'AI 会话',
-    to: '/ai-chat',
-    icon: 'i-lucide-brain-circuit',
-    active: route.path === '/ai-chat'
-  },
-])
+  // 智能功能
+  const aiItems = computed<NavigationMenuItem[]>(() => [
+    {
+      label: 'AI 会话',
+      to: '/ai-chat',
+      icon: 'i-lucide-brain-circuit',
+      active: route.path === '/ai-chat',
+    },
+  ])
 
-// 设置和帮助
-const settingsItems = computed<NavigationMenuItem[]>(() => [
-  {
-    label: '个人设置',
-    to: '/settings',
-    icon: 'i-lucide-settings',
-    active: route.path === '/settings'
-  },
-  {
-    label: '个人资料',
-    to: '/profile',
-    icon: 'i-lucide-user',
-    active: route.path === '/profile'
-  }
-])
+  // 设置和帮助
+  const settingsItems = computed<NavigationMenuItem[]>(() => [
+    {
+      label: '个人设置',
+      to: '/settings',
+      icon: 'i-lucide-settings',
+      active: route.path === '/settings',
+    },
+    {
+      label: '个人资料',
+      to: '/profile',
+      icon: 'i-lucide-user',
+      active: route.path === '/profile',
+    },
+  ])
 
-// 侧边栏收起状态
-const isCollapsed = ref(false)
+  // 侧边栏收起状态
+  const isCollapsed = ref(false)
 
-// 响应式侧边栏
-const isMobile = ref(false)
+  // 响应式侧边栏
+  const isMobile = ref(false)
 
-onMounted(() => {
-  const checkMobile = () => {
-    isMobile.value = window.innerWidth < 1024
-    if (isMobile.value) {
-      isCollapsed.value = true
+  onMounted(() => {
+    const checkMobile = () => {
+      isMobile.value = window.innerWidth < 1024
+      if (isMobile.value) {
+        isCollapsed.value = true
+      }
     }
-  }
-  
-  checkMobile()
-  window.addEventListener('resize', checkMobile)
-  
-  onUnmounted(() => {
-    window.removeEventListener('resize', checkMobile)
+
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+
+    onUnmounted(() => {
+      window.removeEventListener('resize', checkMobile)
+    })
   })
-})
 </script>
 
 <template>
-  <aside 
+  <aside
     :class="[
       'bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 transition-all duration-300 relative',
       isCollapsed ? 'w-16' : 'w-64',
-      'hidden lg:block'
+      'hidden lg:block',
     ]"
   >
     <!-- 侧边栏头部 -->
@@ -108,13 +108,15 @@ onMounted(() => {
       <!-- 主要功能 -->
       <div class="mb-6">
         <div v-if="!isCollapsed" class="px-4 mb-2">
-          <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+          <p
+            class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+          >
             主要功能
           </p>
         </div>
-        <UNavigationMenu 
-          :items="mainItems" 
-          orientation="vertical" 
+        <UNavigationMenu
+          :items="mainItems"
+          orientation="vertical"
           :class="isCollapsed ? 'px-2' : 'px-3'"
         />
       </div>
@@ -122,13 +124,15 @@ onMounted(() => {
       <!-- AI 智能功能 -->
       <div class="mb-6">
         <div v-if="!isCollapsed" class="px-4 mb-2">
-          <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+          <p
+            class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+          >
             AI 功能
           </p>
         </div>
-        <UNavigationMenu 
-          :items="aiItems" 
-          orientation="vertical" 
+        <UNavigationMenu
+          :items="aiItems"
+          orientation="vertical"
           :class="isCollapsed ? 'px-2' : 'px-3'"
         />
       </div>
@@ -136,13 +140,15 @@ onMounted(() => {
       <!-- 设置和帮助 -->
       <div>
         <div v-if="!isCollapsed" class="px-4 mb-2">
-          <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+          <p
+            class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+          >
             设置
           </p>
         </div>
-        <UNavigationMenu 
-          :items="settingsItems" 
-          orientation="vertical" 
+        <UNavigationMenu
+          :items="settingsItems"
+          orientation="vertical"
           :class="isCollapsed ? 'px-2' : 'px-3'"
         />
       </div>
@@ -155,9 +161,7 @@ onMounted(() => {
           <div class="w-2 h-2 bg-green-500 rounded-full"></div>
           <span class="text-sm font-medium text-gray-900 dark:text-white">AI 引擎运行中</span>
         </div>
-        <p class="text-xs text-gray-600 dark:text-gray-400">
-          今日已处理...条笔记
-        </p>
+        <p class="text-xs text-gray-600 dark:text-gray-400">今日已处理...条笔记</p>
       </div>
       <div v-else class="flex justify-center">
         <div class="w-2 h-2 bg-green-500 rounded-full"></div>

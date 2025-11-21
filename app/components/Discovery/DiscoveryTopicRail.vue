@@ -1,31 +1,31 @@
 <script setup lang="ts">
-import { computed } from '#imports'
+  import { computed } from '#imports'
 
-interface CategoryEntry {
-  tag: string
-  label: string
-  count: number
-}
+  interface CategoryEntry {
+    tag: string
+    label: string
+    count: number
+  }
 
-const props = defineProps<{
-  categories: CategoryEntry[]
-  trending: Array<{ id: string; label: string; mentions: number; tag: string }>
-  selectedCategory: string
-  selectedRange: 'today' | 'week' | 'month' | 'all'
-}>()
+  const props = defineProps<{
+    categories: CategoryEntry[]
+    trending: Array<{ id: string; label: string; mentions: number; tag: string }>
+    selectedCategory: string
+    selectedRange: 'today' | 'week' | 'month' | 'all'
+  }>()
 
-const emit = defineEmits<{
-  (event: 'select-category', value: string): void
-  (event: 'select-range', value: 'today' | 'week' | 'month' | 'all'): void
-  (event: 'select-topic', value: string): void
-}>()
+  const emit = defineEmits<{
+    (event: 'select-category', value: string): void
+    (event: 'select-range', value: 'today' | 'week' | 'month' | 'all'): void
+    (event: 'select-topic', value: string): void
+  }>()
 
-const timeRanges = computed(() => ([
-  { label: '全部时间', value: 'all' as const },
-  { label: '今天', value: 'today' as const },
-  { label: '近 7 日', value: 'week' as const },
-  { label: '近 30 日', value: 'month' as const }
-]))
+  const timeRanges = computed(() => [
+    { label: '全部时间', value: 'all' as const },
+    { label: '今天', value: 'today' as const },
+    { label: '近 7 日', value: 'week' as const },
+    { label: '近 30 日', value: 'month' as const },
+  ])
 </script>
 
 <template>
@@ -69,11 +69,7 @@ const timeRanges = computed(() => ([
           @click="emit('select-range', range.value)"
         >
           {{ range.label }}
-          <UIcon
-            v-if="range.value === selectedRange"
-            name="i-lucide-check"
-            class="ml-1"
-          />
+          <UIcon v-if="range.value === selectedRange" name="i-lucide-check" class="ml-1" />
         </UButton>
       </div>
     </UCard>
@@ -107,51 +103,54 @@ const timeRanges = computed(() => ([
 </template>
 
 <style scoped>
-.category-pill {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
-  border-radius: 0.75rem;
-  border: 1px solid transparent;
-  padding: 0.5rem 0.75rem;
-  font-size: 0.875rem;
-  color: #475569;
-  transition: color 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
-}
+  .category-pill {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    border-radius: 0.75rem;
+    border: 1px solid transparent;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+    color: #475569;
+    transition:
+      color 0.2s ease,
+      border-color 0.2s ease,
+      background-color 0.2s ease;
+  }
 
-.category-pill:hover {
-  border-color: rgba(59, 130, 246, 0.3);
-  color: #2563eb;
-}
+  .category-pill:hover {
+    border-color: rgba(59, 130, 246, 0.3);
+    color: #2563eb;
+  }
 
-:global(.dark) .category-pill {
-  color: #e2e8f0;
-}
+  :global(.dark) .category-pill {
+    color: #e2e8f0;
+  }
 
-:global(.dark) .category-pill:hover {
-  border-color: rgba(59, 130, 246, 0.4);
-  color: #60a5fa;
-}
+  :global(.dark) .category-pill:hover {
+    border-color: rgba(59, 130, 246, 0.4);
+    color: #60a5fa;
+  }
 
-.category-pill-active {
-  border-color: rgba(59, 130, 246, 0.6);
-  background-color: rgba(59, 130, 246, 0.1);
-  color: #2563eb;
-}
+  .category-pill-active {
+    border-color: rgba(59, 130, 246, 0.6);
+    background-color: rgba(59, 130, 246, 0.1);
+    color: #2563eb;
+  }
 
-:global(.dark) .category-pill-active {
-  border-color: rgba(59, 130, 246, 0.5);
-  background-color: rgba(59, 130, 246, 0.15);
-  color: #93c5fd;
-}
+  :global(.dark) .category-pill-active {
+    border-color: rgba(59, 130, 246, 0.5);
+    background-color: rgba(59, 130, 246, 0.15);
+    color: #93c5fd;
+  }
 
-.category-count {
-  font-size: 0.75rem;
-  color: #94a3b8;
-}
+  .category-count {
+    font-size: 0.75rem;
+    color: #94a3b8;
+  }
 
-:global(.dark) .category-count {
-  color: #94a3b8;
-}
+  :global(.dark) .category-count {
+    color: #94a3b8;
+  }
 </style>

@@ -12,20 +12,20 @@ export const useChatSessionMenu = (options: UseChatSessionMenuOptions) => {
       {
         label: '重命名',
         icon: 'i-lucide-edit-3',
-        onSelect: () => options.onRename(session)
-      }
+        onSelect: () => options.onRename(session),
+      },
     ],
     [
       {
         label: '删除会话',
         icon: 'i-lucide-trash-2',
         color: 'red',
-        onSelect: () => options.onDelete(session.id)
-      }
-    ]
+        onSelect: () => options.onDelete(session.id),
+      },
+    ],
   ]
 
   return {
-    buildMenuItems
+    buildMenuItems,
   }
 }

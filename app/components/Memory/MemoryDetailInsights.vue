@@ -1,6 +1,8 @@
 <template>
   <div class="space-y-4">
-  <UCard class="border border-gray-200/60 dark:border-white/10 bg-white/80 dark:bg-slate-900/60 backdrop-blur">
+    <UCard
+      class="border border-gray-200/60 dark:border-white/10 bg-white/80 dark:bg-slate-900/60 backdrop-blur"
+    >
       <template #header>
         <div class="flex items-center justify-between gap-2">
           <div class="flex items-center gap-2">
@@ -19,7 +21,9 @@
           <span class="insight-label">淡化进度</span>
           <div class="flex items-center gap-2">
             <UProgress :value="Number(progressValue)" color="primary" class="w-28" />
-            <span class="font-medium text-gray-900 dark:text-white min-w-[3rem] text-right">{{ progressValue }}%</span>
+            <span class="font-medium text-gray-900 dark:text-white min-w-[3rem] text-right"
+              >{{ progressValue }}%</span
+            >
           </div>
         </div>
         <div class="insight-row">
@@ -33,7 +37,10 @@
       </div>
     </UCard>
 
-    <UCard v-if="note?.description" class="border border-gray-200/60 dark:border-white/10 bg-white/70 dark:bg-slate-900/50">
+    <UCard
+      v-if="note?.description"
+      class="border border-gray-200/60 dark:border-white/10 bg-white/70 dark:bg-slate-900/50"
+    >
       <template #header>
         <div class="flex items-center gap-2 text-sm font-medium text-gray-900 dark:text-white">
           <UIcon name="i-lucide-align-left" class="text-primary" />
@@ -50,78 +57,74 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
-import type { DetailStatus } from '~/composables/memory/useMemoryDetailHelpers'
-import type { NoteRecord } from '~/composables/note/types'
-import { useMemoryMeta } from '~/composables/memory/useMemoryMeta'
+  import { computed } from 'vue'
+  import type { DetailStatus } from '~/composables/memory/useMemoryDetailHelpers'
+  import type { NoteRecord } from '~/composables/note/types'
+  import { useMemoryMeta } from '~/composables/memory/useMemoryMeta'
 
-const props = defineProps<{
-  note: NoteRecord | null
-  status: DetailStatus | null
-}>()
+  const props = defineProps<{
+    note: NoteRecord | null
+    status: DetailStatus | null
+  }>()
 
-const detail = computed(() => props.note ?? null)
+  const detail = computed(() => props.note ?? null)
 
-const {
-  importanceLabel,
-  importanceColor,
-  displayDate,
-  forgettingStatus
-} = useMemoryMeta(
-  {
-    title: computed(() => detail.value?.title ?? ''),
-    snippet: computed(() => detail.value?.content ?? ''),
-    date: computed(() => detail.value?.lastAccessed ?? detail.value?.date ?? ''),
-    icon: computed(() => detail.value?.icon ?? '📝'),
-    importance: computed(() => detail.value?.importance ?? 'medium'),
-    fadeLevel: computed(() => detail.value?.fadeLevel ?? 0),
-    forgettingProgress: computed(() => detail.value?.forgettingProgress ?? 0)
-  },
-  {
-    snippetLimit: 120
-  }
-)
+  const { importanceLabel, importanceColor, displayDate, forgettingStatus } = useMemoryMeta(
+    {
+      title: computed(() => detail.value?.title ?? ''),
+      snippet: computed(() => detail.value?.content ?? ''),
+      date: computed(() => detail.value?.lastAccessed ?? detail.value?.date ?? ''),
+      icon: computed(() => detail.value?.icon ?? '📝'),
+      importance: computed(() => detail.value?.importance ?? 'medium'),
+      fadeLevel: computed(() => detail.value?.fadeLevel ?? 0),
+      forgettingProgress: computed(() => detail.value?.forgettingProgress ?? 0),
+    },
+    {
+      snippetLimit: 120,
+    }
+  )
 
-const progressValue = computed(() => Math.min(100, Math.max(0, detail.value?.forgettingProgress ?? 0)).toFixed(0))
+  const progressValue = computed(() =>
+    Math.min(100, Math.max(0, detail.value?.forgettingProgress ?? 0)).toFixed(0)
+  )
 
-const lastAccessedText = computed(() => displayDate.value || '暂无访问记录')
+  const lastAccessedText = computed(() => displayDate.value || '暂无访问记录')
 
-const forgetEstimate = computed(() => {
-  const days = detail.value?.daysUntilForgotten
-  if (days === undefined || days === null) {
-    return forgettingStatus.value ? `状态：${forgettingStatus.value}` : '暂无预测'
-  }
-  if (days <= 0) {
-    return '即将遗忘'
-  }
-  return `约 ${days} 天`
-})
-
+  const forgetEstimate = computed(() => {
+    const days = detail.value?.daysUntilForgotten
+    if (days === undefined || days === null) {
+      return forgettingStatus.value ? `状态：${forgettingStatus.value}` : '暂无预测'
+    }
+    if (days <= 0) {
+      return '即将遗忘'
+    }
+    return `约 ${days} 天`
+  })
 </script>
 
 <style scoped>
-.insight-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-}
+  .insight-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
 
-.insight-label {
-  font-size: 0.875rem;
-  color: rgb(100 116 139);
-}
+  .insight-label {
+    font-size: 0.875rem;
+    color: rgb(100 116 139);
+  }
 
-:global(.dark) .insight-label {
-  color: rgb(148 163 184);
-}
+  :global(.dark) .insight-label {
+    color: rgb(148 163 184);
+  }
 
-.insight-value {
-  font-size: 0.875rem;
-  color: rgb(71 85 105);
-}
+  .insight-value {
+    font-size: 0.875rem;
+    color: rgb(71 85 105);
+  }
 
-:global(.dark) .insight-value {
-  color: rgb(203 213 225);
-}
+  :global(.dark) .insight-value {
+    color: rgb(203 213 225);
+  }
 </style>

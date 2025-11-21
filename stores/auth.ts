@@ -50,7 +50,10 @@ const isFetchError = (error: unknown): error is FetchError<ErrorResponsePayload>
   return error instanceof Error && 'statusCode' in error
 }
 
-const mapErrorCode = (payload: ErrorResponsePayload | undefined, statusCode: number | undefined): AuthErrorCode => {
+const mapErrorCode = (
+  payload: ErrorResponsePayload | undefined,
+  statusCode: number | undefined
+): AuthErrorCode => {
   const code = payload?.code
 
   if (code === 'INVALID_CREDENTIALS') {
@@ -119,7 +122,7 @@ const normalizeAuthError = (error: unknown, fallbackMessage: string): AuthError 
       code,
       message,
       details: typed.data?.issues || typed.data,
-      cause: error
+      cause: error,
     })
   }
 
@@ -127,13 +130,13 @@ const normalizeAuthError = (error: unknown, fallbackMessage: string): AuthError 
     return new AuthError({
       code: 'SERVER_ERROR',
       message: error.message,
-      cause: error
+      cause: error,
     })
   }
 
   return new AuthError({
     code: 'SERVER_ERROR',
-    message: fallbackMessage
+    message: fallbackMessage,
   })
 }
 
@@ -264,7 +267,7 @@ export const useAuthStore = defineStore('auth', () => {
     signup,
     logout,
     clearSession,
-    requireAuth
+    requireAuth,
   }
 })
 

@@ -31,6 +31,6 @@ export const usePasswordHash = () => {
   return {
     hashPassword,
     verifyPassword,
-    hashToken
+    hashToken,
   }
 }

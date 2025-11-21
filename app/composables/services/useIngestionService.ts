@@ -62,7 +62,7 @@ export interface MemoryRawItem {
 }
 
 export const ingestionSourceTypes = ['tianapi-general'] as const
-export type IngestionSourceType = typeof ingestionSourceTypes[number]
+export type IngestionSourceType = (typeof ingestionSourceTypes)[number]
 
 const DEFAULT_INGESTION_KEYWORDS = ['互联网', '前端', '后端', 'AI'] as const
 const DEFAULT_FETCH_LIMIT = 20
@@ -78,22 +78,22 @@ type SessionUser = {
 const sourceSchema = z.object({
   name: z.string().min(2).max(120),
   type: z.enum(ingestionSourceTypes),
-  config: z.record(z.string(), z.unknown()).optional()
+  config: z.record(z.string(), z.unknown()).optional(),
 })
 
 const updateSourceSchema = z.object({
   name: z.string().min(2).max(120).optional(),
   type: z.enum(ingestionSourceTypes).optional(),
   config: z.record(z.string(), z.unknown()).optional(),
-  isActive: z.boolean().optional()
+  isActive: z.boolean().optional(),
 })
 
 const promoteSchema = z.object({
   note: z.object({
     title: z.string().min(1).max(200).optional(),
     content: z.string().min(1),
-    importance: z.enum(['high', 'medium', 'low', 'noise']).default('medium')
-  })
+    importance: z.enum(['high', 'medium', 'low', 'noise']).default('medium'),
+  }),
 })
 
 const resolveUserSession = async (event: H3Event): Promise<SessionUser> => {
@@ -121,7 +121,9 @@ const parseSourceConfig = (input: unknown): Record<string, unknown> | null => {
 
     try {
       const parsed = JSON.parse(input)
-      return typeof parsed === 'object' && parsed !== null ? parsed as Record<string, unknown> : null
+      return typeof parsed === 'object' && parsed !== null
+        ? (parsed as Record<string, unknown>)
+        : null
     } catch (error) {
       console.warn('[ingestion] Failed to parse source config string', error)
       return null
@@ -152,7 +154,7 @@ const mapSourceRow = (row: MemorySourceRow): MemorySource => ({
   config: parseSourceConfig(row.config),
   isActive: Boolean(row.is_active),
   createdAt: row.created_at.toISOString(),
-  updatedAt: row.updated_at.toISOString()
+  updatedAt: row.updated_at.toISOString(),
 })
 
 const parseRawPayload = (input: unknown): Record<string, unknown> | null => {
@@ -167,7 +169,9 @@ const parseRawPayload = (input: unknown): Record<string, unknown> | null => {
 
     try {
       const parsed = JSON.parse(input)
-      return typeof parsed === 'object' && parsed !== null ? parsed as Record<string, unknown> : null
+      return typeof parsed === 'object' && parsed !== null
+        ? (parsed as Record<string, unknown>)
+        : null
     } catch (error) {
       console.warn('[ingestion] Failed to parse raw item payload string', error)
       return null
@@ -201,7 +205,7 @@ const mapRawItemRow = (row: MemoryRawItemRow): MemoryRawItem => ({
   status: row.status,
   ingestedAt: row.ingested_at.toISOString(),
   processedAt: row.processed_at ? row.processed_at.toISOString() : null,
-  errorMessage: row.error_message
+  errorMessage: row.error_message,
 })
 
 const toStringOrNull = (value: unknown): string | null => {
@@ -233,7 +237,7 @@ const buildFallbackNews = () => [
     publishedAt: new Date().toISOString(),
     source: 'MemFilter Demo',
     articleTitle: null,
-    articleContent: null
+    articleContent: null,
   },
   {
     externalId: randomUUID(),
@@ -243,8 +247,8 @@ const buildFallbackNews = () => [
     publishedAt: new Date().toISOString(),
     source: 'MemFilter Demo',
     articleTitle: null,
-    articleContent: null
-  }
+    articleContent: null,
+  },
 ]
 
 const sanitizeApiName = (value: unknown): string => {
@@ -272,9 +276,10 @@ const fetchTianApiNews = async (
   const allowFallback = options.allowFallback !== false
   const body: Record<string, string> = { key: apiKey }
 
-  const limit = typeof options.limit === 'number' && Number.isFinite(options.limit)
-    ? Math.max(1, Math.min(MAX_FETCH_LIMIT, Math.floor(options.limit)))
-    : null
+  const limit =
+    typeof options.limit === 'number' && Number.isFinite(options.limit)
+      ? Math.max(1, Math.min(MAX_FETCH_LIMIT, Math.floor(options.limit)))
+      : null
 
   if (limit !== null) {
     body.num = String(limit)
@@ -290,13 +295,20 @@ const fetchTianApiNews = async (
     const response = await $fetch<{
       code: number
       msg: string
-      newslist?: Array<{ id?: string; title?: string; url?: string; intro?: string; ctime?: string; source?: string }>
+      newslist?: Array<{
+        id?: string
+        title?: string
+        url?: string
+        intro?: string
+        ctime?: string
+        source?: string
+      }>
     }>(`https://apis.tianapi.com/${apiName}/index`, {
       method: 'POST',
       body: formBody,
       headers: {
-        'Content-Type': 'application/x-www-form-urlencoded'
-      }
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
     })
 
     const rawNewslist = Array.isArray(response.newslist)
@@ -305,12 +317,21 @@ const fetchTianApiNews = async (
         ? (response as any).result.newslist
         : []
 
-    const newslist = rawNewslist as Array<{ id?: string; title?: string; url?: string; intro?: string; ctime?: string; source?: string }>
+    const newslist = rawNewslist as Array<{
+      id?: string
+      title?: string
+      url?: string
+      intro?: string
+      ctime?: string
+      source?: string
+    }>
 
     if (response.code !== 200 || newslist.length === 0) {
       if (response.code === 250 && allowFallback) {
         if (apiName === 'internet' && keywords?.length) {
-          console.info('[ingestion] TianAPI internet feed empty for keywords, retrying without filters')
+          console.info(
+            '[ingestion] TianAPI internet feed empty for keywords, retrying without filters'
+          )
           return fetchTianApiNews(undefined, { apiName: 'internet', allowFallback: false })
         }
 
@@ -327,7 +348,7 @@ const fetchTianApiNews = async (
 
       throw createError({
         statusCode: 502,
-        statusMessage: `天行数据接口返回错误（${response.code}）：${response.msg || '未返回资讯数据'}`
+        statusMessage: `天行数据接口返回错误（${response.code}）：${response.msg || '未返回资讯数据'}`,
       })
     }
 
@@ -371,7 +392,7 @@ const fetchTianApiNews = async (
         articleTitle,
         articleContent,
         originalTitle: item.title ?? null,
-        originalSummary: item.intro ?? null
+        originalSummary: item.intro ?? null,
       })
     }
 
@@ -385,7 +406,7 @@ const fetchTianApiNews = async (
     const message = error instanceof Error ? error.message : '拉取资讯失败'
     throw createError({
       statusCode: 502,
-      statusMessage: `天行数据接口请求失败：${message}`
+      statusMessage: `天行数据接口请求失败：${message}`,
     })
   }
 }
@@ -411,7 +432,7 @@ export const useIngestionService = async (event: H3Event) => {
       throw createError({
         statusCode: 422,
         statusMessage: '来源信息无效',
-        data: { issues: parsed.error.flatten() }
+        data: { issues: parsed.error.flatten() },
       })
     }
 
@@ -442,7 +463,7 @@ export const useIngestionService = async (event: H3Event) => {
       throw createError({
         statusCode: 422,
         statusMessage: '来源更新无效',
-        data: { issues: parsed.error.flatten() }
+        data: { issues: parsed.error.flatten() },
       })
     }
 
@@ -462,7 +483,7 @@ export const useIngestionService = async (event: H3Event) => {
         configValue,
         parsed.data.isActive !== undefined ? Number(parsed.data.isActive) : null,
         sourceId,
-        user.id
+        user.id,
       ]
     )
 
@@ -490,7 +511,10 @@ export const useIngestionService = async (event: H3Event) => {
     return rows.map(mapRawItemRow)
   }
 
-  const syncSource = async (sourceId: string, options: { keywords?: string[] | null; limit?: number | null } = {}) => {
+  const syncSource = async (
+    sourceId: string,
+    options: { keywords?: string[] | null; limit?: number | null } = {}
+  ) => {
     const [sources] = await db.execute<MemorySourceRow[]>(
       'SELECT * FROM memory_sources WHERE id = ? AND user_id = ? LIMIT 1',
       [sourceId, user.id]
@@ -508,11 +532,12 @@ export const useIngestionService = async (event: H3Event) => {
     const config = parseSourceConfig(source.config) ?? {}
     const configRecord = config as Record<string, unknown>
     const overrideKeywords = Array.isArray(options.keywords)
-      ? options.keywords.map(keyword => keyword.trim()).filter(Boolean)
+      ? options.keywords.map((keyword) => keyword.trim()).filter(Boolean)
       : []
-    const overrideLimit = typeof options.limit === 'number' && Number.isFinite(options.limit)
-      ? Math.max(1, Math.min(MAX_FETCH_LIMIT, Math.floor(options.limit)))
-      : null
+    const overrideLimit =
+      typeof options.limit === 'number' && Number.isFinite(options.limit)
+        ? Math.max(1, Math.min(MAX_FETCH_LIMIT, Math.floor(options.limit)))
+        : null
 
     let configuredLimit: number | null = null
     const configLimit = configRecord.limit
@@ -545,7 +570,9 @@ export const useIngestionService = async (event: H3Event) => {
 
         if (Array.isArray(rawKeywords)) {
           configuredKeywords = rawKeywords
-            .map(keyword => (typeof keyword === 'string' ? keyword : String(keyword ?? '')).trim())
+            .map((keyword) =>
+              (typeof keyword === 'string' ? keyword : String(keyword ?? '')).trim()
+            )
             .filter(Boolean)
         } else {
           const legacyKeyword = configRecord.keyword
@@ -579,22 +606,15 @@ export const useIngestionService = async (event: H3Event) => {
         articleTitle: item.articleTitle,
         articleContent: item.articleContent,
         originalTitle: item.originalTitle,
-        originalSummary: item.originalSummary
+        originalSummary: item.originalSummary,
       }
 
       try {
         await db.execute(
           `INSERT INTO memory_raw_items (source_id, user_id, external_id, title, content, payload)
            VALUES (?, ?, ?, ?, ?, CAST(? AS JSON))
-           ON DUPLICATE KEY UPDATE title = VALUES(title), content = VALUES(content), payload = VALUES(payload), status = 'pending', error_message = NULL` ,
-          [
-            source.id,
-            user.id,
-            item.externalId,
-            item.title,
-            item.content,
-            JSON.stringify(payload)
-          ]
+           ON DUPLICATE KEY UPDATE title = VALUES(title), content = VALUES(content), payload = VALUES(payload), status = 'pending', error_message = NULL`,
+          [source.id, user.id, item.externalId, item.title, item.content, JSON.stringify(payload)]
         )
         inserted += 1
 
@@ -606,7 +626,7 @@ export const useIngestionService = async (event: H3Event) => {
             url: item.url,
             source: item.source,
             publishedAt: item.publishedAt ?? null,
-            userId: user.id
+            userId: user.id,
           })
         }
       } catch (error) {
@@ -624,7 +644,7 @@ export const useIngestionService = async (event: H3Event) => {
       throw createError({
         statusCode: 422,
         statusMessage: '记忆生成数据无效',
-        data: { issues: parsed.error.flatten() }
+        data: { issues: parsed.error.flatten() },
       })
     }
 
@@ -646,7 +666,8 @@ export const useIngestionService = async (event: H3Event) => {
     const originalSummary = toStringOrNull(payloadRecord?.['originalSummary'])
     const originalTitle = toStringOrNull(payloadRecord?.['originalTitle'])
     const requestedTitle = parsed.data.note.title ? parsed.data.note.title.trim() : ''
-    const baseTitle = pickFirstNonEmpty(rawItem.title, originalTitle, requestedTitle) ?? '自动生成记忆'
+    const baseTitle =
+      pickFirstNonEmpty(rawItem.title, originalTitle, requestedTitle) ?? '自动生成记忆'
 
     if (!articleContent && rawUrl) {
       try {
@@ -661,17 +682,23 @@ export const useIngestionService = async (event: H3Event) => {
 
     const summarizerInput = pickFirstNonEmpty(articleContent, rawItem.content, originalSummary)
     let rewrittenContent = summarizerInput
-      ? (await summarizeArticleContent({
-        title: baseTitle,
-        content: summarizerInput,
-        summary: originalSummary,
-        source: sourceLabel,
-        url: rawUrl ?? undefined
-      })).trim()
+      ? (
+          await summarizeArticleContent({
+            title: baseTitle,
+            content: summarizerInput,
+            summary: originalSummary,
+            source: sourceLabel,
+            url: rawUrl ?? undefined,
+          })
+        ).trim()
       : ''
 
     if (!rewrittenContent.length) {
-      const fallbackContent = pickFirstNonEmpty(parsed.data.note.content, rawItem.content, originalSummary)
+      const fallbackContent = pickFirstNonEmpty(
+        parsed.data.note.content,
+        rawItem.content,
+        originalSummary
+      )
       rewrittenContent = fallbackContent ?? ''
     }
 
@@ -695,7 +722,7 @@ export const useIngestionService = async (event: H3Event) => {
       decayRate: null,
       isCollapsed: false,
       lastAccessed: new Date().toISOString(),
-      date: undefined
+      date: undefined,
     }
 
     const note = await noteService.create(notePayload)
@@ -717,6 +744,6 @@ export const useIngestionService = async (event: H3Event) => {
     updateSource,
     listRawItems,
     syncSource,
-    promoteRawItem
+    promoteRawItem,
   }
 }

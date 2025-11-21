@@ -1,136 +1,134 @@
 <script setup lang="ts">
-import { computed } from "vue";
-import { storeToRefs } from "pinia";
-import { useNotesStore } from "~~/stores/notes";
+  import { computed } from 'vue'
+  import { storeToRefs } from 'pinia'
+  import { useNotesStore } from '~~/stores/notes'
 
-// 使用 app 布局
+  // 使用 app 布局
 
-definePageMeta({
-  layout: "app",
-});
+  definePageMeta({
+    layout: 'app',
+  })
 
-// SEO 设置
-useHead({
-  title: "主页",
-});
+  // SEO 设置
+  useHead({
+    title: '主页',
+  })
 
-// 获取页面配置
-const { data: homeConfig } = await useAsyncData("home", () =>
-  queryCollection("home").first()
-);
+  // 获取页面配置
+  const { data: homeConfig } = await useAsyncData('home', () => queryCollection('home').first())
 
-// 路由导航
-const router = useRouter();
+  // 路由导航
+  const router = useRouter()
 
-// 全局笔记数据
-const notesStore = useNotesStore();
-notesStore.ensureInitialized();
+  // 全局笔记数据
+  const notesStore = useNotesStore()
+  notesStore.ensureInitialized()
 
-const { notes, noteStats, importanceCounts } = storeToRefs(notesStore);
+  const { notes, noteStats, importanceCounts } = storeToRefs(notesStore)
 
-const { resolveImportanceBadge } = useImportanceBadges();
+  const { resolveImportanceBadge } = useImportanceBadges()
 
-const welcomeCardUi = {
-  base: "welcome-card border-none shadow-none backdrop-blur",
-  body: "space-y-4 text-center",
-  root: "p-6 md:p-8 bg-gradient-to-br from-blue-150 via-indigo-50 to-green-50 dark:from-blue-900/30 dark:via-indigo-900/20 dark:to-green-900/20",
-};
-
-const formatDateLabel = (date: Date) =>
-  new Intl.DateTimeFormat("zh-CN", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(date);
-
-const RECENT_LIMIT = 6;
-
-const createDescriptionPreview = (description?: string | null) => {
-  const normalized = (description ?? "").replace(/\s+/g, " ").trim();
-  if (!normalized) {
-    return "暂无描述，点击查看详情";
+  const welcomeCardUi = {
+    base: 'welcome-card border-none shadow-none backdrop-blur',
+    body: 'space-y-4 text-center',
+    root: 'p-6 md:p-8 bg-gradient-to-br from-blue-150 via-indigo-50 to-green-50 dark:from-blue-900/30 dark:via-indigo-900/20 dark:to-green-900/20',
   }
-  return normalized.length > 90 ? `${normalized.slice(0, 90)}…` : normalized;
-};
 
-const derivedStats = computed(() => {
-  const stats = noteStats.value ?? {
-    total: 0,
-    core: 0,
-    fading: 0,
-    forgotten: 0,
-  };
-  const today = formatDateLabel(new Date());
-  const newNotes = notes.value.filter((note) => note.date === today).length;
-  const processing = stats.fading ?? 0;
-  const forgotten = stats.forgotten ?? 0;
-  const retained = Math.max((stats.total ?? 0) - processing - forgotten, 0);
+  const formatDateLabel = (date: Date) =>
+    new Intl.DateTimeFormat('zh-CN', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).format(date)
 
-  return {
-    newNotes,
-    processing,
-    retained,
-    forgotten,
-  };
-});
+  const RECENT_LIMIT = 6
 
-const statItems = computed(() => {
-  const items = homeConfig.value?.stats?.items ?? [];
-  const stats = derivedStats.value;
-
-  return items.map((item) => {
-    const key = item.key as keyof typeof stats | undefined;
-    const fallback = Number.parseInt(item.value ?? "0", 10) || 0;
-    const value = key && stats[key] !== undefined ? stats[key] : fallback;
-
-    return {
-      ...item,
-      resolvedValue: value,
-    };
-  });
-});
-
-const memoryCategoryItems = computed(() => {
-  const categories = homeConfig.value?.memoryOverview?.categories ?? [];
-
-  return categories.map((category) => {
-    let count = category.count ?? 0;
-    const key = category.key ?? "";
-
-    if (key.startsWith("importance.")) {
-      const importance = key.split(".")[1] as ImportanceLevel | undefined;
-      if (importance && importanceCounts.value[importance] !== undefined) {
-        count = importanceCounts.value[importance];
-      }
+  const createDescriptionPreview = (description?: string | null) => {
+    const normalized = (description ?? '').replace(/\s+/g, ' ').trim()
+    if (!normalized) {
+      return '暂无描述，点击查看详情'
     }
+    return normalized.length > 90 ? `${normalized.slice(0, 90)}…` : normalized
+  }
+
+  const derivedStats = computed(() => {
+    const stats = noteStats.value ?? {
+      total: 0,
+      core: 0,
+      fading: 0,
+      forgotten: 0,
+    }
+    const today = formatDateLabel(new Date())
+    const newNotes = notes.value.filter((note) => note.date === today).length
+    const processing = stats.fading ?? 0
+    const forgotten = stats.forgotten ?? 0
+    const retained = Math.max((stats.total ?? 0) - processing - forgotten, 0)
 
     return {
-      ...category,
-      count,
-    };
-  });
-});
+      newNotes,
+      processing,
+      retained,
+      forgotten,
+    }
+  })
 
-const recentMemories = computed(() =>
-  notesStore.getRecentNotes(RECENT_LIMIT).map((note) => ({
-    id: note.id,
-    title: note.title,
-    description: createDescriptionPreview(note.description),
-    importance: note.importance,
-    badge: resolveImportanceBadge(note.importance),
-    lastAccessed: note.lastAccessed,
-    date: note.date,
-  }))
-);
+  const statItems = computed(() => {
+    const items = homeConfig.value?.stats?.items ?? []
+    const stats = derivedStats.value
 
-// 快速导航
-const navigateTo = (path: string) => {
-  router.push(path);
-};
+    return items.map((item) => {
+      const key = item.key as keyof typeof stats | undefined
+      const fallback = Number.parseInt(item.value ?? '0', 10) || 0
+      const value = key && stats[key] !== undefined ? stats[key] : fallback
 
-const navigateToMemoryDetail = (id: number | string) => {
-  router.push({ path: `/memory/${id}` });
-};
+      return {
+        ...item,
+        resolvedValue: value,
+      }
+    })
+  })
+
+  const memoryCategoryItems = computed(() => {
+    const categories = homeConfig.value?.memoryOverview?.categories ?? []
+
+    return categories.map((category) => {
+      let count = category.count ?? 0
+      const key = category.key ?? ''
+
+      if (key.startsWith('importance.')) {
+        const importance = key.split('.')[1] as ImportanceLevel | undefined
+        if (importance && importanceCounts.value[importance] !== undefined) {
+          count = importanceCounts.value[importance]
+        }
+      }
+
+      return {
+        ...category,
+        count,
+      }
+    })
+  })
+
+  const recentMemories = computed(() =>
+    notesStore.getRecentNotes(RECENT_LIMIT).map((note) => ({
+      id: note.id,
+      title: note.title,
+      description: createDescriptionPreview(note.description),
+      importance: note.importance,
+      badge: resolveImportanceBadge(note.importance),
+      lastAccessed: note.lastAccessed,
+      date: note.date,
+    }))
+  )
+
+  // 快速导航
+  const navigateTo = (path: string) => {
+    router.push(path)
+  }
+
+  const navigateToMemoryDetail = (id: number | string) => {
+    router.push({ path: `/memory/${id}` })
+  }
 </script>
 
 <template>
@@ -191,11 +189,7 @@ const navigateToMemoryDetail = (id: number | string) => {
       </template>
 
       <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
-        <div
-          v-for="stat in statItems"
-          :key="stat.label"
-          class="text-center space-y-2"
-        >
+        <div v-for="stat in statItems" :key="stat.label" class="text-center space-y-2">
           <UIcon
             v-if="stat.icon"
             :name="stat.icon"
@@ -237,18 +231,12 @@ const navigateToMemoryDetail = (id: number | string) => {
             class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
           >
             <div class="flex items-center space-x-3">
-              <UIcon
-                :name="category.icon"
-                :class="`text-${category.color}-500`"
-              />
+              <UIcon :name="category.icon" :class="`text-${category.color}-500`" />
               <span class="font-medium text-gray-900 dark:text-white">
                 {{ category.name }}
               </span>
             </div>
-            <UBadge
-              :label="category.count.toString()"
-              variant="soft"
-            />
+            <UBadge :label="category.count.toString()" variant="soft" />
           </div>
         </div>
       </UCard>
@@ -351,28 +339,18 @@ const navigateToMemoryDetail = (id: number | string) => {
           @keydown.enter.prevent="navigateToMemoryDetail(item.id)"
           @keydown.space.prevent="navigateToMemoryDetail(item.id)"
         >
-          <div
-            class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between"
-          >
+          <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
             <div class="space-y-2">
-              <div
-                class="flex items-center gap-2 text-gray-900 dark:text-white"
-              >
+              <div class="flex items-center gap-2 text-gray-900 dark:text-white">
                 <UIcon name="i-lucide-sticky-note" class="text-gray-400" />
                 <span class="font-medium">{{ item.title }}</span>
               </div>
-              <p
-                class="text-sm text-gray-500 dark:text-gray-400 leading-relaxed"
-              >
+              <p class="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
                 {{ item.description }}
               </p>
             </div>
             <div class="flex flex-col items-start md:items-end gap-2">
-              <UBadge
-                :label="item.badge.label"
-                :color="item.badge.color as any"
-                variant="soft"
-              />
+              <UBadge :label="item.badge.label" :color="item.badge.color as any" variant="soft" />
               <div class="text-xs text-gray-500 dark:text-gray-400">
                 最近访问: {{ item.lastAccessed }} · 创建于 {{ item.date }}
               </div>
@@ -385,24 +363,24 @@ const navigateToMemoryDetail = (id: number | string) => {
 </template>
 
 <style scoped>
-/* 卡片悬停效果 */
-.hover\:shadow-md:hover {
-  transform: translateY(-1px);
-  transition: all 0.3s ease;
-}
-
-/* 动画效果 */
-@keyframes pulse {
-  0%,
-  100% {
-    opacity: 1;
+  /* 卡片悬停效果 */
+  .hover\:shadow-md:hover {
+    transform: translateY(-1px);
+    transition: all 0.3s ease;
   }
-  50% {
-    opacity: 0.5;
-  }
-}
 
-.animate-pulse {
-  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-}
+  /* 动画效果 */
+  @keyframes pulse {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.5;
+    }
+  }
+
+  .animate-pulse {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
 </style>

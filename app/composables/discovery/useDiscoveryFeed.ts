@@ -64,9 +64,10 @@ const resolveTags = (item: MemoryRawItem) => {
 const mapRawItemToDiscovery = (item: MemoryRawItem): DiscoveryFeedItem => {
   const payload = item.payload ?? {}
   const link = typeof payload?.url === 'string' ? payload.url : null
-  const source = typeof payload?.source === 'string' && payload.source.trim().length
-    ? payload.source.trim()
-    : '来自天行资讯'
+  const source =
+    typeof payload?.source === 'string' && payload.source.trim().length
+      ? payload.source.trim()
+      : '来自天行资讯'
 
   const published = normalizeDate(
     typeof payload?.publishedAt === 'string'
@@ -84,7 +85,7 @@ const mapRawItemToDiscovery = (item: MemoryRawItem): DiscoveryFeedItem => {
     publishedAt: published ? published.toISOString() : null,
     link,
     tags: resolveTags(item),
-    raw: item
+    raw: item,
   }
 }
 
@@ -114,13 +115,10 @@ export const useDiscoveryFeed = ({ items }: UseDiscoveryFeedOptions) => {
       .map(([tag, count]) => ({
         tag,
         label: tag,
-        count
+        count,
       }))
 
-    return [
-      { tag: 'all', label: '全部资讯', count: allItems.value.length },
-      ...sorted
-    ]
+    return [{ tag: 'all', label: '全部资讯', count: allItems.value.length }, ...sorted]
   })
 
   const trendingTopics = computed<DiscoveryTopic[]>(() => {
@@ -130,7 +128,7 @@ export const useDiscoveryFeed = ({ items }: UseDiscoveryFeedOptions) => {
       const tokens = item.title
         .replace(/[\p{P}\p{S}]/gu, ' ')
         .split(/\s+/)
-        .filter(token => token.length >= 2 && token.length <= 16)
+        .filter((token) => token.length >= 2 && token.length <= 16)
 
       for (const token of tokens) {
         const key = token.toLowerCase()
@@ -148,7 +146,7 @@ export const useDiscoveryFeed = ({ items }: UseDiscoveryFeedOptions) => {
         id: `${token}-${index}`,
         label: token,
         tag: token,
-        mentions
+        mentions,
       }))
   })
 
@@ -159,22 +157,22 @@ export const useDiscoveryFeed = ({ items }: UseDiscoveryFeedOptions) => {
       description: '接入 AI 后将根据你的笔记主题自动推荐值得记录的资讯。',
       icon: 'i-lucide-sparkles',
       tone: 'primary',
-      comingSoon: true
+      comingSoon: true,
     },
     {
       id: 'productivity-boost',
       title: '效率工具精选',
       description: '聚焦效率工具、工作流优化与知识管理的新趋势。',
       icon: 'i-lucide-rocket',
-      tone: 'info'
+      tone: 'info',
     },
     {
       id: 'industry-hot',
       title: '行业热点追踪',
       description: '快速浏览科技、互联网、AI 行业的当日高热度事件。',
       icon: 'i-lucide-flame',
-      tone: 'warning'
-    }
+      tone: 'warning',
+    },
   ])
 
   const stats = computed(() => {
@@ -201,7 +199,7 @@ export const useDiscoveryFeed = ({ items }: UseDiscoveryFeedOptions) => {
     return {
       total,
       today,
-      thisWeek
+      thisWeek,
     }
   })
 
@@ -242,15 +240,15 @@ export const useDiscoveryFeed = ({ items }: UseDiscoveryFeedOptions) => {
       return true
     }
 
-    return allItems.value.filter(item => {
-      const matchKeyword = !keyword
-        || item.title.toLowerCase().includes(keyword)
-        || item.summary.toLowerCase().includes(keyword)
-        || item.tags.some(tag => tag.toLowerCase().includes(keyword))
+    return allItems.value.filter((item) => {
+      const matchKeyword =
+        !keyword ||
+        item.title.toLowerCase().includes(keyword) ||
+        item.summary.toLowerCase().includes(keyword) ||
+        item.tags.some((tag) => tag.toLowerCase().includes(keyword))
 
-      const matchTopic = topic === 'all'
-        || item.tags.includes(topic)
-        || item.title.toLowerCase().includes(topic)
+      const matchTopic =
+        topic === 'all' || item.tags.includes(topic) || item.title.toLowerCase().includes(topic)
 
       return matchKeyword && matchTopic && matchesTimeRange(item)
     })
@@ -277,6 +275,6 @@ export const useDiscoveryFeed = ({ items }: UseDiscoveryFeedOptions) => {
     filteredItems,
     highlightItem,
     setTopic,
-    setTimeRange
+    setTimeRange,
   }
 }

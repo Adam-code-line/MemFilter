@@ -18,7 +18,7 @@ interface NoteEvaluationPayload {
     temperature?: number
     thinking?: boolean
   }
-  }
+}
 
 export type NoteEvaluationResult = NoteAIEvaluation
 
@@ -66,7 +66,9 @@ export const useNoteAIInsights = () => {
   const compressionError = ref<string | null>(null)
   const compressionResult = shallowRef<NoteCompressionResult | null>(null)
 
-  const evaluateNote = async (payload: NoteEvaluationPayload): Promise<NoteEvaluationResult | null> => {
+  const evaluateNote = async (
+    payload: NoteEvaluationPayload
+  ): Promise<NoteEvaluationResult | null> => {
     const content = payload.text?.trim()
     if (!content) {
       evaluationError.value = '请输入需要评估的内容。'
@@ -82,11 +84,11 @@ export const useNoteAIInsights = () => {
         body: {
           text: content,
           meta: payload.meta,
-          options: payload.options
-        }
+          options: payload.options,
+        },
       })
 
-      const base = Array.isArray(response?.items) ? response.items[0] ?? null : null
+      const base = Array.isArray(response?.items) ? (response.items[0] ?? null) : null
       const normalized = base
         ? { ...base, generatedAt: base.generatedAt ?? new Date().toISOString() }
         : null
@@ -101,7 +103,9 @@ export const useNoteAIInsights = () => {
     }
   }
 
-  const compressNote = async (payload: NoteCompressionPayload): Promise<NoteCompressionResult | null> => {
+  const compressNote = async (
+    payload: NoteCompressionPayload
+  ): Promise<NoteCompressionResult | null> => {
     const content = payload.text?.trim()
     if (!content) {
       compressionError.value = '请输入需要压缩的内容。'
@@ -117,11 +121,11 @@ export const useNoteAIInsights = () => {
         body: {
           text: content,
           meta: payload.meta,
-          options: payload.options
-        }
+          options: payload.options,
+        },
       })
 
-      const base = Array.isArray(response?.items) ? response.items[0] ?? null : null
+      const base = Array.isArray(response?.items) ? (response.items[0] ?? null) : null
       const normalized = base
         ? { ...base, generatedAt: base.generatedAt ?? new Date().toISOString() }
         : null
@@ -164,6 +168,6 @@ export const useNoteAIInsights = () => {
     compressNote,
     resetEvaluation,
     resetCompression,
-    resetAll
+    resetAll,
   }
 }

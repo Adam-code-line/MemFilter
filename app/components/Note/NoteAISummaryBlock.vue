@@ -39,56 +39,59 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
-import type { NoteAIUsageSummary } from '~/composables/note/types'
+  import { computed } from 'vue'
+  import type { NoteAIUsageSummary } from '~/composables/note/types'
 
-const props = withDefaults(defineProps<{
-  summary?: string | null
-  bullets?: string[] | null
-  tokensSaved?: number | null
-  usage?: NoteAIUsageSummary | null
-  emptyMessage?: string
-}>(), {
-  summary: '',
-  bullets: null,
-  tokensSaved: null,
-  usage: null,
-  emptyMessage: '暂无 AI 摘要，生成后会自动展示。'
-})
+  const props = withDefaults(
+    defineProps<{
+      summary?: string | null
+      bullets?: string[] | null
+      tokensSaved?: number | null
+      usage?: NoteAIUsageSummary | null
+      emptyMessage?: string
+    }>(),
+    {
+      summary: '',
+      bullets: null,
+      tokensSaved: null,
+      usage: null,
+      emptyMessage: '暂无 AI 摘要，生成后会自动展示。',
+    }
+  )
 
-const summaryContent = computed(() => (props.summary ?? '').trim())
-const hasSummary = computed(() => summaryContent.value.length > 0)
+  const summaryContent = computed(() => (props.summary ?? '').trim())
+  const hasSummary = computed(() => summaryContent.value.length > 0)
 
-const bulletItems = computed(() => {
-  if (!Array.isArray(props.bullets)) {
-    return [] as string[]
-  }
-  return props.bullets
-    .map(item => (typeof item === 'string' ? item.trim() : ''))
-    .filter(item => item.length > 0)
-})
-const hasBullets = computed(() => bulletItems.value.length > 0)
+  const bulletItems = computed(() => {
+    if (!Array.isArray(props.bullets)) {
+      return [] as string[]
+    }
+    return props.bullets
+      .map((item) => (typeof item === 'string' ? item.trim() : ''))
+      .filter((item) => item.length > 0)
+  })
+  const hasBullets = computed(() => bulletItems.value.length > 0)
 
-const promptTokens = computed(() => props.usage?.promptTokens ?? null)
-const completionTokens = computed(() => props.usage?.completionTokens ?? null)
-const totalTokens = computed(() => props.usage?.totalTokens ?? null)
+  const promptTokens = computed(() => props.usage?.promptTokens ?? null)
+  const completionTokens = computed(() => props.usage?.completionTokens ?? null)
+  const totalTokens = computed(() => props.usage?.totalTokens ?? null)
 
-const metaEntries = computed(() => {
-  const entries: Array<{ label: string; value: string | number }> = []
+  const metaEntries = computed(() => {
+    const entries: Array<{ label: string; value: string | number }> = []
 
-  if (typeof props.tokensSaved === 'number' && props.tokensSaved > 0) {
-    entries.push({ label: '节省 Tokens', value: props.tokensSaved })
-  }
-  if (typeof promptTokens.value === 'number') {
-    entries.push({ label: 'Prompt', value: promptTokens.value })
-  }
-  if (typeof completionTokens.value === 'number') {
-    entries.push({ label: 'Completion', value: completionTokens.value })
-  }
-  if (typeof totalTokens.value === 'number') {
-    entries.push({ label: '总计', value: totalTokens.value })
-  }
+    if (typeof props.tokensSaved === 'number' && props.tokensSaved > 0) {
+      entries.push({ label: '节省 Tokens', value: props.tokensSaved })
+    }
+    if (typeof promptTokens.value === 'number') {
+      entries.push({ label: 'Prompt', value: promptTokens.value })
+    }
+    if (typeof completionTokens.value === 'number') {
+      entries.push({ label: 'Completion', value: completionTokens.value })
+    }
+    if (typeof totalTokens.value === 'number') {
+      entries.push({ label: '总计', value: totalTokens.value })
+    }
 
-  return entries
-})
+    return entries
+  })
 </script>

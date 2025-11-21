@@ -128,7 +128,7 @@ export default defineContentConfig({
                   label: z.string(),
                   value: z.string(),
                   icon: z.string().optional(),
-                  key: z.string().optional()
+                  key: z.string().optional(),
                 })
               )
               .optional(),
@@ -145,10 +145,10 @@ export default defineContentConfig({
                   count: z.number().optional(),
                   color: z.string().optional(),
                   icon: z.string().optional(),
-                  key: z.string().optional()
+                  key: z.string().optional(),
                 })
               )
-              .optional()
+              .optional(),
           })
           .optional(),
         aiStatus: z
@@ -228,14 +228,16 @@ export default defineContentConfig({
                 title: z.string().optional(),
                 subtitle: z.string().optional(),
                 icon: z.string().optional(),
-                fields: z.record(
-                  z.object({
-                    label: z.string().optional(),
-                    placeholder: z.string().optional(),
-                    icon: z.string().optional(),
-                    type: z.string().optional(),
-                  })
-                ).optional(),
+                fields: z
+                  .record(
+                    z.object({
+                      label: z.string().optional(),
+                      placeholder: z.string().optional(),
+                      icon: z.string().optional(),
+                      type: z.string().optional(),
+                    })
+                  )
+                  .optional(),
                 submit: z.string().optional(),
                 submitIcon: z.string().optional(),
                 switchText: z.string().optional(),
@@ -247,14 +249,16 @@ export default defineContentConfig({
                 title: z.string().optional(),
                 subtitle: z.string().optional(),
                 icon: z.string().optional(),
-                fields: z.record(
-                  z.object({
-                    label: z.string().optional(),
-                    placeholder: z.string().optional(),
-                    icon: z.string().optional(),
-                    type: z.string().optional(),
-                  })
-                ).optional(),
+                fields: z
+                  .record(
+                    z.object({
+                      label: z.string().optional(),
+                      placeholder: z.string().optional(),
+                      icon: z.string().optional(),
+                      type: z.string().optional(),
+                    })
+                  )
+                  .optional(),
                 submit: z.string().optional(),
                 submitIcon: z.string().optional(),
                 switchText: z.string().optional(),
@@ -278,7 +282,7 @@ export default defineContentConfig({
           .object({
             label: z.string().optional(),
             color: colorEnum.optional(),
-            icon: z.string().optional()
+            icon: z.string().optional(),
           })
           .optional(),
         actions: z
@@ -290,7 +294,7 @@ export default defineContentConfig({
               icon: z.string().optional(),
               variant: variantEnum.optional(),
               color: colorEnum.optional(),
-              size: sizeEnum.optional()
+              size: sizeEnum.optional(),
             })
           )
           .optional(),
@@ -302,7 +306,7 @@ export default defineContentConfig({
             viewToggle: z
               .object({
                 card: z.string().optional(),
-                list: z.string().optional()
+                list: z.string().optional(),
               })
               .optional(),
             importance: z
@@ -310,10 +314,10 @@ export default defineContentConfig({
                 z.object({
                   label: z.string().nonempty(),
                   value: z.string().nonempty(),
-                  icon: z.string().optional()
+                  icon: z.string().optional(),
                 })
               )
-              .optional()
+              .optional(),
           })
           .optional(),
         list: z
@@ -329,11 +333,11 @@ export default defineContentConfig({
                 action: z
                   .object({
                     label: z.string().optional(),
-                    icon: z.string().optional()
+                    icon: z.string().optional(),
                   })
-                  .optional()
+                  .optional(),
               })
-              .optional()
+              .optional(),
           })
           .optional(),
         stats: z
@@ -345,10 +349,10 @@ export default defineContentConfig({
                   title: z.string().nonempty(),
                   description: z.string().optional(),
                   icon: z.string().optional(),
-                  variant: z.enum(['gradient', 'glass', 'minimal', 'elevated']).optional()
+                  variant: z.enum(['gradient', 'glass', 'minimal', 'elevated']).optional(),
                 })
               )
-              .optional()
+              .optional(),
           })
           .optional(),
         emptyState: z
@@ -361,9 +365,9 @@ export default defineContentConfig({
                 icon: z.string().optional(),
                 to: z.string().optional(),
                 variant: variantEnum.optional(),
-                color: colorEnum.optional()
+                color: colorEnum.optional(),
               })
-              .optional()
+              .optional(),
           })
           .optional(),
         editor: z
@@ -373,31 +377,31 @@ export default defineContentConfig({
               .object({
                 default: z.string(),
                 fading: z.string().optional(),
-                strongFading: z.string().optional()
+                strongFading: z.string().optional(),
               })
               .optional(),
             actions: z
               .object({
                 save: z.string().optional(),
-                cancel: z.string().optional()
+                cancel: z.string().optional(),
               })
               .optional(),
             status: z
               .object({
                 saved: z.string().optional(),
-                unsaved: z.string().optional()
+                unsaved: z.string().optional(),
               })
               .optional(),
             metaLabels: z
               .object({
                 wordCount: z.string().optional(),
                 readTime: z.string().optional(),
-                lastEdited: z.string().optional()
+                lastEdited: z.string().optional(),
               })
               .optional(),
-            aiBadgePrefix: z.string().optional()
+            aiBadgePrefix: z.string().optional(),
           })
-          .optional()
+          .optional(),
       }),
     }),
 
@@ -411,12 +415,12 @@ export default defineContentConfig({
           .object({
             label: z.string().optional(),
             color: colorEnum.optional(),
-            icon: z.string().optional()
+            icon: z.string().optional(),
           })
           .optional(),
         intro: z
           .object({
-            description: z.string().optional()
+            description: z.string().optional(),
           })
           .optional(),
         detail: z
@@ -427,7 +431,7 @@ export default defineContentConfig({
             emptyFallback: z
               .object({
                 title: z.string().optional(),
-                description: z.string().optional()
+                description: z.string().optional(),
               })
               .optional(),
             actions: z
@@ -438,7 +442,7 @@ export default defineContentConfig({
                     icon: z.string().optional(),
                     color: colorEnum.optional(),
                     variant: variantEnum.optional(),
-                    tooltip: z.string().optional()
+                    tooltip: z.string().optional(),
                   })
                   .optional(),
                 accelerate: z
@@ -447,7 +451,7 @@ export default defineContentConfig({
                     icon: z.string().optional(),
                     color: colorEnum.optional(),
                     variant: variantEnum.optional(),
-                    tooltip: z.string().optional()
+                    tooltip: z.string().optional(),
                   })
                   .optional(),
                 forget: z
@@ -456,11 +460,11 @@ export default defineContentConfig({
                     icon: z.string().optional(),
                     color: colorEnum.optional(),
                     variant: variantEnum.optional(),
-                    tooltip: z.string().optional()
+                    tooltip: z.string().optional(),
                   })
-                  .optional()
+                  .optional(),
               })
-              .optional()
+              .optional(),
           })
           .optional(),
         overview: z
@@ -472,10 +476,10 @@ export default defineContentConfig({
                   label: z.string().nonempty(),
                   description: z.string().optional(),
                   icon: z.string().optional(),
-                  color: colorEnum.optional()
+                  color: colorEnum.optional(),
                 })
               )
-              .optional()
+              .optional(),
           })
           .optional(),
         sections: z
@@ -489,13 +493,13 @@ export default defineContentConfig({
               empty: z
                 .object({
                   title: z.string().optional(),
-                  description: z.string().optional()
+                  description: z.string().optional(),
                 })
-                .optional()
+                .optional(),
             })
           )
-          .optional()
-      })
+          .optional(),
+      }),
     }),
 
     history: defineCollection({
@@ -508,7 +512,7 @@ export default defineContentConfig({
           .object({
             label: z.string().optional(),
             color: colorEnum.optional(),
-            icon: z.string().optional()
+            icon: z.string().optional(),
           })
           .optional(),
         hero: z
@@ -521,9 +525,9 @@ export default defineContentConfig({
                 icon: z.string().optional(),
                 to: z.string().optional(),
                 variant: variantEnum.optional(),
-                color: colorEnum.optional()
+                color: colorEnum.optional(),
               })
-              .optional()
+              .optional(),
           })
           .optional(),
         overview: z
@@ -537,10 +541,10 @@ export default defineContentConfig({
                   label: z.string().nonempty(),
                   description: z.string().optional(),
                   icon: z.string().optional(),
-                  color: colorEnum.optional()
+                  color: colorEnum.optional(),
                 })
               )
-              .optional()
+              .optional(),
           })
           .optional(),
         timeline: z
@@ -550,9 +554,9 @@ export default defineContentConfig({
             empty: z
               .object({
                 title: z.string().optional(),
-                description: z.string().optional()
+                description: z.string().optional(),
               })
-              .optional()
+              .optional(),
           })
           .optional(),
         sections: z
@@ -566,9 +570,9 @@ export default defineContentConfig({
               empty: z
                 .object({
                   title: z.string().optional(),
-                  description: z.string().optional()
+                  description: z.string().optional(),
                 })
-                .optional()
+                .optional(),
             })
           )
           .optional(),
@@ -579,12 +583,12 @@ export default defineContentConfig({
             empty: z
               .object({
                 title: z.string().optional(),
-                description: z.string().optional()
+                description: z.string().optional(),
               })
-              .optional()
+              .optional(),
           })
-          .optional()
-      })
+          .optional(),
+      }),
     }),
 
     settings: defineCollection({
@@ -597,7 +601,7 @@ export default defineContentConfig({
           .object({
             label: z.string().optional(),
             color: colorEnum.optional(),
-            icon: z.string().optional()
+            icon: z.string().optional(),
           })
           .optional(),
         sections: z
@@ -614,7 +618,9 @@ export default defineContentConfig({
                     title: z.string().nonempty(),
                     description: z.string().optional(),
                     icon: z.string().optional(),
-                    type: z.enum(['profile', 'security', 'toggle-group', 'select-group', 'info']).optional(),
+                    type: z
+                      .enum(['profile', 'security', 'toggle-group', 'select-group', 'info'])
+                      .optional(),
                     fields: z
                       .array(
                         z.object({
@@ -622,7 +628,7 @@ export default defineContentConfig({
                           label: z.string().nonempty(),
                           placeholder: z.string().optional(),
                           helper: z.string().optional(),
-                          type: z.enum(['text', 'email', 'password']).optional()
+                          type: z.enum(['text', 'email', 'password']).optional(),
                         })
                       )
                       .optional(),
@@ -634,7 +640,7 @@ export default defineContentConfig({
                           description: z.string().optional(),
                           helpful: z.string().optional(),
                           icon: z.string().optional(),
-                          default: z.boolean().optional()
+                          default: z.boolean().optional(),
                         })
                       )
                       .optional(),
@@ -643,17 +649,17 @@ export default defineContentConfig({
                         z.object({
                           key: z.string().nonempty(),
                           label: z.string().nonempty(),
-                          description: z.string().optional()
+                          description: z.string().optional(),
                         })
                       )
-                      .optional()
+                      .optional(),
                   })
                 )
-                .optional()
+                .optional(),
             })
           )
-          .optional()
-      })
-    })
+          .optional(),
+      }),
+    }),
   },
 })

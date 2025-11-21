@@ -1,267 +1,270 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { storeToRefs } from 'pinia'
-import { useAuthStore } from '~~/stores/auth'
+  import { computed } from 'vue'
+  import { storeToRefs } from 'pinia'
+  import { useAuthStore } from '~~/stores/auth'
 
-definePageMeta({
-	layout: 'app'
-})
+  definePageMeta({
+    layout: 'app',
+  })
 
-const router = useRouter()
-const authStore = useAuthStore()
+  const router = useRouter()
+  const authStore = useAuthStore()
 
-if (!authStore.isInitialized.value) {
-	await authStore.initialize()
-}
+  if (!authStore.isInitialized.value) {
+    await authStore.initialize()
+  }
 
-const { user: authUser } = storeToRefs(authStore)
+  const { user: authUser } = storeToRefs(authStore)
 
-const { content } = await useProfileContent()
-const {
-	summaryMetrics,
-	importanceDistribution,
-	recentNotes,
-	hasNotes
-} = useProfileMetrics()
+  const { content } = await useProfileContent()
+  const { summaryMetrics, importanceDistribution, recentNotes, hasNotes } = useProfileMetrics()
 
-const { headerTitle, headerSubtitle, headerBadge } = usePageMeta(
-	{
-		title: computed(() => content.value.title),
-		subtitle: computed(() => content.value.subtitle ?? ''),
-		badge: computed(() => content.value.badge ?? null)
-	},
-	{
-		title: '个人档案',
-		subtitle: '了解你的记忆画像与近期的遗忘行为。',
-		badge: null
-	}
-)
+  const { headerTitle, headerSubtitle, headerBadge } = usePageMeta(
+    {
+      title: computed(() => content.value.title),
+      subtitle: computed(() => content.value.subtitle ?? ''),
+      badge: computed(() => content.value.badge ?? null),
+    },
+    {
+      title: '个人档案',
+      subtitle: '了解你的记忆画像与近期的遗忘行为。',
+      badge: null,
+    }
+  )
 
-useHead(() => ({
-	title: headerTitle.value
-}))
+  useHead(() => ({
+    title: headerTitle.value,
+  }))
 
-const formatJoinDate = (value?: string) => {
-	if (!value) {
-		return null
-	}
+  const formatJoinDate = (value?: string) => {
+    if (!value) {
+      return null
+    }
 
-	const parsed = new Date(value)
-	if (Number.isNaN(parsed.getTime())) {
-		return null
-	}
+    const parsed = new Date(value)
+    if (Number.isNaN(parsed.getTime())) {
+      return null
+    }
 
-	return new Intl.DateTimeFormat('zh-CN', {
-		year: 'numeric',
-		month: '2-digit',
-		day: '2-digit'
-	}).format(parsed)
-}
+    return new Intl.DateTimeFormat('zh-CN', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).format(parsed)
+  }
 
-const profileSummary = computed(() => {
-	const base = content.value.summary ?? null
-	const user = authUser.value
+  const profileSummary = computed(() => {
+    const base = content.value.summary ?? null
+    const user = authUser.value
 
-	if (!user) {
-		return base
-	}
+    if (!user) {
+      return base
+    }
 
-	const tags = [...(base?.tags ?? [])]
+    const tags = [...(base?.tags ?? [])]
 
-	if (user.email && !tags.some(tag => (tag.key ?? tag.label) === 'auth-email' || tag.label === user.email)) {
-		tags.push({
-			key: 'auth-email',
-			label: user.email,
-			icon: 'i-lucide-mail',
-			color: 'primary'
-		})
-	}
+    if (
+      user.email &&
+      !tags.some((tag) => (tag.key ?? tag.label) === 'auth-email' || tag.label === user.email)
+    ) {
+      tags.push({
+        key: 'auth-email',
+        label: user.email,
+        icon: 'i-lucide-mail',
+        color: 'primary',
+      })
+    }
 
-	const joinedLabel = formatJoinDate(user.createdAt)
-	if (joinedLabel && !tags.some(tag => (tag.key ?? tag.label) === 'auth-joined')) {
-		tags.push({
-			key: 'auth-joined',
-			label: `加入于 ${joinedLabel}`,
-			icon: 'i-lucide-calendar-clock',
-			color: 'neutral'
-		})
-	}
+    const joinedLabel = formatJoinDate(user.createdAt)
+    if (joinedLabel && !tags.some((tag) => (tag.key ?? tag.label) === 'auth-joined')) {
+      tags.push({
+        key: 'auth-joined',
+        label: `加入于 ${joinedLabel}`,
+        icon: 'i-lucide-calendar-clock',
+        color: 'neutral',
+      })
+    }
 
-	return {
-		...(base ?? {}),
-		name: user.name || base?.name,
-		bio: base?.bio ?? '完善更多资料，让 AI 更懂你的记忆偏好。',
-		role: base?.role ?? '记忆探索者',
-		status: base?.status ?? {
-			label: '账号已激活',
-			icon: 'i-lucide-badge-check',
-			color: 'success',
-			variant: 'soft'
-		},
-		tags,
-		actions: [...(base?.actions ?? [])]
-	}
-})
+    return {
+      ...(base ?? {}),
+      name: user.name || base?.name,
+      bio: base?.bio ?? '完善更多资料，让 AI 更懂你的记忆偏好。',
+      role: base?.role ?? '记忆探索者',
+      status: base?.status ?? {
+        label: '账号已激活',
+        icon: 'i-lucide-badge-check',
+        color: 'success',
+        variant: 'soft',
+      },
+      tags,
+      actions: [...(base?.actions ?? [])],
+    }
+  })
 
-const dynamicSummaryStats = computed<ProfileContentStat[]>(() => {
-	const metrics = summaryMetrics.value
+  const dynamicSummaryStats = computed<ProfileContentStat[]>(() => {
+    const metrics = summaryMetrics.value
 
-	return [
-		{
-			key: 'total',
-			label: '记忆总量',
-			value: String(metrics.total ?? 0),
-			icon: 'i-lucide-layers',
-			color: 'primary'
-		},
-		{
-			key: 'core',
-			label: '核心记忆',
-			value: String(metrics.core ?? 0),
-			icon: 'i-lucide-flame',
-			color: 'success'
-		},
-		{
-			key: 'fading',
-			label: '淡化中',
-			value: String(metrics.fading ?? 0),
-			icon: 'i-lucide-timer',
-			color: 'warning'
-		},
-		{
-			key: 'forgotten',
-			label: '已遗忘',
-			value: String(metrics.forgotten ?? 0),
-			icon: 'i-lucide-moon-star',
-			color: 'neutral'
-		}
-	]
-})
+    return [
+      {
+        key: 'total',
+        label: '记忆总量',
+        value: String(metrics.total ?? 0),
+        icon: 'i-lucide-layers',
+        color: 'primary',
+      },
+      {
+        key: 'core',
+        label: '核心记忆',
+        value: String(metrics.core ?? 0),
+        icon: 'i-lucide-flame',
+        color: 'success',
+      },
+      {
+        key: 'fading',
+        label: '淡化中',
+        value: String(metrics.fading ?? 0),
+        icon: 'i-lucide-timer',
+        color: 'warning',
+      },
+      {
+        key: 'forgotten',
+        label: '已遗忘',
+        value: String(metrics.forgotten ?? 0),
+        icon: 'i-lucide-moon-star',
+        color: 'neutral',
+      },
+    ]
+  })
 
-const profileStats = computed(() => {
-	const configuredStats = profileSummary.value?.stats
-	if (configuredStats?.length) {
-		return configuredStats
-	}
+  const profileStats = computed(() => {
+    const configuredStats = profileSummary.value?.stats
+    if (configuredStats?.length) {
+      return configuredStats
+    }
 
-	return dynamicSummaryStats.value
-})
+    return dynamicSummaryStats.value
+  })
 
-const summaryStatOverrides = computed<Record<string, string>>(() => {
-	const overrides: Record<string, string> = {}
-	const metrics = summaryMetrics.value
+  const summaryStatOverrides = computed<Record<string, string>>(() => {
+    const overrides: Record<string, string> = {}
+    const metrics = summaryMetrics.value
 
-	overrides.total = String(metrics.total ?? 0)
-	overrides.core = String(metrics.core ?? 0)
-	overrides.fading = String(metrics.fading ?? 0)
-	overrides.forgotten = String(metrics.forgotten ?? 0)
+    overrides.total = String(metrics.total ?? 0)
+    overrides.core = String(metrics.core ?? 0)
+    overrides.fading = String(metrics.fading ?? 0)
+    overrides.forgotten = String(metrics.forgotten ?? 0)
 
-	const retained = Math.max((metrics.total ?? 0) - (metrics.forgotten ?? 0), 0)
-	overrides.retained = String(retained)
+    const retained = Math.max((metrics.total ?? 0) - (metrics.forgotten ?? 0), 0)
+    overrides.retained = String(retained)
 
-	const total = metrics.total ?? 0
-	const forgotten = metrics.forgotten ?? 0
-	const forgettingPercent = total > 0 ? Math.round((forgotten / total) * 100) : 0
-	overrides.forgetting = `${forgettingPercent}%`
+    const total = metrics.total ?? 0
+    const forgotten = metrics.forgotten ?? 0
+    const forgettingPercent = total > 0 ? Math.round((forgotten / total) * 100) : 0
+    overrides.forgetting = `${forgettingPercent}%`
 
-	return overrides
-})
+    return overrides
+  })
 
-const insightSection = computed(() => content.value.insights ?? null)
-const hasInsightItems = computed(() => (insightSection.value?.items?.length ?? 0) > 0)
-const timelineSection = computed(() => content.value.timeline ?? null)
-const resourceSection = computed(() => content.value.resources ?? null)
+  const insightSection = computed(() => content.value.insights ?? null)
+  const hasInsightItems = computed(() => (insightSection.value?.items?.length ?? 0) > 0)
+  const timelineSection = computed(() => content.value.timeline ?? null)
+  const resourceSection = computed(() => content.value.resources ?? null)
 
-const showRecentNotes = computed(() => hasNotes.value && (recentNotes.value?.length ?? 0) > 0)
+  const showRecentNotes = computed(() => hasNotes.value && (recentNotes.value?.length ?? 0) > 0)
 
-const handleSummaryAction = (action: { action?: string; to?: string }) => {
-	if (action?.action === 'open-settings') {
-		router.push('/settings')
-		return
-	}
+  const handleSummaryAction = (action: { action?: string; to?: string }) => {
+    if (action?.action === 'open-settings') {
+      router.push('/settings')
+      return
+    }
 
-	if (action?.action === 'open-history') {
-		router.push('/history')
-	}
-}
+    if (action?.action === 'open-history') {
+      router.push('/history')
+    }
+  }
 
-const handleResourceOpen = async (link: { action?: string; value?: string }) => {
-	if (process.client && link.action === 'copy-email' && link.value && navigator?.clipboard?.writeText) {
-		try {
-			await navigator.clipboard.writeText(link.value)
-		} catch {
-			// noop — clipboard support is optional
-		}
-	}
-}
+  const handleResourceOpen = async (link: { action?: string; value?: string }) => {
+    if (
+      import.meta.client &&
+      link.action === 'copy-email' &&
+      link.value &&
+      navigator?.clipboard?.writeText
+    ) {
+      try {
+        await navigator.clipboard.writeText(link.value)
+      } catch {
+        // noop — clipboard support is optional
+      }
+    }
+  }
 </script>
 
 <template>
-	<div class="max-w-7xl mx-auto space-y-12 px-4 pb-20 pt-10 sm:px-6 lg:px-8">
-		<section class="space-y-4">
-			<div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-				<div class="space-y-2">
-					<div class="flex flex-wrap items-center gap-3">
-						<UBadge
-							v-if="headerBadge"
-							:label="headerBadge.label"
-							:color="headerBadge.color ?? 'primary'"
-							:icon="headerBadge.icon"
-							variant="soft"
-						/>
-						<h1 class="text-3xl font-bold text-gray-900 dark:text-white">
-							{{ headerTitle }}
-						</h1>
-					</div>
-					<p v-if="headerSubtitle" class="text-sm text-gray-500 dark:text-gray-400 max-w-3xl">
-						{{ headerSubtitle }}
-					</p>
-				</div>
-			</div>
+  <div class="max-w-7xl mx-auto space-y-12 px-4 pb-20 pt-10 sm:px-6 lg:px-8">
+    <section class="space-y-4">
+      <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div class="space-y-2">
+          <div class="flex flex-wrap items-center gap-3">
+            <UBadge
+              v-if="headerBadge"
+              :label="headerBadge.label"
+              :color="headerBadge.color ?? 'primary'"
+              :icon="headerBadge.icon"
+              variant="soft"
+            />
+            <h1 class="text-3xl font-bold text-gray-900 dark:text-white">
+              {{ headerTitle }}
+            </h1>
+          </div>
+          <p v-if="headerSubtitle" class="text-sm text-gray-500 dark:text-gray-400 max-w-3xl">
+            {{ headerSubtitle }}
+          </p>
+        </div>
+      </div>
 
-			<ProfileSummaryCard
-				:summary="profileSummary"
-				:stats="profileStats"
-				:metrics="summaryStatOverrides"
-				@action="handleSummaryAction"
-			/>
-		</section>
+      <ProfileSummaryCard
+        :summary="profileSummary"
+        :stats="profileStats"
+        :metrics="summaryStatOverrides"
+        @action="handleSummaryAction"
+      />
+    </section>
 
-		<section
-			class="grid gap-6"
-			:class="{ 'lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]': hasInsightItems }"
-		>
-			<ProfileInsightGrid
-				v-if="hasInsightItems"
-				:title="insightSection?.title"
-				:subtitle="insightSection?.subtitle"
-				:items="insightSection?.items"
-			/>
+    <section
+      class="grid gap-6"
+      :class="{ 'lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]': hasInsightItems }"
+    >
+      <ProfileInsightGrid
+        v-if="hasInsightItems"
+        :title="insightSection?.title"
+        :subtitle="insightSection?.subtitle"
+        :items="insightSection?.items"
+      />
 
-			<div class="space-y-6">
-				<ProfileImportanceChart :distribution="importanceDistribution" />
-				<ProfileRecentNotes
-					:notes="recentNotes"
-					:class="{ 'opacity-70': !showRecentNotes }"
-					:empty-label="showRecentNotes ? undefined : '暂无最近访问记录'"
-				/>
-			</div>
-		</section>
+      <div class="space-y-6">
+        <ProfileImportanceChart :distribution="importanceDistribution" />
+        <ProfileRecentNotes
+          :notes="recentNotes"
+          :class="{ 'opacity-70': !showRecentNotes }"
+          :empty-label="showRecentNotes ? undefined : '暂无最近访问记录'"
+        />
+      </div>
+    </section>
 
-		<section class="grid gap-6 xl:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
-			<ProfileTimeline
-				:title="timelineSection?.title"
-				:description="timelineSection?.description"
-				:items="timelineSection?.items"
-				:empty="timelineSection?.empty"
-			/>
+    <section class="grid gap-6 xl:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
+      <ProfileTimeline
+        :title="timelineSection?.title"
+        :description="timelineSection?.description"
+        :items="timelineSection?.items"
+        :empty="timelineSection?.empty"
+      />
 
-			<ProfileResourceList
-				:title="resourceSection?.title"
-				:description="resourceSection?.description"
-				:links="resourceSection?.links"
-				@open="handleResourceOpen"
-			/>
-		</section>
-	</div>
+      <ProfileResourceList
+        :title="resourceSection?.title"
+        :description="resourceSection?.description"
+        :links="resourceSection?.links"
+        @open="handleResourceOpen"
+      />
+    </section>
+  </div>
 </template>

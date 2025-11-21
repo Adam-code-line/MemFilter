@@ -1,20 +1,22 @@
 <script setup lang="ts">
+  interface ProfileRecentNotesProps {
+    title?: string
+    emptyLabel?: string
+    notes?: NoteRecord[] | null
+  }
 
-interface ProfileRecentNotesProps {
-  title?: string
-  emptyLabel?: string
-  notes?: NoteRecord[] | null
-}
-
-const props = withDefaults(defineProps<ProfileRecentNotesProps>(), {
-  title: '最近访问的记忆',
-  emptyLabel: '暂无最近访问记录',
-  notes: () => []
-})
+  const props = withDefaults(defineProps<ProfileRecentNotesProps>(), {
+    title: '最近访问的记忆',
+    emptyLabel: '暂无最近访问记录',
+    notes: () => [],
+  })
 </script>
 
 <template>
-  <UCard :ui="{ body: { padding: 'p-5' } }" class="border border-gray-200/80 dark:border-white/10 bg-white/85 dark:bg-slate-900/60">
+  <UCard
+    :ui="{ body: { padding: 'p-5' } }"
+    class="border border-gray-200/80 dark:border-white/10 bg-white/85 dark:bg-slate-900/60"
+  >
     <div class="space-y-4">
       <div class="flex items-center justify-between">
         <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
@@ -45,13 +47,32 @@ const props = withDefaults(defineProps<ProfileRecentNotesProps>(), {
                 {{ note.title || '未命名笔记' }}
               </h4>
               <UBadge
-                :label="note.importance === 'high' ? '核心' : note.importance === 'medium' ? '重点' : note.importance === 'low' ? '轻度' : '噪声'"
-                :color="note.importance === 'high' ? 'error' : note.importance === 'medium' ? 'primary' : note.importance === 'low' ? 'secondary' : 'neutral'"
+                :label="
+                  note.importance === 'high'
+                    ? '核心'
+                    : note.importance === 'medium'
+                      ? '重点'
+                      : note.importance === 'low'
+                        ? '轻度'
+                        : '噪声'
+                "
+                :color="
+                  note.importance === 'high'
+                    ? 'error'
+                    : note.importance === 'medium'
+                      ? 'primary'
+                      : note.importance === 'low'
+                        ? 'secondary'
+                        : 'neutral'
+                "
                 variant="soft"
                 size="xs"
               />
             </div>
-            <p v-if="note.description" class="text-sm text-gray-600 dark:text-gray-400 line-clamp-2">
+            <p
+              v-if="note.description"
+              class="text-sm text-gray-600 dark:text-gray-400 line-clamp-2"
+            >
               {{ note.description }}
             </p>
             <div class="flex flex-wrap items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
@@ -62,7 +83,10 @@ const props = withDefaults(defineProps<ProfileRecentNotesProps>(), {
         </UCard>
       </div>
 
-      <div v-else class="flex flex-col items-center gap-2 rounded-lg border border-dashed border-gray-200 py-10 text-center text-sm text-gray-500 dark:border-gray-700 dark:text-gray-400">
+      <div
+        v-else
+        class="flex flex-col items-center gap-2 rounded-lg border border-dashed border-gray-200 py-10 text-center text-sm text-gray-500 dark:border-gray-700 dark:text-gray-400"
+      >
         <UIcon name="i-lucide-notebook" class="text-xl text-primary-500" />
         <span>{{ emptyLabel }}</span>
       </div>

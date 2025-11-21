@@ -2,8 +2,7 @@
   <div class="w-full max-w-md mx-auto space-y-8">
     <!-- 品牌标识 -->
     <div class="text-center space-y-6">
-      <div class="flex justify-center">
-      </div>
+      <div class="flex justify-center"></div>
       <div class="space-y-3">
         <h1 class="text-3xl font-bold text-white">
           {{ config.branding?.name || '忆滤' }}
@@ -15,13 +14,15 @@
     </div>
 
     <!-- 登录注册卡片 -->
-    <UCard 
+    <UCard
       class="backdrop-blur-xl bg-white/5 border border-white/10 shadow-2xl shadow-black/25 rounded-3xl overflow-hidden"
     >
       <template #header>
         <div class="text-center space-y-4 py-2">
           <div class="flex justify-center">
-            <div class="w-14 h-14 bg-gradient-to-br from-blue-400 via-purple-500 to-indigo-500 rounded-2xl flex items-center justify-center text-white shadow-lg">
+            <div
+              class="w-14 h-14 bg-gradient-to-br from-blue-400 via-purple-500 to-indigo-500 rounded-2xl flex items-center justify-center text-white shadow-lg"
+            >
               <UIcon :name="currentForm.icon || 'i-lucide-user'" class="text-xl" />
             </div>
           </div>
@@ -38,7 +39,7 @@
 
       <div class="space-y-8 px-2">
         <!-- 登录表单 -->
-        <UForm 
+        <UForm
           v-if="activeTab === 'login'"
           ref="loginFormRef"
           :state="loginModel"
@@ -46,8 +47,8 @@
           @submit="handleLoginSubmit"
           class="space-y-3"
         >
-          <UFormField 
-            v-for="(field, fieldName) in config.forms?.login?.fields" 
+          <UFormField
+            v-for="(field, fieldName) in config.forms?.login?.fields"
             :key="fieldName"
             :label="field.label"
             :name="fieldName"
@@ -65,10 +66,10 @@
             >
             </UInput>
           </UFormField>
-          
+
           <div class="pt-4">
-            <UButton 
-              type="submit" 
+            <UButton
+              type="submit"
               :label="config.forms?.login?.submit"
               :icon="config.forms?.login?.submitIcon"
               :loading="isLoading"
@@ -83,7 +84,7 @@
         </UForm>
 
         <!-- 注册表单 -->
-        <UForm 
+        <UForm
           v-else
           ref="signupFormRef"
           :state="signupModel"
@@ -91,8 +92,8 @@
           @submit="handleSignupSubmit"
           class="space-y-3"
         >
-          <UFormField 
-            v-for="(field, fieldName) in config.forms?.signup?.fields" 
+          <UFormField
+            v-for="(field, fieldName) in config.forms?.signup?.fields"
             :key="fieldName"
             :label="field.label"
             :name="fieldName"
@@ -110,10 +111,10 @@
             >
             </UInput>
           </UFormField>
-          
+
           <div class="pt-4">
-            <UButton 
-              type="submit" 
+            <UButton
+              type="submit"
               :label="config.forms?.signup?.submit"
               :icon="config.forms?.signup?.submitIcon"
               :loading="isLoading"
@@ -128,7 +129,7 @@
         </UForm>
 
         <!-- 错误信息 -->
-        <UAlert 
+        <UAlert
           v-if="errorMessage"
           :title="errorTitle"
           :description="errorMessage"
@@ -143,7 +144,7 @@
         <div class="text-center py-2">
           <p class="text-blue-200 text-base">
             {{ currentForm.switchText }}
-            <UButton 
+            <UButton
               :label="currentForm.switchAction"
               variant="link"
               size="lg"
@@ -157,7 +158,7 @@
 
     <!-- 返回首页链接 -->
     <div class="text-center">
-      <UButton 
+      <UButton
         :label="config.labels?.backToHome || '返回首页'"
         to="/"
         variant="ghost"
@@ -170,65 +171,59 @@
 </template>
 
 <script lang="ts" setup>
+  // 接收属性和事件
+  const props = defineProps<{
+    activeTab: 'login' | 'signup'
+    config: LoginConfig
+    isLoading?: boolean
+    errorMessage?: string
+    errorTitle?: string
+  }>()
 
-// 接收属性和事件
-const props = defineProps<{
-  activeTab: 'login' | 'signup'
-  config: LoginConfig
-  isLoading?: boolean
-  errorMessage?: string
-  errorTitle?: string
-}>()
+  const emit = defineEmits<{
+    'login-submit': [data: FormData]
+    'signup-submit': [data: FormData]
+    'tab-changed': [tab: 'login' | 'signup']
+  }>()
 
-const emit = defineEmits<{
-  'login-submit': [data: FormData]
-  'signup-submit': [data: FormData]
-  'tab-changed': [tab: 'login' | 'signup']
-}>()
+  // 使用表单管理组合式函数
+  const { loginModel, signupModel, updateLoginModel, updateSignupModel, getFieldType } =
+    useAuthForm(props.activeTab)
 
-// 使用表单管理组合式函数
-const { 
-  loginModel, 
-  signupModel, 
-  updateLoginModel, 
-  updateSignupModel, 
-  getFieldType 
-} = useAuthForm(props.activeTab)
+  // 使用表单验证组合式函数
+  const { loginSchema, signupSchema } = useAuthValidation()
 
-// 使用表单验证组合式函数
-const { loginSchema, signupSchema } = useAuthValidation()
+  // 计算属性
+  const currentForm = computed(() => {
+    return props.activeTab === 'login'
+      ? props.config.forms?.login || {}
+      : props.config.forms?.signup || {}
+  })
 
-// 计算属性
-const currentForm = computed(() => {
-  return props.activeTab === 'login' 
-    ? props.config.forms?.login || {}
-    : props.config.forms?.signup || {}
-})
+  const loginFormRef = ref<{ submit: () => void } | null>(null)
+  const signupFormRef = ref<{ submit: () => void } | null>(null)
 
-const loginFormRef = ref<{ submit: () => void } | null>(null)
-const signupFormRef = ref<{ submit: () => void } | null>(null)
-
-// 方法
-const switchTab = () => {
-  const newTab = props.activeTab === 'login' ? 'signup' : 'login'
-  emit('tab-changed', newTab)
-}
-
-const handleLoginSubmit = (event: any) => {
-  emit('login-submit', event.data)
-}
-
-const handleSignupSubmit = (event: any) => {
-  emit('signup-submit', event.data)
-}
-
-const submitActive = () => {
-  if (props.activeTab === 'login') {
-    loginFormRef.value?.submit()
-  } else {
-    signupFormRef.value?.submit()
+  // 方法
+  const switchTab = () => {
+    const newTab = props.activeTab === 'login' ? 'signup' : 'login'
+    emit('tab-changed', newTab)
   }
-}
 
-defineExpose({ submitActive })
+  const handleLoginSubmit = (event: any) => {
+    emit('login-submit', event.data)
+  }
+
+  const handleSignupSubmit = (event: any) => {
+    emit('signup-submit', event.data)
+  }
+
+  const submitActive = () => {
+    if (props.activeTab === 'login') {
+      loginFormRef.value?.submit()
+    } else {
+      signupFormRef.value?.submit()
+    }
+  }
+
+  defineExpose({ submitActive })
 </script>

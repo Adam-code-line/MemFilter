@@ -1,5 +1,3 @@
-
-
 type EmptyStateAction = {
   label?: string
   icon?: string
@@ -25,25 +23,26 @@ const mergeAction = (defaults?: EmptyStateAction, value?: EmptyStateAction | nul
 
   return {
     ...(defaults ?? {}),
-    ...value
+    ...value,
   }
 }
 
 export const useEmptyState = (
   source: ComputedRef<EmptyState | null | undefined>,
   defaults: EmptyState
-) => computed(() => {
-  const state = source.value
-  if (!state) {
+) =>
+  computed(() => {
+    const state = source.value
+    if (!state) {
+      return {
+        ...defaults,
+        action: mergeAction(defaults.action ?? undefined, null),
+      }
+    }
+
     return {
       ...defaults,
-      action: mergeAction(defaults.action ?? undefined, null)
+      ...state,
+      action: mergeAction(defaults.action ?? undefined, state.action ?? undefined),
     }
-  }
-
-  return {
-    ...defaults,
-    ...state,
-    action: mergeAction(defaults.action ?? undefined, state.action ?? undefined)
-  }
-})
+  })

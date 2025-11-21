@@ -26,14 +26,18 @@ export const useAuth = () => {
     networkError: '网络连接失败，请重试',
     serverError: '服务器错误，请稍后重试',
     validationFailed: '提交的信息不完整或格式有误',
-    required: '请完善表单信息'
+    required: '请完善表单信息',
   }
 
   const getErrorText = (key: keyof typeof defaultErrorMessages, config: LoginConfig) => {
     return config.errors?.[key] || defaultErrorMessages[key]
   }
 
-  const resolveErrorMessage = (error: unknown, config: LoginConfig, fallbackKey: keyof typeof defaultErrorMessages) => {
+  const resolveErrorMessage = (
+    error: unknown,
+    config: LoginConfig,
+    fallbackKey: keyof typeof defaultErrorMessages
+  ) => {
     const fallback = getErrorText(fallbackKey, config)
 
     if (error instanceof AuthError) {
@@ -62,7 +66,7 @@ export const useAuth = () => {
   const createValidationError = (message: string) => {
     return new AuthError({
       code: 'VALIDATION_FAILED',
-      message
+      message,
     })
   }
 
@@ -88,7 +92,14 @@ export const useAuth = () => {
     action: () => Promise<void>
   }
 
-  const submit = async ({ title, fallbackKey, config, router, redirectPath = '/home', action }: SubmitOptions) => {
+  const submit = async ({
+    title,
+    fallbackKey,
+    config,
+    router,
+    redirectPath = '/home',
+    action,
+  }: SubmitOptions) => {
     try {
       isSubmitting.value = true
       resetSubmissionState()
@@ -122,7 +133,7 @@ export const useAuth = () => {
         }
 
         await authStore.login({ identifier, password })
-      }
+      },
     })
   }
 
@@ -145,7 +156,7 @@ export const useAuth = () => {
         }
 
         await authStore.signup({ name, email, password })
-      }
+      },
     })
   }
 
@@ -170,11 +181,11 @@ export const useAuth = () => {
     isSubmitting: readonly(isSubmitting),
     errorMessage: readonly(errorMessage),
     errorTitle: readonly(errorTitle),
-    
+
     // 方法
     handleLogin,
     handleSignup,
     clearErrors,
-    logout
+    logout,
   }
 }

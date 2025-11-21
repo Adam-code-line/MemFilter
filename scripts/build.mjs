@@ -7,7 +7,7 @@ const require = createRequire(import.meta.url)
 
 const env = {
   ...process.env,
-  NODE_NO_WARNINGS: '1'
+  NODE_NO_WARNINGS: '1',
 }
 
 const nuxtPkgPath = require.resolve('nuxt/package.json')
@@ -17,14 +17,14 @@ const args = [nuxtBin, 'build']
 
 const child = spawn(command, args, {
   stdio: 'inherit',
-  env
+  env,
 })
 
-child.on('exit', code => {
+child.on('exit', (code) => {
   process.exit(code ?? 0)
 })
 
-child.on('error', error => {
+child.on('error', (error) => {
   console.error('Failed to run Nuxt build:', error)
   process.exit(1)
 })

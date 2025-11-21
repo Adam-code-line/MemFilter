@@ -1,4 +1,3 @@
-
 import { storeToRefs } from 'pinia'
 import { useNotesStore } from '~~/stores/notes'
 
@@ -29,7 +28,7 @@ export const useProfileMetrics = () => {
       total: stats.total ?? 0,
       core: stats.core ?? 0,
       fading: stats.fading ?? 0,
-      forgotten: stats.forgotten ?? 0
+      forgotten: stats.forgotten ?? 0,
     }
   })
 
@@ -40,7 +39,7 @@ export const useProfileMetrics = () => {
       high: counts.high ?? 0,
       medium: counts.medium ?? 0,
       low: counts.low ?? 0,
-      noise: counts.noise ?? 0
+      noise: counts.noise ?? 0,
     }
   })
 
@@ -52,6 +51,6 @@ export const useProfileMetrics = () => {
     summaryMetrics,
     importanceDistribution,
     recentNotes,
-    hasNotes
+    hasNotes,
   }
 }

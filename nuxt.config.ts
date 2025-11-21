@@ -2,22 +2,16 @@
 export default defineNuxtConfig({
   app: {
     head: {
-      title: "忆滤",
-      meta: [{ name: "description", content: "信息过载时代的认知减负工具" }],
-      link: [{ rel: "icon", type: "image/x-icon", href: "/favicon.ico" }],
+      title: '忆滤',
+      meta: [{ name: 'description', content: '信息过载时代的认知减负工具' }],
+      link: [{ rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' }],
     },
   },
-  compatibilityDate: "2025-07-15",
+  compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
-  modules: [
-    "@nuxt/content",
-    "@nuxt/eslint",
-    "@nuxt/ui",
-    "@pinia/nuxt",
-    "@nuxtjs/mdc",
-  ],
+  modules: ['@nuxt/content', '@nuxt/eslint', '@nuxt/ui', '@pinia/nuxt', '@nuxtjs/mdc'],
 
-  css: ["~/assets/css/main.css", "cherry-markdown/dist/cherry-markdown.css"],
+  css: ['~/assets/css/main.css', 'cherry-markdown/dist/cherry-markdown.css'],
 
   ui: {
     fonts: false,
@@ -29,8 +23,8 @@ export default defineNuxtConfig({
   // 路由重定向配置
   nitro: {
     routeRules: {
-      "/login": { redirect: "/auth/login" },
-      "/signup": { redirect: "/auth/signup" },
+      '/login': { redirect: '/auth/login' },
+      '/signup': { redirect: '/auth/signup' },
     },
   },
 
@@ -55,23 +49,25 @@ export default defineNuxtConfig({
       baseUrl: process.env.AI_API_BASE_URL,
       apiKey: process.env.AI_API_KEY,
       defaultModel: process.env.AI_DEFAULT_MODEL,
-      temperature: process.env.AI_TEMPERATURE
-        ? Number(process.env.AI_TEMPERATURE)
-        : undefined,
+      temperature: process.env.AI_TEMPERATURE ? Number(process.env.AI_TEMPERATURE) : undefined,
     },
     public: {
-      aiModels: (process.env.AI_AVAILABLE_MODELS || "")
-        .split(",")
+      aiModels: (process.env.AI_AVAILABLE_MODELS || '')
+        .split(',')
         .map((segment) => segment.trim())
         .filter(Boolean),
       aiDefaultModel: process.env.AI_DEFAULT_MODEL,
-      aiTemperature: process.env.AI_TEMPERATURE
-        ? Number(process.env.AI_TEMPERATURE)
-        : undefined,
+      aiTemperature: process.env.AI_TEMPERATURE ? Number(process.env.AI_TEMPERATURE) : undefined,
     },
   },
 
   imports: {
-    dirs: ["~/composables", "~/composables/**"],
+    dirs: ['~/composables', '~/composables/**'],
   },
-});
+
+  vite: {
+    optimizeDeps: {
+      include: ['cherry-markdown', 'echarts'],
+    },
+  },
+})

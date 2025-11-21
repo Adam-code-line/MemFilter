@@ -25,10 +25,10 @@ MemFilter 是一款基于 Nuxt 4 + @nuxt/ui 的全栈应用，通过 AI 帮助�
 - pnpm 8+
 - MySQL 8.0（或兼容版本）
 - 配置 `.env` 文件，包含以下变量：
-	- `MYSQL_HOST`, `MYSQL_PORT`, `MYSQL_DATABASE`, `MYSQL_USER`, `MYSQL_PASSWORD`
-	- `AUTH_SESSION_COOKIE`, `AUTH_SESSION_TTL`
-	- `TIAN_API_KEY`
-	- `AI_API_BASE_URL`, `AI_API_KEY`, `AI_DEFAULT_MODEL`, `AI_TEMPERATURE`, `AI_AVAILABLE_MODELS`
+  - `MYSQL_HOST`, `MYSQL_PORT`, `MYSQL_DATABASE`, `MYSQL_USER`, `MYSQL_PASSWORD`
+  - `AUTH_SESSION_COOKIE`, `AUTH_SESSION_TTL`
+  - `TIAN_API_KEY`
+  - `AI_API_BASE_URL`, `AI_API_KEY`, `AI_DEFAULT_MODEL`, `AI_TEMPERATURE`, `AI_AVAILABLE_MODELS`
 
 > 提示：`pnpm install` 会自动执行 `nuxt prepare`，确保模块与类型声明保持最新。
 

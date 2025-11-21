@@ -44,18 +44,18 @@ export const useIngestionManager = () => {
         const sources = await ingestionApi.listSources()
         sourcesState.value = sources
 
-        let target = sources.find(source => source.type === DEFAULT_SOURCE_TYPE)
+        let target = sources.find((source) => source.type === DEFAULT_SOURCE_TYPE)
 
         if (!target) {
           target = await ingestionApi.createSource({
             name: DEFAULT_SOURCE_NAME,
             type: DEFAULT_SOURCE_TYPE,
-            config: { keywords: DEFAULT_KEYWORDS, limit: DEFAULT_LIMIT }
+            config: { keywords: DEFAULT_KEYWORDS, limit: DEFAULT_LIMIT },
           })
           sourcesState.value = [...sourcesState.value, target]
         } else {
           const existingKeywords = Array.isArray(target.config?.keywords)
-            ? target.config?.keywords.filter(item => typeof item === 'string')
+            ? target.config?.keywords.filter((item) => typeof item === 'string')
             : []
 
           const hasLimit = typeof target.config?.limit === 'number'
@@ -66,15 +66,15 @@ export const useIngestionManager = () => {
             const nextConfig = {
               ...(target.config ?? {}),
               keywords: existingKeywords.length ? existingKeywords : DEFAULT_KEYWORDS,
-              limit: hasLimit ? target.config?.limit : DEFAULT_LIMIT
+              limit: hasLimit ? target.config?.limit : DEFAULT_LIMIT,
             }
 
             const updatedTarget = await ingestionApi.updateSource(target.id, {
-              config: nextConfig
+              config: nextConfig,
             })
 
             target = updatedTarget
-            sourcesState.value = sourcesState.value.map(source =>
+            sourcesState.value = sourcesState.value.map((source) =>
               source.id === updatedTarget.id ? updatedTarget : source
             )
           }
@@ -86,7 +86,7 @@ export const useIngestionManager = () => {
         toast.add({
           title: '初始化失败',
           description: error instanceof Error ? error.message : '无法创建默认来源',
-          color: 'error'
+          color: 'error',
         })
         throw error
       } finally {
@@ -106,7 +106,7 @@ export const useIngestionManager = () => {
       toast.add({
         title: '拉取原始记忆失败',
         description: error instanceof Error ? error.message : '请稍后重试',
-        color: 'error'
+        color: 'error',
       })
       throw error
     } finally {
@@ -114,7 +114,9 @@ export const useIngestionManager = () => {
     }
   }
 
-  const syncAndFetch = async (options: { keywords?: string[] | null; limit?: number | null } = {}) => {
+  const syncAndFetch = async (
+    options: { keywords?: string[] | null; limit?: number | null } = {}
+  ) => {
     const sourceId = await ensureDefaultSource()
     if (!sourceId) {
       return null
@@ -124,12 +126,13 @@ export const useIngestionManager = () => {
 
     try {
       const sanitizedKeywords = Array.isArray(options.keywords)
-        ? options.keywords.map(keyword => keyword.trim()).filter(Boolean)
+        ? options.keywords.map((keyword) => keyword.trim()).filter(Boolean)
         : []
 
-      const sanitizedLimit = typeof options.limit === 'number' && Number.isFinite(options.limit)
-        ? Math.max(1, Math.min(50, Math.floor(options.limit)))
-        : null
+      const sanitizedLimit =
+        typeof options.limit === 'number' && Number.isFinite(options.limit)
+          ? Math.max(1, Math.min(50, Math.floor(options.limit)))
+          : null
 
       const payload: { keywords?: string[]; limit?: number } = {}
 
@@ -151,13 +154,13 @@ export const useIngestionManager = () => {
         toast.add({
           title: '暂无新资讯',
           description: '天行数据暂未返回新的内容',
-          color: 'neutral'
+          color: 'neutral',
         })
       } else {
         toast.add({
           title: '已获取新的原始记忆',
           description: `新增 ${result.inserted} 条资讯`,
-          color: 'primary'
+          color: 'primary',
         })
       }
       return result
@@ -165,7 +168,7 @@ export const useIngestionManager = () => {
       toast.add({
         title: '同步失败',
         description: error instanceof Error ? error.message : '请检查 API Key 或稍后重试',
-        color: 'error'
+        color: 'error',
       })
       throw error
     } finally {
@@ -176,12 +179,12 @@ export const useIngestionManager = () => {
   const promoteRawItem = async (item: MemoryRawItem, options: PromoteOptions = {}) => {
     try {
       const payloadRecord = (item.payload ?? null) as Record<string, unknown> | null
-      const payloadUrl = typeof payloadRecord?.['url'] === 'string'
-        ? String(payloadRecord['url'])
-        : null
-      const payloadArticle = typeof payloadRecord?.['articleContent'] === 'string'
-        ? String(payloadRecord['articleContent'])
-        : null
+      const payloadUrl =
+        typeof payloadRecord?.['url'] === 'string' ? String(payloadRecord['url']) : null
+      const payloadArticle =
+        typeof payloadRecord?.['articleContent'] === 'string'
+          ? String(payloadRecord['articleContent'])
+          : null
       const resolvedContent = (() => {
         const article = (payloadArticle ?? '').trim()
         if (article.length) {
@@ -201,16 +204,16 @@ export const useIngestionManager = () => {
         note: {
           title: options.title ?? item.title ?? '自动生成记忆',
           content: resolvedContent,
-          importance: options.importance ?? 'medium'
-        }
+          importance: options.importance ?? 'medium',
+        },
       })
 
-      pendingItemsState.value = pendingItemsState.value.filter(current => current.id !== item.id)
+      pendingItemsState.value = pendingItemsState.value.filter((current) => current.id !== item.id)
 
       toast.add({
         title: '记忆已生成',
         description: 'AI 已整理原文并写入记忆正文。',
-        color: 'success'
+        color: 'success',
       })
 
       return response
@@ -218,7 +221,7 @@ export const useIngestionManager = () => {
       toast.add({
         title: '生成笔记失败',
         description: error instanceof Error ? error.message : '请稍后重试',
-        color: 'error'
+        color: 'error',
       })
       throw error
     }
@@ -234,7 +237,7 @@ export const useIngestionManager = () => {
     ensureDefaultSource,
     refreshPendingItems,
     syncAndFetch,
-    promoteRawItem
+    promoteRawItem,
   }
 }
 

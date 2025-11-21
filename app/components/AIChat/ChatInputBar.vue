@@ -46,72 +46,75 @@
 </template>
 
 <script setup lang="ts">
-import { useKeyboardShortcut } from '~/composables/ui/useKeyboardShortcut'
-const props = withDefaults(defineProps<{
-  modelValue: string
-  loading?: boolean
-  disabled?: boolean
-  placeholder?: string
-  models?: Array<{ label: string; value: string }>
-  activeModel?: string | null
-}>(), {
-  modelValue: '',
-  loading: false,
-  disabled: false,
-  placeholder: '向 AI 提问任何问题...'
-})
+  import { useKeyboardShortcut } from '~/composables/ui/useKeyboardShortcut'
+  const props = withDefaults(
+    defineProps<{
+      modelValue: string
+      loading?: boolean
+      disabled?: boolean
+      placeholder?: string
+      models?: Array<{ label: string; value: string }>
+      activeModel?: string | null
+    }>(),
+    {
+      modelValue: '',
+      loading: false,
+      disabled: false,
+      placeholder: '向 AI 提问任何问题...',
+    }
+  )
 
-const emit = defineEmits<{
-  (event: 'update:modelValue', value: string): void
-  (event: 'submit'): void
-  (event: 'update:model', value: string): void
-}>()
+  const emit = defineEmits<{
+    (event: 'update:modelValue', value: string): void
+    (event: 'submit'): void
+    (event: 'update:model', value: string): void
+  }>()
 
-const modelOptions = computed(() => props.models ?? [])
+  const modelOptions = computed(() => props.models ?? [])
 
-const textValue = computed({
-  get: () => props.modelValue,
-  set: value => emit('update:modelValue', value)
-})
+  const textValue = computed({
+    get: () => props.modelValue,
+    set: (value) => emit('update:modelValue', value),
+  })
 
-const selectedModel = computed({
-  get: () => props.activeModel ?? modelOptions.value[0]?.value ?? null,
-  set: value => {
-    if (!value) return
-    emit('update:model', value)
+  const selectedModel = computed({
+    get: () => props.activeModel ?? modelOptions.value[0]?.value ?? null,
+    set: (value) => {
+      if (!value) return
+      emit('update:model', value)
+    },
+  })
+
+  const handleSubmit = () => {
+    if (props.disabled || props.loading) return
+    emit('submit')
   }
-})
 
-const handleSubmit = () => {
-  if (props.disabled || props.loading) return
-  emit('submit')
-}
+  useKeyboardShortcut({
+    allowInInput: true,
+    preventDefault: true,
+    stopPropagation: true,
+    handler: () => {
+      if (props.disabled || props.loading) {
+        return
+      }
+      handleSubmit()
+    },
+    match: (event) => {
+      if (event.repeat || event.isComposing) {
+        return false
+      }
 
-useKeyboardShortcut({
-  allowInInput: true,
-  preventDefault: true,
-  stopPropagation: true,
-  handler: () => {
-    if (props.disabled || props.loading) {
-      return
-    }
-    handleSubmit()
-  },
-  match: event => {
-    if (event.repeat || event.isComposing) {
-      return false
-    }
+      if (event.key !== 'Enter') {
+        return false
+      }
 
-    if (event.key !== 'Enter') {
-      return false
-    }
+      if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) {
+        return false
+      }
 
-    if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) {
-      return false
-    }
-
-    const target = event.target as HTMLElement | null
-    return target?.dataset?.chatInput === 'true'
-  }
-})
+      const target = event.target as HTMLElement | null
+      return target?.dataset?.chatInput === 'true'
+    },
+  })
 </script>

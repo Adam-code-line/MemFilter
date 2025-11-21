@@ -1,9 +1,14 @@
-
 import { useToast } from '#imports'
 import type { SettingsContent } from './useSettingsContent'
-import { useSettingsStore, type SettingsNotifications, type SettingsPreferences, type SettingsProfile, type SettingsSecurity } from './useSettingsStore'
+import {
+  useSettingsStore,
+  type SettingsNotifications,
+  type SettingsPreferences,
+  type SettingsProfile,
+  type SettingsSecurity,
+} from './useSettingsStore'
 
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
+const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
 type SaveTarget = 'profile' | 'security' | 'preferences' | 'notifications'
 
@@ -19,29 +24,29 @@ export const useSettingsForm = (content: MaybeRefOrGetter<SettingsContent>) => {
     profile: false,
     security: false,
     preferences: false,
-    notifications: false
+    notifications: false,
   })
 
   const sectionMap = computed(() => settingsContent.value.sections ?? [])
 
   const sections = computed(() =>
-    sectionMap.value.map(section => ({
+    sectionMap.value.map((section) => ({
       ...section,
-      cards: section.cards.map(card => ({
+      cards: section.cards.map((card) => ({
         ...card,
-        fields: card.fields?.map(field => ({
+        fields: card.fields?.map((field) => ({
           ...field,
-          value: resolveFieldValue(card.key, field.key)
+          value: resolveFieldValue(card.key, field.key),
         })),
-        toggles: card.toggles?.map(toggle => ({
+        toggles: card.toggles?.map((toggle) => ({
           ...toggle,
-          value: resolveToggleValue(card.key, toggle.key)
+          value: resolveToggleValue(card.key, toggle.key),
         })),
-        options: card.options?.map(option => ({
+        options: card.options?.map((option) => ({
           ...option,
-          selected: resolveOptionSelected(card.key, option.key)
-        }))
-      }))
+          selected: resolveOptionSelected(card.key, option.key),
+        })),
+      })),
     }))
   )
 
@@ -128,7 +133,7 @@ export const useSettingsForm = (content: MaybeRefOrGetter<SettingsContent>) => {
       title: '设置已保存',
       description: resolveToastDescription(target),
       color: 'primary',
-      icon: 'i-lucide-check-circle-2'
+      icon: 'i-lucide-check-circle-2',
     })
     saving[target] = false
   }
@@ -164,6 +169,6 @@ export const useSettingsForm = (content: MaybeRefOrGetter<SettingsContent>) => {
     updateField,
     updateToggle,
     selectOption,
-    persist
+    persist,
   }
 }

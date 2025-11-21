@@ -1,7 +1,7 @@
 import { defineEventHandler, getQuery } from 'h3'
 import { useIngestionService } from '~/composables/services/useIngestionService'
 
-export default defineEventHandler(async event => {
+export default defineEventHandler(async (event) => {
   const query = getQuery(event)
   const status = typeof query.status === 'string' ? query.status : undefined
 

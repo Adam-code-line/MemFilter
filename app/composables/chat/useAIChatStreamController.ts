@@ -36,6 +36,6 @@ export const useAIChatStreamController = () => {
     abort,
     clear,
     isActive,
-    currentSignal
+    currentSignal,
   }
 }

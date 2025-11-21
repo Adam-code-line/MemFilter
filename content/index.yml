@@ -1,75 +1,75 @@
-title: "忆滤 —— 信息过载时代的认知减负工具"
-description: "用 AI 主动帮助用户遗忘不重要的信息，保留关键内容。"
+title: '忆滤 —— 信息过载时代的认知减负工具'
+description: '用 AI 主动帮助用户遗忘不重要的信息，保留关键内容。'
 hero:
-  subtitle: "信息去噪 · 智能保留"
+  subtitle: '信息去噪 · 智能保留'
   card:
-    title: "忆滤"
-    description: "AI 遗忘引擎，让重要信息浮现"
+    title: '忆滤'
+    description: 'AI 遗忘引擎，让重要信息浮现'
   links:
-    - label: "立即体验"
-      to: "/signup"
-      icon: "i-lucide-arrow-right"
-      size: "xl"
+    - label: '立即体验'
+      to: '/signup'
+      icon: 'i-lucide-arrow-right'
+      size: 'xl'
       trailing: true
 sections:
-  - title: "项目背景"
-    description: "解决现代人信息过载问题的创新方案"
+  - title: '项目背景'
+    description: '解决现代人信息过载问题的创新方案'
     body: |
       信息爆炸：现代人每天处理大量学习资料、工作文件、社交信息。
       过度记忆导致笔记臃肿、任务冗余、心理负担加重。
-    orientation: "horizontal"
+    orientation: 'horizontal'
     reverse: false
     features:
-      - title: "信息过载现状"
-        description: "每日处理海量信息，大脑负荷过重"
-      - title: "传统记录弊端"
-        description: "笔记冗余，重点难以突出"
-      - title: "认知负担加重"
-        description: "心理压力增加，效率下降"
-  - title: "核心创新"
-    description: "基于AI的智能遗忘系统，重新定义信息管理"
+      - title: '信息过载现状'
+        description: '每日处理海量信息，大脑负荷过重'
+      - title: '传统记录弊端'
+        description: '笔记冗余，重点难以突出'
+      - title: '认知负担加重'
+        description: '心理压力增加，效率下降'
+  - title: '核心创新'
+    description: '基于AI的智能遗忘系统，重新定义信息管理'
     body: |
       - 价值驱动遗忘：语义 + 频率 + 情绪联合评估信息重要度。
       - 遗忘模拟：基于艾宾浩斯曲线可视化淡化流程。
-    icon: "🎯"
-    orientation: "horizontal"
+    icon: '🎯'
+    orientation: 'horizontal'
     reverse: true
     features:
-      - title: "智能评估算法"
-        description: "多维度分析信息价值，精准识别重要内容"
-      - title: "遗忘曲线模拟"
-        description: "科学的渐进式遗忘，优化记忆结构"
-      - title: "自适应学习"
-        description: "根据用户行为调整遗忘策略"
-  - title: "应用场景"
-    description: "广泛适用于学习、工作、生活等多个领域"
+      - title: '智能评估算法'
+        description: '多维度分析信息价值，精准识别重要内容'
+      - title: '遗忘曲线模拟'
+        description: '科学的渐进式遗忘，优化记忆结构'
+      - title: '自适应学习'
+        description: '根据用户行为调整遗忘策略'
+  - title: '应用场景'
+    description: '广泛适用于学习、工作、生活等多个领域'
     body: |
       - 学习：笔记自动精简，考前只剩核心知识点。
       - 工作：会议纪要提炼结论，去除冗余对话。
-    icon: "🚀"
-    orientation: "horizontal"
+    icon: '🚀'
+    orientation: 'horizontal'
     reverse: false
     features:
-      - title: "学习场景"
-        description: "课程笔记自动整理，重点知识智能保留"
-      - title: "工作场景"
-        description: "会议记录精简，项目文档去冗"
-      - title: "生活场景"
-        description: "日常信息筛选，重要事项突出"
+      - title: '学习场景'
+        description: '课程笔记自动整理，重点知识智能保留'
+      - title: '工作场景'
+        description: '会议记录精简，项目文档去冗'
+      - title: '生活场景'
+        description: '日常信息筛选，重要事项突出'
 features:
-  title: "为什么选择忆滤？"
-  description: "告别信息过载，拥抱智能简化"
+  title: '为什么选择忆滤？'
+  description: '告别信息过载，拥抱智能简化'
   items:
-    - title: "智能筛选"
-      description: "AI 自动识别重要信息，过滤无关内容"
-    - title: "渐进遗忘"
-      description: "模拟大脑自然遗忘过程，优化记忆结构"
-    - title: "个性化定制"
-      description: "根据使用习惯调整遗忘策略和保留规则"
+    - title: '智能筛选'
+      description: 'AI 自动识别重要信息，过滤无关内容'
+    - title: '渐进遗忘'
+      description: '模拟大脑自然遗忘过程，优化记忆结构'
+    - title: '个性化定制'
+      description: '根据使用习惯调整遗忘策略和保留规则'
 cta:
-  title: "想试试忆滤吗？"
-  description: "开始你的信息减负之旅"
+  title: '想试试忆滤吗？'
+  description: '开始你的信息减负之旅'
   button:
-    label: "立即开始"
-    icon: "i-lucide-arrow-right"
-  action: "/signup"
+    label: '立即开始'
+    icon: 'i-lucide-arrow-right'
+  action: '/signup'

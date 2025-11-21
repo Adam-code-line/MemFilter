@@ -1,13 +1,13 @@
-import type { ImportanceLevel, NoteRecord } from "./types";
-import { IMPORTANCE_METADATA } from "../note-memory/importanceMetadata";
-import { getAIImportanceScore } from "./useAIImportanceScore";
+import type { ImportanceLevel, NoteRecord } from './types'
+import { IMPORTANCE_METADATA } from '../note-memory/importanceMetadata'
+import { getAIImportanceScore } from './useAIImportanceScore'
 
 const fallbackBadge = {
-  label: "未分类",
-  color: "neutral",
-  variant: "subtle" as const,
-  icon: "i-lucide-circle",
-};
+  label: '未分类',
+  color: 'neutral',
+  variant: 'subtle' as const,
+  icon: 'i-lucide-circle',
+}
 
 const importanceBadgeMap = Object.fromEntries(
   Object.entries(IMPORTANCE_METADATA).map(([key, value]) => [
@@ -22,44 +22,38 @@ const importanceBadgeMap = Object.fromEntries(
 ) as Record<
   ImportanceLevel,
   {
-    label: string;
-    color: string;
-    variant: "solid" | "soft" | "subtle" | "outline";
-    icon: string;
+    label: string
+    color: string
+    variant: 'solid' | 'soft' | 'subtle' | 'outline'
+    icon: string
   }
->;
+>
 
 export const useImportanceBadges = () => {
   const resolveImportanceBadge = (importance: ImportanceLevel) =>
-    importanceBadgeMap[importance] ?? fallbackBadge;
+    importanceBadgeMap[importance] ?? fallbackBadge
 
   const resolveNoteItem = (note: NoteRecord) => {
-    const badge = resolveImportanceBadge(note.importance);
+    const badge = resolveImportanceBadge(note.importance)
     return {
       id: note.id,
       record: note,
-      title: note.title || "未命名笔记",
-      description: note.date ?? "",
-      iconName:
-        typeof note.icon === "string" && note.icon.startsWith("i-")
-          ? note.icon
-          : undefined,
-      iconFallback:
-        typeof note.icon === "string" && !note.icon.startsWith("i-")
-          ? note.icon
-          : "📝",
+      title: note.title || '未命名笔记',
+      description: note.date ?? '',
+      iconName: typeof note.icon === 'string' && note.icon.startsWith('i-') ? note.icon : undefined,
+      iconFallback: typeof note.icon === 'string' && !note.icon.startsWith('i-') ? note.icon : '📝',
       badge,
       score: getAIImportanceScore(note),
-    };
-  };
+    }
+  }
 
   const useNoteItems = (notes: ComputedRef<NoteRecord[]>) =>
-    computed(() => notes.value.map(resolveNoteItem));
+    computed(() => notes.value.map(resolveNoteItem))
 
   return {
     importanceBadgeMap,
     resolveImportanceBadge,
     resolveNoteItem,
     useNoteItems,
-  };
-};
+  }
+}

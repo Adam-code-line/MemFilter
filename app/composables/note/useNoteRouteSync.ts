@@ -1,4 +1,3 @@
-
 import type { NoteRecord } from './types'
 import { useRoute, useRouter } from '#imports'
 
@@ -24,7 +23,7 @@ export const useNoteRouteSync = ({ notes, onOpenNote }: UseNoteRouteSyncOptions)
 
   watch(
     () => route.query.noteId,
-    value => {
+    (value) => {
       if (Array.isArray(value)) {
         pendingNoteId.value = value[0] ?? null
       } else if (typeof value === 'string') {
@@ -36,18 +35,22 @@ export const useNoteRouteSync = ({ notes, onOpenNote }: UseNoteRouteSyncOptions)
     { immediate: true }
   )
 
-  watch([notes, pendingNoteId], ([noteList, noteId]) => {
-    if (!noteId) {
-      return
-    }
+  watch(
+    [notes, pendingNoteId],
+    ([noteList, noteId]) => {
+      if (!noteId) {
+        return
+      }
 
-    const target = noteList.find(note => String(note.id) === noteId)
-    if (!target) {
-      return
-    }
+      const target = noteList.find((note) => String(note.id) === noteId)
+      if (!target) {
+        return
+      }
 
-    onOpenNote(target)
-    pendingNoteId.value = null
-    clearRouteNoteId()
-  }, { immediate: true })
+      onOpenNote(target)
+      pendingNoteId.value = null
+      clearRouteNoteId()
+    },
+    { immediate: true }
+  )
 }

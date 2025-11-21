@@ -1,5 +1,11 @@
 import { computed, type ComputedRef } from 'vue'
-import { buildMemoryDetailActions, buildMemoryDetailStatus, type DetailActionMap, type DetailStatus, type MemorySectionConfig } from './useMemoryDetailHelpers'
+import {
+  buildMemoryDetailActions,
+  buildMemoryDetailStatus,
+  type DetailActionMap,
+  type DetailStatus,
+  type MemorySectionConfig,
+} from './useMemoryDetailHelpers'
 import type { NoteRecord } from '../note/types'
 
 interface UseMemoryDetailPageOptions {
@@ -23,7 +29,7 @@ export const useMemoryDetailPage = (
 
   const detailActions = computed(() =>
     buildMemoryDetailActions(currentNote.value, options.detailPanel.value.actions, {
-      includeOpenNote: options.includeOpenNoteAction ?? true
+      includeOpenNote: options.includeOpenNoteAction ?? true,
     })
   )
 
@@ -54,6 +60,6 @@ export const useMemoryDetailPage = (
   return {
     detailStatus,
     detailActions,
-    handleAction
+    handleAction,
   }
 }

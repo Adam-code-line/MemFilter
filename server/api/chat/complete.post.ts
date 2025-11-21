@@ -6,13 +6,16 @@ const encoder = new TextEncoder()
 
 const sanitizeMessages = (entries: SendAIChatPayload['messages']) =>
   entries
-    .filter(message => typeof message.content === 'string' && message.content.trim().length > 0)
-    .map(message => ({
+    .filter((message) => typeof message.content === 'string' && message.content.trim().length > 0)
+    .map((message) => ({
       role: message.role,
-      content: message.content
+      content: message.content,
     }))
 
-const emitSse = (controller: ReadableStreamDefaultController<Uint8Array>, payload: Record<string, unknown>) => {
+const emitSse = (
+  controller: ReadableStreamDefaultController<Uint8Array>,
+  payload: Record<string, unknown>
+) => {
   controller.enqueue(encoder.encode(`data: ${JSON.stringify(payload)}\n\n`))
 }
 
@@ -29,7 +32,7 @@ const extractTextFromDelta = (input: any): string => {
   }
   if (Array.isArray(input)) {
     return input
-      .map(item => {
+      .map((item) => {
         if (!item) {
           return ''
         }
@@ -98,7 +101,13 @@ const unwrapStreamPayload = (raw: any) => {
     current = nextNode
   }
 
-  while (current && typeof current === 'object' && current.data && typeof current.data === 'object' && !Array.isArray(current.data)) {
+  while (
+    current &&
+    typeof current === 'object' &&
+    current.data &&
+    typeof current.data === 'object' &&
+    !Array.isArray(current.data)
+  ) {
     const next = current.data
     if (typeof next.event === 'string') {
       eventType = next.event.toLowerCase()
@@ -134,7 +143,7 @@ const transformUpstreamStream = (upstream: ReadableStream<Uint8Array>) =>
           id: lastId ?? nanoid(),
           done: true,
           finishReason,
-          content: finalContent
+          content: finalContent,
         })
         emitDone(controller)
       }
@@ -156,7 +165,7 @@ const transformUpstreamStream = (upstream: ReadableStream<Uint8Array>) =>
 
             const segment = buffer.slice(0, boundary)
             buffer = buffer.slice(boundary + 2)
-            const dataLines = segment.split(/\r?\n/).filter(line => line.startsWith('data:'))
+            const dataLines = segment.split(/\r?\n/).filter((line) => line.startsWith('data:'))
 
             if (!dataLines.length) {
               continue
@@ -186,7 +195,7 @@ const transformUpstreamStream = (upstream: ReadableStream<Uint8Array>) =>
                 emitSse(controller, {
                   id: parsed.id ?? nanoid(),
                   error: parsed.error ?? parsed.code ?? 'upstream_error',
-                  message: parsed.message ?? parsed.msg ?? 'AI provider error'
+                  message: parsed.message ?? parsed.msg ?? 'AI provider error',
                 })
                 sendFinal('error')
                 return
@@ -202,7 +211,7 @@ const transformUpstreamStream = (upstream: ReadableStream<Uint8Array>) =>
                 emitSse(controller, {
                   id: core.id ?? parsed.id ?? nanoid(),
                   error: core.error ?? core.code ?? 'upstream_error',
-                  message: core.message ?? core.msg ?? 'AI provider error'
+                  message: core.message ?? core.msg ?? 'AI provider error',
                 })
                 sendFinal('error')
                 return
@@ -212,7 +221,9 @@ const transformUpstreamStream = (upstream: ReadableStream<Uint8Array>) =>
               const choice = choices[0]
               const delta = choice?.delta ?? core.delta ?? {}
               const chunkText = extractTextFromDelta(delta?.content)
-              const answerText = extractTextFromDelta(choice?.message?.content ?? core.content ?? core.answer ?? '')
+              const answerText = extractTextFromDelta(
+                choice?.message?.content ?? core.content ?? core.answer ?? ''
+              )
               if (answerText) {
                 latestAnswer = answerText
               }
@@ -225,7 +236,7 @@ const transformUpstreamStream = (upstream: ReadableStream<Uint8Array>) =>
                 emitSse(controller, {
                   id: currentId,
                   delta: text,
-                  done: false
+                  done: false,
                 })
               } else if (typeof core.answer === 'string' && core.answer.length) {
                 aggregated += core.answer
@@ -233,7 +244,7 @@ const transformUpstreamStream = (upstream: ReadableStream<Uint8Array>) =>
                 emitSse(controller, {
                   id: currentId,
                   delta: core.answer,
-                  done: false
+                  done: false,
                 })
               } else if (!aggregated && answerText) {
                 aggregated = answerText
@@ -241,12 +252,13 @@ const transformUpstreamStream = (upstream: ReadableStream<Uint8Array>) =>
                 emitSse(controller, {
                   id: currentId,
                   delta: answerText,
-                  done: false
+                  done: false,
                 })
               }
 
               const finishReason = choice?.finish_reason ?? core.finish_reason ?? null
-              const isTerminalEvent = eventType === 'stop' || eventType === 'end' || eventType === 'finish'
+              const isTerminalEvent =
+                eventType === 'stop' || eventType === 'end' || eventType === 'finish'
 
               if (finishReason || isTerminalEvent) {
                 if (!aggregated && latestAnswer) {
@@ -266,13 +278,13 @@ const transformUpstreamStream = (upstream: ReadableStream<Uint8Array>) =>
         emitSse(controller, {
           id: lastId ?? nanoid(),
           error: 'upstream_error',
-          message: 'AI provider request failed'
+          message: 'AI provider request failed',
         })
         sendFinal('error')
       } finally {
         controller.close()
       }
-    }
+    },
   })
 
 export default defineEventHandler(async (event) => {
@@ -281,7 +293,7 @@ export default defineEventHandler(async (event) => {
   if (!body?.messages?.length) {
     throw createError({
       statusCode: 400,
-      statusMessage: 'messages payload is required'
+      statusMessage: 'messages payload is required',
     })
   }
 
@@ -300,7 +312,7 @@ export default defineEventHandler(async (event) => {
 
     const stream = new ReadableStream<Uint8Array>({
       start(controller) {
-  const segments = content.match(/.{1,16}/gs) ?? [content]
+        const segments = content.match(/.{1,16}/gs) ?? [content]
         let index = 0
 
         const flushFinal = () => {
@@ -330,7 +342,7 @@ export default defineEventHandler(async (event) => {
           clearTimeout(timer)
           timer = null
         }
-      }
+      },
     })
 
     setResponseHeader(event, 'Content-Type', 'text/event-stream; charset=utf-8')
@@ -344,28 +356,28 @@ export default defineEventHandler(async (event) => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${runtime.ai.apiKey}`
+        Authorization: `Bearer ${runtime.ai.apiKey}`,
       },
       body: JSON.stringify({
         model,
         temperature,
         messages,
-        stream: true
-      })
+        stream: true,
+      }),
     })
 
     if (!response.ok) {
       const text = await response.text().catch(() => '')
       throw createError({
         statusCode: response.status,
-        statusMessage: text || 'AI provider request failed'
+        statusMessage: text || 'AI provider request failed',
       })
     }
 
     if (!response.body) {
       throw createError({
         statusCode: 502,
-        statusMessage: 'AI provider did not return a stream.'
+        statusMessage: 'AI provider did not return a stream.',
       })
     }
 
@@ -378,7 +390,7 @@ export default defineEventHandler(async (event) => {
     console.error('[chat/complete] 调用外部模型失败', error)
     throw createError({
       statusCode: 502,
-      statusMessage: 'AI provider request failed'
+      statusMessage: 'AI provider request failed',
     })
   }
 })

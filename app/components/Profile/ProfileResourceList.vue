@@ -1,44 +1,43 @@
 <script setup lang="ts">
-
-interface ProfileResourceListProps {
-  title?: string
-  description?: string
-  links?: ProfileContentResourceLink[] | null
-}
-
-const props = withDefaults(defineProps<ProfileResourceListProps>(), {
-  title: '协作与支持',
-  description: '',
-  links: () => []
-})
-
-const hasLinks = computed(() => (props.links?.length ?? 0) > 0)
-
-const emit = defineEmits<{
-  (event: 'open', payload: ProfileContentResourceLink): void
-}>()
-
-const colorClassMap: Record<string, string> = {
-  primary: 'text-primary-500',
-  secondary: 'text-secondary-500',
-  neutral: 'text-neutral-500',
-  error: 'text-error-500',
-  warning: 'text-warning-500',
-  success: 'text-success-500',
-  info: 'text-info-500'
-}
-
-const resolveColorClass = (color?: ProfileContentResourceLink['color']) => {
-  if (!color) {
-    return colorClassMap.primary
+  interface ProfileResourceListProps {
+    title?: string
+    description?: string
+    links?: ProfileContentResourceLink[] | null
   }
 
-  return colorClassMap[color] ?? colorClassMap.primary
-}
+  const props = withDefaults(defineProps<ProfileResourceListProps>(), {
+    title: '协作与支持',
+    description: '',
+    links: () => [],
+  })
 
-const handleAction = (link: ProfileContentResourceLink) => {
-  emit('open', link)
-}
+  const hasLinks = computed(() => (props.links?.length ?? 0) > 0)
+
+  const emit = defineEmits<{
+    (event: 'open', payload: ProfileContentResourceLink): void
+  }>()
+
+  const colorClassMap: Record<string, string> = {
+    primary: 'text-primary-500',
+    secondary: 'text-secondary-500',
+    neutral: 'text-neutral-500',
+    error: 'text-error-500',
+    warning: 'text-warning-500',
+    success: 'text-success-500',
+    info: 'text-info-500',
+  }
+
+  const resolveColorClass = (color?: ProfileContentResourceLink['color']) => {
+    if (!color) {
+      return colorClassMap.primary
+    }
+
+    return colorClassMap[color] ?? colorClassMap.primary
+  }
+
+  const handleAction = (link: ProfileContentResourceLink) => {
+    emit('open', link)
+  }
 </script>
 
 <template>
@@ -52,10 +51,7 @@ const handleAction = (link: ProfileContentResourceLink) => {
       </p>
     </div>
 
-    <div
-      v-if="hasLinks"
-      class="grid gap-4 md:grid-cols-2"
-    >
+    <div v-if="hasLinks" class="grid gap-4 md:grid-cols-2">
       <UCard
         v-for="link in links"
         :key="link.key"
@@ -64,7 +60,9 @@ const handleAction = (link: ProfileContentResourceLink) => {
       >
         <div class="flex flex-col gap-4">
           <div class="flex items-start gap-3">
-            <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-50 dark:bg-primary-500/10">
+            <div
+              class="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-50 dark:bg-primary-500/10"
+            >
               <UIcon
                 :name="link.icon ?? 'i-lucide-link'"
                 class="text-xl"
@@ -75,7 +73,10 @@ const handleAction = (link: ProfileContentResourceLink) => {
               <h4 class="text-base font-semibold text-gray-900 dark:text-white">
                 {{ link.label }}
               </h4>
-              <p v-if="link.description" class="text-sm leading-relaxed text-gray-600 dark:text-gray-400">
+              <p
+                v-if="link.description"
+                class="text-sm leading-relaxed text-gray-600 dark:text-gray-400"
+              >
                 {{ link.description }}
               </p>
               <p v-if="link.value" class="text-xs font-medium text-gray-500 dark:text-gray-400">

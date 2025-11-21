@@ -34,13 +34,14 @@ export const useAuthRoute = () => {
     useHead({
       title: `${pageTitle} - 忆滤 MemFilter`,
       meta: [
-        { 
-          name: 'description', 
-          content: mode === 'signup' 
-            ? '创建忆滤新账户，开始您的智能信息管理之旅' 
-            : '使用忆滤账号登录，管理您的笔记与偏好设置'
-        }
-      ]
+        {
+          name: 'description',
+          content:
+            mode === 'signup'
+              ? '创建忆滤新账户，开始您的智能信息管理之旅'
+              : '使用忆滤账号登录，管理您的笔记与偏好设置',
+        },
+      ],
     })
   }
 
@@ -59,11 +60,15 @@ export const useAuthRoute = () => {
    * 监听路由变化
    */
   const watchRouteChanges = (callback: (mode: AuthMode) => void) => {
-    watch(() => route.params.mode, (newMode) => {
-      if (validateMode(newMode as string)) {
-        callback(newMode as AuthMode)
-      }
-    }, { immediate: true })
+    watch(
+      () => route.params.mode,
+      (newMode) => {
+        if (validateMode(newMode as string)) {
+          callback(newMode as AuthMode)
+        }
+      },
+      { immediate: true }
+    )
   }
 
   /**
@@ -85,6 +90,6 @@ export const useAuthRoute = () => {
     setPageMeta,
     handleTabChange,
     watchRouteChanges,
-    redirectToValidMode
+    redirectToValidMode,
   }
 }

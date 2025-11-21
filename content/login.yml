@@ -1,87 +1,87 @@
-title: "登录 · 注册"
-description: "使用忆滤账号登录或注册新账户，保护你的笔记与偏好设置。"
+title: '登录 · 注册'
+description: '使用忆滤账号登录或注册新账户，保护你的笔记与偏好设置。'
 hero:
-  title: "欢迎回到忆滤"
-  subtitle: "简洁、安全、可回溯的遗忘管理"
-  icon: "/logo_notext.png"
-  gradient: "from-blue-600 via-purple-600 to-indigo-800"
+  title: '欢迎回到忆滤'
+  subtitle: '简洁、安全、可回溯的遗忘管理'
+  icon: '/logo_notext.png'
+  gradient: 'from-blue-600 via-purple-600 to-indigo-800'
 branding:
-  name: "忆滤"
-  tagline: "AI 遗忘引擎，智能信息管理"
-  logo: "/logo_notext.png"
+  name: '忆滤'
+  tagline: 'AI 遗忘引擎，智能信息管理'
+  logo: '/logo_notext.png'
 forms:
   login:
-    title: "登录"
-    subtitle: "使用邮箱与密码登录"
-    icon: "i-lucide-log-in"
+    title: '登录'
+    subtitle: '使用邮箱与密码登录'
+    icon: 'i-lucide-log-in'
     fields:
       identifier:
-        label: "邮箱"
-        placeholder: "your@email.com"
-        icon: "i-lucide-mail"
-        type: "email"
+        label: '邮箱'
+        placeholder: 'your@email.com'
+        icon: 'i-lucide-mail'
+        type: 'email'
       password:
-        label: "密码"
-        placeholder: "输入密码"
-        icon: "i-lucide-lock"
-        type: "password"
-    submit: "登录"
-    submitIcon: "i-lucide-log-in"
-    switchText: "还没有账号？"
-    switchAction: "注册"
+        label: '密码'
+        placeholder: '输入密码'
+        icon: 'i-lucide-lock'
+        type: 'password'
+    submit: '登录'
+    submitIcon: 'i-lucide-log-in'
+    switchText: '还没有账号？'
+    switchAction: '注册'
   signup:
-    title: "注册"
-    subtitle: "创建一个新账户，开始遗忘改造"
-    icon: "i-lucide-user-plus"
+    title: '注册'
+    subtitle: '创建一个新账户，开始遗忘改造'
+    icon: 'i-lucide-user-plus'
     fields:
       name:
-        label: "显示名称"
-        placeholder: "你的名字"
-        icon: "i-lucide-user"
-        type: "text"
+        label: '显示名称'
+        placeholder: '你的名字'
+        icon: 'i-lucide-user'
+        type: 'text'
       email:
-        label: "邮箱"
-        placeholder: "your@email.com"
-        icon: "i-lucide-mail"
-        type: "email"
+        label: '邮箱'
+        placeholder: 'your@email.com'
+        icon: 'i-lucide-mail'
+        type: 'email'
       password:
-        label: "密码"
-        placeholder: "至少 8 位"
-        icon: "i-lucide-lock"
-        type: "password"
+        label: '密码'
+        placeholder: '至少 8 位'
+        icon: 'i-lucide-lock'
+        type: 'password'
       confirmPassword:
-        label: "确认密码"
-        placeholder: "再次输入密码"
-        icon: "i-lucide-lock"
-        type: "password"
-    submit: "创建账户"
-    submitIcon: "i-lucide-user-plus"
-    switchText: "已经有账号了？"
-    switchAction: "登录"
+        label: '确认密码'
+        placeholder: '再次输入密码'
+        icon: 'i-lucide-lock'
+        type: 'password'
+    submit: '创建账户'
+    submitIcon: 'i-lucide-user-plus'
+    switchText: '已经有账号了？'
+    switchAction: '登录'
 ui:
   background:
-    gradient: "bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900"
-    overlay: "bg-black/20"
+    gradient: 'bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900'
+    overlay: 'bg-black/20'
   card:
-    background: "bg-white/10 backdrop-blur-lg"
-    border: "border border-white/20"
-    shadow: "shadow-2xl shadow-black/50"
-    rounded: "rounded-2xl"
+    background: 'bg-white/10 backdrop-blur-lg'
+    border: 'border border-white/20'
+    shadow: 'shadow-2xl shadow-black/50'
+    rounded: 'rounded-2xl'
   colors:
-    primary: "blue"
-    secondary: "purple"
-    accent: "indigo"
+    primary: 'blue'
+    secondary: 'purple'
+    accent: 'indigo'
 errors:
-  invalidCredentials: "用户名或密码错误"
-  required: "这是必填项"
-  emailInvalid: "请输入有效的邮箱地址"
-  passwordMismatch: "两次密码不一致"
-  passwordTooShort: "密码长度至少 8 位"
-  networkError: "网络连接失败，请重试"
-  serverError: "服务器错误，请稍后重试"
+  invalidCredentials: '用户名或密码错误'
+  required: '这是必填项'
+  emailInvalid: '请输入有效的邮箱地址'
+  passwordMismatch: '两次密码不一致'
+  passwordTooShort: '密码长度至少 8 位'
+  networkError: '网络连接失败，请重试'
+  serverError: '服务器错误，请稍后重试'
 labels:
-  showPassword: "显示密码"
-  hidePassword: "隐藏密码"
-  loading: "载入中..."
-  processing: "处理中..."
-  backToHome: "返回首页"
+  showPassword: '显示密码'
+  hidePassword: '隐藏密码'
+  loading: '载入中...'
+  processing: '处理中...'
+  backToHome: '返回首页'

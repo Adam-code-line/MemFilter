@@ -14,7 +14,7 @@ const resolveAuthMeta = (route: RouteLocationNormalized): AuthMeta => {
   return {
     public: authMeta?.public,
     requiresAuth: authMeta?.requiresAuth,
-    redirectAuthenticatedTo: authMeta?.redirectAuthenticatedTo
+    redirectAuthenticatedTo: authMeta?.redirectAuthenticatedTo,
   }
 }
 
@@ -37,9 +37,10 @@ export default defineNuxtRouteMiddleware(async (to) => {
   }
 
   if (authStore.isAuthenticated && isAuthRoute) {
-    const redirectPath = authMeta.redirectAuthenticatedTo === false
-      ? null
-      : authMeta.redirectAuthenticatedTo || '/home'
+    const redirectPath =
+      authMeta.redirectAuthenticatedTo === false
+        ? null
+        : authMeta.redirectAuthenticatedTo || '/home'
 
     if (redirectPath) {
       return navigateTo(redirectPath)
