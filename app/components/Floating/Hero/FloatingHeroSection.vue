@@ -109,8 +109,8 @@ const handleMouseLeave = () => {
   background: linear-gradient(
     135deg,
     rgba(59, 130, 246, 0.1) 0%,
-    rgba(147, 51, 234, 0.1) 50%,
-    rgba(239, 68, 68, 0.1) 100%
+    rgba(14, 51, 234, 0.1) 50%,
+    rgba(34, 197, 94, 0.1) 100%
   );
   border-radius: 24px;
   opacity: 0;

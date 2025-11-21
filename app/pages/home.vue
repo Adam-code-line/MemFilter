@@ -33,7 +33,7 @@ const { resolveImportanceBadge } = useImportanceBadges();
 const welcomeCardUi = {
   base: "welcome-card border-none shadow-none backdrop-blur",
   body: "space-y-4 text-center",
-  root: "p-6 md:p-8 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-blue-900/30 dark:via-indigo-900/20 dark:to-purple-900/20",
+  root: "p-6 md:p-8 bg-gradient-to-br from-blue-150 via-indigo-50 to-green-50 dark:from-blue-900/30 dark:via-indigo-900/20 dark:to-green-900/20",
 };
 
 const formatDateLabel = (date: Date) =>
