@@ -247,7 +247,6 @@ const navigateToMemoryDetail = (id: number | string) => {
             </div>
             <UBadge
               :label="category.count.toString()"
-              :color="category.color as any"
               variant="soft"
             />
           </div>
